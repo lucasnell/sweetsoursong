@@ -1,0 +1,20 @@
+Package: sweetsoursong
+Title: A Song of Sweet and Sour (Nectar)
+Version: 0.0.0.9000
+Authors@R: 
+    person(c("Lucas", "A."), "Nell", , "lucnell@gmail.com", role = c("aut", "cre"),
+           comment = c(ORCID = "0000-0003-3209-0517"))
+Description: Simulates metacommunities of nectar microbes with effects on 
+    pollinator visitations to plants.
+License: GPL (>= 3)
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.2.3
+LinkingTo: 
+    BH,
+    Rcpp
+Imports: 
+    ggplot2,
+    Rcpp,
+    tibble
+SystemRequirements: GNU make
