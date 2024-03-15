@@ -3,6 +3,21 @@ library(sweetsoursong)
 library(tidyverse)
 
 
+b_curve <- function(s0, h, ...) {
+    curve(s0^h / (s0^h + x^h), 0, 1,
+          xlab =  "Proportion bacteria",
+          ylab = "Pollinator density at plant",
+          ylim = c(0, 1), lwd = 2,
+          ...)
+}
+f_curve <- function(f0, u, ...) {
+    curve(x^u / (f0^u + x^u), 0, 100,
+          xlab =  "Total flowers",
+          ylab = "Pollinator density at plant",
+          ylim = c(0, 1), lwd = 2,
+          ...)
+}
+
 
 high_low_run <- function(other_args) {
 
@@ -49,27 +64,32 @@ high_low_run <- function(other_args) {
 
 tibble(# ----------
     # within-plant dispersal rates:
-    d_yp = 1.5,  # pollinator-dependent for yeast
-    d_b0 = 0.3,  # pollinator-independent for bacteria
-    d_bp = 0.4,  # pollinator-dependent for bacteria
+    d_yp = 1.5,  # pollinator-dependent for yeast (**)
+    d_b0 = 0.3,  # pollinator-independent for bacteria (**)
+    d_bp = 0.4,  # pollinator-dependent for bacteria (**)
     # -------------
     # rates of immigration from non-focal-plant sources:
-    g_yp = 0,  # 0.005,
-    g_b0 = 0,  # 0.02,
-    g_bp = 0,  # 1e-2,
+    g_yp = 0.005, # pollinator-dependent for yeast (**)
+    g_b0 = 0.02, # pollinator-independent for bacteria (**)
+    g_bp = 0.001,  # pollinator-dependent for bacteria
     # -------------
     # half saturation ratios:
-    L_0 = 0.01,  # for P -> dispersal
-    s_0 = 0.4,   # for B/F -> P
-    f_0 = 1,     # for F -> P
+    L_0 = 0.01,  # for P -> dispersal (**)
+    s_0 = 0.5,   # for B/F -> P (??)
+    f_0 = 50,    # for F -> P (??)
     # -------------
     # shape exponents:
-    h = 2,  # for B/F -> P
-    u = 2,  # for F -> P
+    h = 3,  # for B/F -> P (??)
+    u = 2,  # for F -> P (??)
     # -------------
     # others:
     P_max = 1,  # maximum possible pollinator density
-    q = 1,      # relative strength of B/F -> P versus F -> P
+    q = 1,      # relative strength of B/F -> P versus F -> P (??)
+    #
+    # (**)  = value from Song et al. (submitted)
+    # (??) = value should be varied bc I have no clue what to use
+    #
+    max_t = 1000
     ) |>
     high_low_run() |>
     (\(x) {
@@ -80,11 +100,15 @@ tibble(# ----------
                       P = tail(P, 1)))
         return(x)
     })() |>
+    mutate(P = P * 50) |>
     pivot_longer(Y:P, names_to = "type", values_to = "density") |>
     mutate(type = factor(type, levels = c("Y", "B", "N", "P"),
                          labels = c("yeast", "bacteria", "non-colonized",
                                     "pollinators"))) |>
     ggplot(aes(t, density)) +
+    geom_hline(yintercept = 0, linewidth = 1, linetype = "22", color = "gray70") +
     geom_line(aes(color = type), linewidth = 1) +
     facet_wrap(~ run, ncol = 1) +
+    scale_y_continuous("flower-type density",
+                       sec.axis = sec_axis(~ . / 50, "pollinator density")) +
     scale_color_viridis_d(NULL, begin = 0.1, option = "H")
