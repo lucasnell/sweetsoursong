@@ -16,3 +16,8 @@ one_plant_mP_ode <- function(m, R, d_yp, d_b0, d_bp, g_yp, g_b0, g_bp, L_0, r, P
     .Call(`_sweetsoursong_one_plant_mP_ode`, m, R, d_yp, d_b0, d_bp, g_yp, g_b0, g_bp, L_0, r, P_max, q, s_0, h, f_0, u, dt, max_t, Y0, B0, N0, P0)
 }
 
+#' @export
+stoch_test <- function() {
+    .Call(`_sweetsoursong_stoch_test`)
+}
+

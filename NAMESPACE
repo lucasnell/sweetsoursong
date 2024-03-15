@@ -3,5 +3,6 @@
 export(one_plant_mP_ode)
 export(one_plant_ode)
 export(run_ode_cpp)
+export(stoch_test)
 importFrom(Rcpp,sourceCpp)
 useDynLib(sweetsoursong, .registration = TRUE)

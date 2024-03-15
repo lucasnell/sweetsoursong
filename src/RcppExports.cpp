@@ -103,11 +103,22 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// stoch_test
+NumericMatrix stoch_test();
+RcppExport SEXP _sweetsoursong_stoch_test() {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    rcpp_result_gen = Rcpp::wrap(stoch_test());
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_sweetsoursong_run_ode_cpp", (DL_FUNC) &_sweetsoursong_run_ode_cpp, 21},
     {"_sweetsoursong_one_plant_ode", (DL_FUNC) &_sweetsoursong_one_plant_ode, 20},
     {"_sweetsoursong_one_plant_mP_ode", (DL_FUNC) &_sweetsoursong_one_plant_mP_ode, 22},
+    {"_sweetsoursong_stoch_test", (DL_FUNC) &_sweetsoursong_stoch_test, 0},
     {NULL, NULL, 0}
 };
 
