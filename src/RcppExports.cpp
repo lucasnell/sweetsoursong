@@ -42,8 +42,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // one_plant_ode
-NumericMatrix one_plant_ode(const double& m, const double& R, const double& d_yp, const double& d_b0, const double& d_bp, const double& g_yp, const double& g_b0, const double& g_bp, const double& L_0, const double& P_max, const double& q, const double& s_0, const double& h, const double& f_0, const double& u, const double& dt, const double& max_t, const double& Y0, const double& B0, const double& N0);
-RcppExport SEXP _sweetsoursong_one_plant_ode(SEXP mSEXP, SEXP RSEXP, SEXP d_ypSEXP, SEXP d_b0SEXP, SEXP d_bpSEXP, SEXP g_ypSEXP, SEXP g_b0SEXP, SEXP g_bpSEXP, SEXP L_0SEXP, SEXP P_maxSEXP, SEXP qSEXP, SEXP s_0SEXP, SEXP hSEXP, SEXP f_0SEXP, SEXP uSEXP, SEXP dtSEXP, SEXP max_tSEXP, SEXP Y0SEXP, SEXP B0SEXP, SEXP N0SEXP) {
+NumericMatrix one_plant_ode(const double& m, const double& R, const double& d_yp, const double& d_b0, const double& d_bp, const double& g_yp, const double& g_b0, const double& g_bp, const double& L_0, const double& P_max, const double& q, const double& s_0, const double& h, const double& f_0, const double& F_tilde, const double& u, const double& dt, const double& max_t, const double& Y0, const double& B0, const double& N0);
+RcppExport SEXP _sweetsoursong_one_plant_ode(SEXP mSEXP, SEXP RSEXP, SEXP d_ypSEXP, SEXP d_b0SEXP, SEXP d_bpSEXP, SEXP g_ypSEXP, SEXP g_b0SEXP, SEXP g_bpSEXP, SEXP L_0SEXP, SEXP P_maxSEXP, SEXP qSEXP, SEXP s_0SEXP, SEXP hSEXP, SEXP f_0SEXP, SEXP F_tildeSEXP, SEXP uSEXP, SEXP dtSEXP, SEXP max_tSEXP, SEXP Y0SEXP, SEXP B0SEXP, SEXP N0SEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -61,13 +61,14 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const double& >::type s_0(s_0SEXP);
     Rcpp::traits::input_parameter< const double& >::type h(hSEXP);
     Rcpp::traits::input_parameter< const double& >::type f_0(f_0SEXP);
+    Rcpp::traits::input_parameter< const double& >::type F_tilde(F_tildeSEXP);
     Rcpp::traits::input_parameter< const double& >::type u(uSEXP);
     Rcpp::traits::input_parameter< const double& >::type dt(dtSEXP);
     Rcpp::traits::input_parameter< const double& >::type max_t(max_tSEXP);
     Rcpp::traits::input_parameter< const double& >::type Y0(Y0SEXP);
     Rcpp::traits::input_parameter< const double& >::type B0(B0SEXP);
     Rcpp::traits::input_parameter< const double& >::type N0(N0SEXP);
-    rcpp_result_gen = Rcpp::wrap(one_plant_ode(m, R, d_yp, d_b0, d_bp, g_yp, g_b0, g_bp, L_0, P_max, q, s_0, h, f_0, u, dt, max_t, Y0, B0, N0));
+    rcpp_result_gen = Rcpp::wrap(one_plant_ode(m, R, d_yp, d_b0, d_bp, g_yp, g_b0, g_bp, L_0, P_max, q, s_0, h, f_0, F_tilde, u, dt, max_t, Y0, B0, N0));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -116,7 +117,7 @@ END_RCPP
 
 static const R_CallMethodDef CallEntries[] = {
     {"_sweetsoursong_run_ode_cpp", (DL_FUNC) &_sweetsoursong_run_ode_cpp, 21},
-    {"_sweetsoursong_one_plant_ode", (DL_FUNC) &_sweetsoursong_one_plant_ode, 20},
+    {"_sweetsoursong_one_plant_ode", (DL_FUNC) &_sweetsoursong_one_plant_ode, 21},
     {"_sweetsoursong_one_plant_mP_ode", (DL_FUNC) &_sweetsoursong_one_plant_mP_ode, 22},
     {"_sweetsoursong_stoch_test", (DL_FUNC) &_sweetsoursong_stoch_test, 0},
     {NULL, NULL, 0}

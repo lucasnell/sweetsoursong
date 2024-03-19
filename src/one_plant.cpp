@@ -25,6 +25,7 @@ public:
     double s_0_h;
     double h;
     double f_0_u;
+    double F_tilde;
     double u;
 
     OnePlantSystemFunction(const double& m_,
@@ -41,6 +42,7 @@ public:
                            const double& s_0_,
                            const double& h_,
                            const double& f_0_,
+                           const double& F_tilde_,
                            const double& u_)
         : m(m_),
           R(R_),
@@ -56,6 +58,7 @@ public:
           s_0_h(std::pow(s_0_, h_)),
           h(h_),
           f_0_u(std::pow(f_0_, u_)),
+          F_tilde(F_tilde_),
           u(u_) {};
 
     void operator()(const VecType& x, VecType& dxdt, const double t) {
@@ -66,8 +69,10 @@ public:
 
         double F = Y + B + N;
 
-        double F_u = std::pow(F, u);
-        double phi = F_u / (f_0_u + F_u);
+        // double F_u = std::pow(F, u);
+        // double phi = F_u / (f_0_u + F_u);
+        double FF_u = std::pow(F / (F + F_tilde), u);
+        double phi = FF_u / (f_0_u + FF_u);
         double psi = s_0_h / (s_0_h + std::pow(B / F, h));
         double P = P_max * (q * psi + (1-q) * phi);
 
@@ -127,6 +132,7 @@ NumericMatrix one_plant_ode(const double& m,
                             const double& s_0,
                             const double& h,
                             const double& f_0,
+                            const double& F_tilde,
                             const double& u,
                             const double& dt = 0.1,
                             const double& max_t = 90.0,
@@ -141,7 +147,7 @@ NumericMatrix one_plant_ode(const double& m,
 
     OnePlantObserver obs;
     OnePlantSystemFunction system(m, R, d_yp, d_b0, d_bp, g_yp, g_b0, g_bp,
-                                  L_0, P_max, q, s_0, h, f_0, u);
+                                  L_0, P_max, q, s_0, h, f_0, F_tilde, u);
 
     boost::numeric::odeint::integrate_const(
         VecStepperType(), std::ref(system),

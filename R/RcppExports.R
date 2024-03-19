@@ -7,8 +7,8 @@ run_ode_cpp <- function(dt = 0.01, max_t = 36.0, Y_delay = 0, B_delay = 0, Y0 = 
 }
 
 #' @export
-one_plant_ode <- function(m, R, d_yp, d_b0, d_bp, g_yp, g_b0, g_bp, L_0, P_max, q, s_0, h, f_0, u, dt = 0.1, max_t = 90.0, Y0 = 1.0, B0 = 1.0, N0 = 1.0) {
-    .Call(`_sweetsoursong_one_plant_ode`, m, R, d_yp, d_b0, d_bp, g_yp, g_b0, g_bp, L_0, P_max, q, s_0, h, f_0, u, dt, max_t, Y0, B0, N0)
+one_plant_ode <- function(m, R, d_yp, d_b0, d_bp, g_yp, g_b0, g_bp, L_0, P_max, q, s_0, h, f_0, F_tilde, u, dt = 0.1, max_t = 90.0, Y0 = 1.0, B0 = 1.0, N0 = 1.0) {
+    .Call(`_sweetsoursong_one_plant_ode`, m, R, d_yp, d_b0, d_bp, g_yp, g_b0, g_bp, L_0, P_max, q, s_0, h, f_0, F_tilde, u, dt, max_t, Y0, B0, N0)
 }
 
 #' @export

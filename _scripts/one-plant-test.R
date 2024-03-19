@@ -76,20 +76,21 @@ tibble(# ----------
     # half saturation ratios:
     L_0 = 0.01,  # for P -> dispersal (**)
     s_0 = 0.5,   # for B/F -> P (??)
-    f_0 = 50,    # for F -> P (??)
+    f_0 = 0.5,   # for F -> P (??)
     # -------------
     # shape exponents:
     h = 3,  # for B/F -> P (??)
     u = 2,  # for F -> P (??)
     # -------------
     # others:
-    P_max = 1,  # maximum possible pollinator density
-    q = 1,      # relative strength of B/F -> P versus F -> P (??)
+    P_max = 1.5,  # maximum possible pollinator density
+    q = 0.5,      # relative strength of B/F -> P versus F -> P (??)
+    F_tilde = 1e3,# number of nearby flowers other than focal plant (??)
     #
     # (**)  = value from Song et al. (submitted)
     # (??) = value should be varied bc I have no clue what to use
     #
-    max_t = 1000
+    max_t = 250
     ) |>
     high_low_run() |>
     (\(x) {
@@ -109,6 +110,7 @@ tibble(# ----------
     geom_hline(yintercept = 0, linewidth = 1, linetype = "22", color = "gray70") +
     geom_line(aes(color = type), linewidth = 1) +
     facet_wrap(~ run, ncol = 1) +
+    xlab("Time (days)") +
     scale_y_continuous("flower-type density",
                        sec.axis = sec_axis(~ . / 50, "pollinator density")) +
     scale_color_viridis_d(NULL, begin = 0.1, option = "H")
