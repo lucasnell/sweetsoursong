@@ -17,6 +17,11 @@ one_plant_mP_ode <- function(m, R, d_yp, d_b0, d_bp, g_yp, g_b0, g_bp, L_0, r, P
 }
 
 #' @export
+one_plant_season_ode <- function(m, d_yp, d_b0, d_bp, g_yp, g_b0, g_bp, L_0, P_max, q, s_0, h, f_0, F_tilde, u, R_hat, t0, k, lambda, dt = 0.1, max_t = 90.0, Y0 = 1.0, B0 = 1.0, N0 = 1.0) {
+    .Call(`_sweetsoursong_one_plant_season_ode`, m, d_yp, d_b0, d_bp, g_yp, g_b0, g_bp, L_0, P_max, q, s_0, h, f_0, F_tilde, u, R_hat, t0, k, lambda, dt, max_t, Y0, B0, N0)
+}
+
+#' @export
 stoch_test <- function() {
     .Call(`_sweetsoursong_stoch_test`)
 }

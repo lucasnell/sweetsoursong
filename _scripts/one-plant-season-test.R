@@ -3,6 +3,8 @@ library(sweetsoursong)
 library(tidyverse)
 
 
+#' Seasonal version. Initial conditions here are tricky. Probably makes
+#' more sense to have microbes added at a later time.
 
 
 b_curve <- function(s0, h, ...) {
@@ -30,8 +32,7 @@ high_low_run <- function(other_args) {
 
     args <- list(dt = 0.1,
                  max_t = 100,
-                 m = 0.1,
-                 R = 10)
+                 m = 0.2)
 
     stopifnot(inherits(other_args, "list"))
     stopifnot(! is.null(names(other_args)) && ! any(names(other_args) == ""))
@@ -43,17 +44,15 @@ high_low_run <- function(other_args) {
 
     stopifnot(! any(names(other_args) %in% names(args)))
 
-    .P0 <- 0.01
-
-    all_runs_args <-list("low Y" = list(Y0 = 1,  B0 = 10, N0 = 89, P0 = .P0),
-                         "low B" = list(Y0 = 10, B0 = 1,  N0 = 89, P0 = .P0),
-                         "both low" = list(Y0 = 1, B0 = 1, N0 = 98, P0 = .P0),
-                         "both high" = list(Y0 = 10, B0 = 10, N0 = 80, P0 = .P0))
+    all_runs_args <-list("low Y" = list(Y0 = 0,  B0 = 1, N0 = 1),
+                         "low B" = list(Y0 = 1, B0 = 0,  N0 = 1),
+                         "both low" = list(Y0 = 0, B0 = 0, N0 = 1),
+                         "both high" = list(Y0 = 1, B0 = 1, N0 = 1))
 
     all_runs <- all_runs_args |>
         imap_dfr(\(x, n) {
             c(args, other_args, x) |>
-                do.call(what = one_plant_mP_ode) |>
+                do.call(what = one_plant_season_ode) |>
                 as_tibble() |>
                 mutate(run = n)
         }) |>
@@ -79,22 +78,27 @@ tibble(# ----------
     # -------------
     # half saturation ratios:
     L_0 = 0.01,  # for P -> dispersal (**)
-    s_0 = 0.2,   # for B/F -> P (??)
-    f_0 = 50,    # for F -> P (??)
+    s_0 = 0.5,   # for B/F -> P (??)
+    f_0 = 0.5,   # for F -> P (??)
     # -------------
     # shape exponents:
     h = 3,  # for B/F -> P (??)
     u = 2,  # for F -> P (??)
     # -------------
     # others:
-    P_max = 1,  # maximum possible pollinator density (??)
-    r = 0.1,    # maximum growth rate for pollinator density (??)
-    q = 1,      # relative strength of B/F -> P versus F -> P (??)
+    P_max = 10,    # maximum possible pollinator density
+    q = 0,        # relative strength of B/F -> P versus F -> P (??)
+    F_tilde = 1000,  # number of nearby flowers other than focal plant (??)
+    R_hat = 5000,  # total number of new flowers (**)
+    t0 = 100,        # amount to shift Weibull distribution
+    k = 10.41,      # shape parameter for phenology Weibull distribution (++)
+    lambda = 149.56,# scale parameter for phenology Weibull distribution (++)
     #
-    # (**)  = value from Song et al. (submitted)
+    # (**) = value from Song et al. (submitted)
     # (??) = value should be varied bc I have no clue what to use
+    # (++) = value estimated from field data
     #
-    max_t = 1000
+    # max_t = 250
     ) |>
     high_low_run() |>
     (\(x) {
@@ -114,6 +118,7 @@ tibble(# ----------
     geom_hline(yintercept = 0, linewidth = 1, linetype = "22", color = "gray70") +
     geom_line(aes(color = type), linewidth = 1) +
     facet_wrap(~ run, ncol = 1) +
+    xlab("Time (days)") +
     scale_y_continuous("flower-type density",
                        sec.axis = sec_axis(~ . / 50, "pollinator density")) +
     scale_color_viridis_d(NULL, begin = 0.1, option = "H")
