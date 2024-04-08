@@ -39,6 +39,30 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// landscape_constantF_ode
+NumericMatrix landscape_constantF_ode(const std::vector<double>& m, const std::vector<double>& d_yp, const std::vector<double>& d_b0, const std::vector<double>& d_bp, const std::vector<double>& g_yp, const std::vector<double>& g_b0, const std::vector<double>& g_bp, const std::vector<double>& L_0, const double& q, const double& X, const std::vector<double>& Y0, const std::vector<double>& B0, const double& dt, const double& max_t);
+RcppExport SEXP _sweetsoursong_landscape_constantF_ode(SEXP mSEXP, SEXP d_ypSEXP, SEXP d_b0SEXP, SEXP d_bpSEXP, SEXP g_ypSEXP, SEXP g_b0SEXP, SEXP g_bpSEXP, SEXP L_0SEXP, SEXP qSEXP, SEXP XSEXP, SEXP Y0SEXP, SEXP B0SEXP, SEXP dtSEXP, SEXP max_tSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const std::vector<double>& >::type m(mSEXP);
+    Rcpp::traits::input_parameter< const std::vector<double>& >::type d_yp(d_ypSEXP);
+    Rcpp::traits::input_parameter< const std::vector<double>& >::type d_b0(d_b0SEXP);
+    Rcpp::traits::input_parameter< const std::vector<double>& >::type d_bp(d_bpSEXP);
+    Rcpp::traits::input_parameter< const std::vector<double>& >::type g_yp(g_ypSEXP);
+    Rcpp::traits::input_parameter< const std::vector<double>& >::type g_b0(g_b0SEXP);
+    Rcpp::traits::input_parameter< const std::vector<double>& >::type g_bp(g_bpSEXP);
+    Rcpp::traits::input_parameter< const std::vector<double>& >::type L_0(L_0SEXP);
+    Rcpp::traits::input_parameter< const double& >::type q(qSEXP);
+    Rcpp::traits::input_parameter< const double& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const std::vector<double>& >::type Y0(Y0SEXP);
+    Rcpp::traits::input_parameter< const std::vector<double>& >::type B0(B0SEXP);
+    Rcpp::traits::input_parameter< const double& >::type dt(dtSEXP);
+    Rcpp::traits::input_parameter< const double& >::type max_t(max_tSEXP);
+    rcpp_result_gen = Rcpp::wrap(landscape_constantF_ode(m, d_yp, d_b0, d_bp, g_yp, g_b0, g_bp, L_0, q, X, Y0, B0, dt, max_t));
+    return rcpp_result_gen;
+END_RCPP
+}
 // run_ode_cpp
 NumericMatrix run_ode_cpp(const double& dt, const double& max_t, const double& Y_delay, const double& B_delay, const double& Y0, const double& B0, const double& A0, const double& H0, const double& D, double A_0, const double& r_Y, const double& r_B, const double& m_Y, const double& m_B, const double& e_B, const double& q_Y, const double& q_B, const double& c_Y, const double& c_B, const double& h_B, const double& h_Y);
 RcppExport SEXP _sweetsoursong_run_ode_cpp(SEXP dtSEXP, SEXP max_tSEXP, SEXP Y_delaySEXP, SEXP B_delaySEXP, SEXP Y0SEXP, SEXP B0SEXP, SEXP A0SEXP, SEXP H0SEXP, SEXP DSEXP, SEXP A_0SEXP, SEXP r_YSEXP, SEXP r_BSEXP, SEXP m_YSEXP, SEXP m_BSEXP, SEXP e_BSEXP, SEXP q_YSEXP, SEXP q_BSEXP, SEXP c_YSEXP, SEXP c_BSEXP, SEXP h_BSEXP, SEXP h_YSEXP) {
@@ -180,6 +204,7 @@ END_RCPP
 
 static const R_CallMethodDef CallEntries[] = {
     {"_sweetsoursong_landscape_ode", (DL_FUNC) &_sweetsoursong_landscape_ode, 19},
+    {"_sweetsoursong_landscape_constantF_ode", (DL_FUNC) &_sweetsoursong_landscape_constantF_ode, 14},
     {"_sweetsoursong_run_ode_cpp", (DL_FUNC) &_sweetsoursong_run_ode_cpp, 21},
     {"_sweetsoursong_one_plant_ode", (DL_FUNC) &_sweetsoursong_one_plant_ode, 21},
     {"_sweetsoursong_one_plant_mP_ode", (DL_FUNC) &_sweetsoursong_one_plant_mP_ode, 22},
