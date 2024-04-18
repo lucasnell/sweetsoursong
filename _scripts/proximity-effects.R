@@ -1,7 +1,9 @@
 
+library(MASS)  # mvrnorm
+library(terra) # autocor
+library(spatstat.random) # rMatClust
 library(tidyverse)
 library(sweetsoursong)
-library(spatstat.random)
 
 
 
@@ -26,7 +28,7 @@ ggplot(xy, aes(x, y)) +
 #     geom_point() +
 #     coord_equal(xlim = c(0, 1), ylim = c(0, 1))
 
-zz <- rMatClust(kappa = 20, scale = 0.05, mu = 5)
+zz <- rMatClust(kappa = 20, scale = 0.05, mu = 5, nsim = 1)
 zz$n
 
 tibble(x = zz$x, y = zz$y) |>
@@ -53,7 +55,7 @@ make_dist_mat <- function(x, y) {
 }
 
 # from distance to spatial weights:
-make_spat_wts <- function(dm, m = 1) {
+make_spat_wts <- function(dm, m = 2) {
     stopifnot(is.matrix(dm) && is.numeric(dm) && isSymmetric(dm) && nrow(dm) > 1)
     n <- nrow(dm)
     sw <- matrix(0, n, n)
@@ -76,12 +78,12 @@ dist_mat <- make_dist_mat(zz$x, zz$y)
 ww <- make_spat_wts(dist_mat)
 
 # Generate spatially autocorrelated random variable with q = 1:
-X <- MASS::mvrnorm(n = 1, mu = rep(1, nrow(vcv_mat)), var_cov_mat(dist_mat, 1, 0.5))
+X <- mvrnorm(n = 1, mu = rep(1, nrow(dist_mat)), var_cov_mat(dist_mat, 1, 0.5))
 # Calculate Moran's I (spatial autocorrelation measure)
 autocor(X, ww, "moran")
 
 # q = 10 should reduce Moran's I
-X <- MASS::mvrnorm(n = 1, mu = rep(1, nrow(vcv_mat)), var_cov_mat(dist_mat, 10, 0.5))
+X <- mvrnorm(n = 1, mu = rep(1, nrow(dist_mat)), var_cov_mat(dist_mat, 10, 0.5))
 autocor(X, ww, "moran")
 
 
