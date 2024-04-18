@@ -202,6 +202,22 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// landscape_weights
+NumericVector landscape_weights(const NumericMatrix& x, const double& S_0, const double& q, const std::vector<double>& X, const double& w, const NumericMatrix& z);
+RcppExport SEXP _sweetsoursong_landscape_weights(SEXP xSEXP, SEXP S_0SEXP, SEXP qSEXP, SEXP XSEXP, SEXP wSEXP, SEXP zSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type x(xSEXP);
+    Rcpp::traits::input_parameter< const double& >::type S_0(S_0SEXP);
+    Rcpp::traits::input_parameter< const double& >::type q(qSEXP);
+    Rcpp::traits::input_parameter< const std::vector<double>& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const double& >::type w(wSEXP);
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type z(zSEXP);
+    rcpp_result_gen = Rcpp::wrap(landscape_weights(x, S_0, q, X, w, z));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_sweetsoursong_landscape_ode", (DL_FUNC) &_sweetsoursong_landscape_ode, 20},
@@ -211,6 +227,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_sweetsoursong_one_plant_ode", (DL_FUNC) &_sweetsoursong_one_plant_ode, 21},
     {"_sweetsoursong_one_plant_season_ode", (DL_FUNC) &_sweetsoursong_one_plant_season_ode, 24},
     {"_sweetsoursong_stoch_test", (DL_FUNC) &_sweetsoursong_stoch_test, 0},
+    {"_sweetsoursong_landscape_weights", (DL_FUNC) &_sweetsoursong_landscape_weights, 6},
     {NULL, NULL, 0}
 };
 
