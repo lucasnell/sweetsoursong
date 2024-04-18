@@ -2,13 +2,13 @@
 # Generator token: 10BE3573-1514-4C36-9D1C-5A225CD40393
 
 #' @export
-landscape_ode <- function(m, R, d_yp, d_b0, d_bp, g_yp, g_b0, g_bp, L_0, P_max, q, X, w, z, Y0, B0, N0, dt = 0.1, max_t = 90.0) {
-    .Call(`_sweetsoursong_landscape_ode`, m, R, d_yp, d_b0, d_bp, g_yp, g_b0, g_bp, L_0, P_max, q, X, w, z, Y0, B0, N0, dt, max_t)
+landscape_ode <- function(m, R, d_yp, d_b0, d_bp, g_yp, g_b0, g_bp, L_0, P_max, S_0, q, X, w, z, Y0, B0, N0, dt = 0.1, max_t = 90.0) {
+    .Call(`_sweetsoursong_landscape_ode`, m, R, d_yp, d_b0, d_bp, g_yp, g_b0, g_bp, L_0, P_max, S_0, q, X, w, z, Y0, B0, N0, dt, max_t)
 }
 
 #' @export
-landscape_constantF_ode <- function(m, d_yp, d_b0, d_bp, g_yp, g_b0, g_bp, L_0, q, X, Y0, B0, dt = 0.1, max_t = 90.0) {
-    .Call(`_sweetsoursong_landscape_constantF_ode`, m, d_yp, d_b0, d_bp, g_yp, g_b0, g_bp, L_0, q, X, Y0, B0, dt, max_t)
+landscape_constantF_ode <- function(m, d_yp, d_b0, d_bp, g_yp, g_b0, g_bp, L_0, S_0, X, Y0, B0, dt = 0.1, max_t = 90.0) {
+    .Call(`_sweetsoursong_landscape_constantF_ode`, m, d_yp, d_b0, d_bp, g_yp, g_b0, g_bp, L_0, S_0, X, Y0, B0, dt, max_t)
 }
 
 #' @export

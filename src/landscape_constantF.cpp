@@ -27,7 +27,7 @@ public:
     std::vector<double> g_b0;
     std::vector<double> g_bp;
     std::vector<double> L_0;
-    double q;
+    double S_0;
     double X;
     size_t n_plants;
 
@@ -40,7 +40,7 @@ public:
                             const std::vector<double>& g_b0_,
                             const std::vector<double>& g_bp_,
                             const std::vector<double>& L_0_,
-                            const double& q_,
+                            const double& S_0_,
                             const double& X_)
         : m(m_),
           d_yp(d_yp_),
@@ -50,7 +50,7 @@ public:
           g_b0(g_b0_),
           g_bp(g_bp_),
           L_0(L_0_),
-          q(q_),
+          S_0(S_0_),
           X(X_),
           n_plants(m_.size()),
           weights(m_.size()) {};
@@ -74,9 +74,11 @@ public:
         if (wts_vec.size() != n_plants) wts_vec.resize(n_plants);
 
         double wt_sum = 0;
+        int power = 3;
+        double pow_S_0 = std::pow(S_0, power);
         for (size_t i = 0; i < n_plants; i++) {
             const double& B(x(i,1));
-            wts_vec[i] = std::exp(-q * B);
+            wts_vec[i] = pow_S_0 / (pow_S_0 + std::pow(B, power));
             wt_sum += wts_vec[i];
         }
 
@@ -152,7 +154,7 @@ NumericMatrix landscape_constantF_ode(const std::vector<double>& m,
                                       const std::vector<double>& g_b0,
                                       const std::vector<double>& g_bp,
                                       const std::vector<double>& L_0,
-                                      const double& q,
+                                      const double& S_0,
                                       const double& X,
                                       const std::vector<double>& Y0,
                                       const std::vector<double>& B0,
@@ -160,15 +162,22 @@ NumericMatrix landscape_constantF_ode(const std::vector<double>& m,
                                       const double& max_t = 90.0) {
 
     size_t np = m.size();
-    if(d_yp.size() != np) stop("d_yp is the wrong length!");
-    if(d_b0.size() != np) stop("d_b0 is the wrong length!");
-    if(d_bp.size() != np) stop("d_bp is the wrong length!");
-    if(g_yp.size() != np) stop("g_yp is the wrong length!");
-    if(g_b0.size() != np) stop("g_b0 is the wrong length!");
-    if(g_bp.size() != np) stop("g_bp is the wrong length!");
-    if(L_0.size() != np) stop("L_0 is the wrong length!");
-    if(Y0.size() != np) stop("Y0 is the wrong length!");
-    if(B0.size() != np) stop("B0 is the wrong length!");
+    /*
+     I can't just use 'stop()' because it causes a segfault (or similar).
+     The system below is my workaround.
+     */
+    bool err = false;
+    len_check<double>(err, d_yp, "d_yp", np);
+    len_check<double>(err, d_b0, "d_b0", np);
+    len_check<double>(err, d_bp, "d_bp", np);
+    len_check<double>(err, g_yp, "g_yp", np);
+    len_check<double>(err, g_b0, "g_b0", np);
+    len_check<double>(err, g_bp, "g_bp", np);
+    len_check<double>(err, L_0, "L_0", np);
+    len_check<double>(err, Y0, "Y0", np);
+    len_check<double>(err, B0, "B0", np);
+
+    if (err) return(NumericMatrix(0,0));
 
     size_t n_states = 2U;
     MatType x(np, n_states);
@@ -180,7 +189,7 @@ NumericMatrix landscape_constantF_ode(const std::vector<double>& m,
 
     LandConstFObserver obs;
     LandConstFSystemFunction system(m, d_yp, d_b0, d_bp, g_yp, g_b0, g_bp,
-                                    L_0, q, X);
+                                    L_0, S_0, X);
 
     boost::numeric::odeint::integrate_const(
         MatStepperType(), std::ref(system),

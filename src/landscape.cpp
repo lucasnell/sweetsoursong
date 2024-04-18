@@ -7,7 +7,6 @@ using namespace Rcpp;
 
 
 
-
 class LandscapeSystemFunction
 {
 public:
@@ -21,6 +20,7 @@ public:
     std::vector<double> g_bp;
     std::vector<double> L_0;
     std::vector<double> P_max;
+    double S_0;
     double q;
     std::vector<double> X;
     MatType exp_wz;
@@ -37,6 +37,7 @@ public:
                             const std::vector<double>& g_bp_,
                             const std::vector<double>& L_0_,
                             const std::vector<double>& P_max_,
+                            const double& S_0_,
                             const double& q_,
                             const std::vector<double>& X_,
                             const double& w_,
@@ -51,6 +52,7 @@ public:
           g_bp(g_bp_),
           L_0(L_0_),
           P_max(P_max_),
+          S_0(S_0_),
           q(q_),
           X(X_),
           exp_wz(z_.size1(), z_.size2()),
@@ -58,7 +60,11 @@ public:
           weights(z_.size1()) {
         for (size_t i = 0; i < n_plants; i++) {
             for (size_t j = 0; j < n_plants; j++) {
-                exp_wz(i,j) = std::exp(-w_ * z_(i, j));
+                if (i == j) {
+                    exp_wz(i,j) = 1;
+                } else {
+                    exp_wz(i,j) = std::exp(-w_ * z_(i, j));
+                }
             }
         }
     };
@@ -79,27 +85,7 @@ public:
     void make_weights(std::vector<double>& wts_vec,
                       const MatType& x) {
 
-        std::vector<double> F;
-        F.reserve(n_plants);
-        for (size_t i = 0; i < n_plants; i++) {
-            F.push_back(x(i,0) + x(i,1) + x(i,2));
-        }
-
-        double theta, wt_sum = 0;
-        for (size_t i = 0; i < n_plants; i++) {
-            theta = F[i];
-            for (size_t j = 0; j < n_plants; j++) {
-                if (j == i) continue;
-                theta += (F[j] * exp_wz(i,j));
-            }
-            const double& B_i(x(i,1));
-            wts_vec.push_back(std::exp(theta - q * B_i / F[i]));
-            wt_sum += wts_vec.back();
-        }
-
-        for (size_t i = 0; i < n_plants; i++) {
-            wts_vec[i] /= (wt_sum + X[i]);
-        }
+        landscape_weights__(wts_vec, x, n_plants, S_0, q, X, exp_wz);
 
         return;
     }
@@ -176,6 +162,7 @@ NumericMatrix landscape_ode(const std::vector<double>& m,
                             const std::vector<double>& g_bp,
                             const std::vector<double>& L_0,
                             const std::vector<double>& P_max,
+                            const double& S_0,
                             const double& q,
                             const std::vector<double>& X,
                             const double& w,
@@ -187,21 +174,31 @@ NumericMatrix landscape_ode(const std::vector<double>& m,
                             const double& max_t = 90.0) {
 
     size_t np = z.nrow();
-    if (z.ncol() != np) stop("z needs to be square!");
-    if(m.size() != np) stop("m is the wrong length!");
-    if(R.size() != np) stop("R is the wrong length!");
-    if(d_yp.size() != np) stop("d_yp is the wrong length!");
-    if(d_b0.size() != np) stop("d_b0 is the wrong length!");
-    if(d_bp.size() != np) stop("d_bp is the wrong length!");
-    if(g_yp.size() != np) stop("g_yp is the wrong length!");
-    if(g_b0.size() != np) stop("g_b0 is the wrong length!");
-    if(g_bp.size() != np) stop("g_bp is the wrong length!");
-    if(L_0.size() != np) stop("L_0 is the wrong length!");
-    if(P_max.size() != np) stop("P_max is the wrong length!");
-    if(X.size() != np) stop("X is the wrong length!");
-    if(Y0.size() != np) stop("Y0 is the wrong length!");
-    if(B0.size() != np) stop("B0 is the wrong length!");
-    if(N0.size() != np) stop("N0 is the wrong length!");
+    /*
+     I can't just use 'stop()' because it causes a segfault (or similar).
+     The system below is my workaround.
+     */
+    bool err = false;
+    if (z.ncol() != np) {
+        Rcout << "z needs to be square!" << std::endl;
+        err = true;
+    }
+    len_check<double>(err, m, "m", np);
+    len_check<double>(err, R, "R", np);
+    len_check<double>(err, d_yp, "d_yp", np);
+    len_check<double>(err, d_b0, "d_b0", np);
+    len_check<double>(err, d_bp, "d_bp", np);
+    len_check<double>(err, g_yp, "g_yp", np);
+    len_check<double>(err, g_b0, "g_b0", np);
+    len_check<double>(err, g_bp, "g_bp", np);
+    len_check<double>(err, L_0, "L_0", np);
+    len_check<double>(err, P_max, "P_max", np);
+    len_check<double>(err, X, "X", np);
+    len_check<double>(err, Y0, "Y0", np);
+    len_check<double>(err, B0, "B0", np);
+    len_check<double>(err, N0, "N0", np);
+
+    if (err) return(NumericMatrix(0,0));
 
     size_t n_states = 3U;
     MatType x(np, n_states);
@@ -220,7 +217,7 @@ NumericMatrix landscape_ode(const std::vector<double>& m,
 
     LandscapeObserver obs;
     LandscapeSystemFunction system(m, R, d_yp, d_b0, d_bp, g_yp, g_b0, g_bp,
-                                   L_0, P_max, q, X, w, z_boost);
+                                   L_0, P_max, S_0, q, X, w, z_boost);
 
     boost::numeric::odeint::integrate_const(
         MatStepperType(), std::ref(system),
