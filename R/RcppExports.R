@@ -36,6 +36,10 @@ stoch_test <- function() {
     .Call(`_sweetsoursong_stoch_test`)
 }
 
+test_R <- function(time, mu, sigma) {
+    .Call(`_sweetsoursong_test_R`, time, mu, sigma)
+}
+
 landscape_weights <- function(x, S_0, q, X, w, z) {
     .Call(`_sweetsoursong_landscape_weights`, x, S_0, q, X, w, z)
 }

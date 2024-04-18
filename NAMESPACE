@@ -3,6 +3,8 @@
 export(landscape_constantF_ode)
 export(landscape_ode)
 export(landscape_season_ode)
+export(make_dist_mat)
+export(make_spat_wts)
 export(one_plant_ode)
 export(one_plant_season_ode)
 export(run_ode_cpp)

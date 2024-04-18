@@ -39,33 +39,6 @@ tibble(x = zz$x, y = zz$y) |>
 
 
 
-
-# create distance matrix:
-make_dist_mat <- function(x, y) {
-    stopifnot(length(x) == length(y))
-    stopifnot(length(x) >= 2)
-    n <- length(x)
-    dm <- matrix(0, n, n)
-    for (i in 1:(n-1)) {
-        for (j in (i+1):n) {
-            dm[i,j] <- dm[j,i] <- sqrt((x[i] - x[j])^2 + (y[i] - y[j])^2)
-        }
-    }
-    return(dm)
-}
-
-# from distance to spatial weights:
-make_spat_wts <- function(dm, m = 2) {
-    stopifnot(is.matrix(dm) && is.numeric(dm) && isSymmetric(dm) && nrow(dm) > 1)
-    n <- nrow(dm)
-    sw <- matrix(0, n, n)
-    for (i in 1:(n-1)) {
-        for (j in (i+1):n) {
-            sw[i,j] <- sw[j,i] <- 1 / (dm[i,j]^m)
-        }
-    }
-    return(sw)
-}
 # to variance-covariance matrix
 var_cov_mat <- function(dm, q, sigma) {
     stopifnot(is.numeric(q) && length(q) == 1)
