@@ -5,16 +5,24 @@
 #'     Must be at least 2 elements in length and must be the same length
 #'     as argument `y`.
 #'     Can be negative or positive, but cannot have infinite or missing values.
+#'     Can also be a data frame with column names `"x"` and `"y"`.
 #' @param y Numeric vector of locations in the y dimension.
 #'     Must be at least 2 elements in length and must be the same length
 #'     as argument `x`.
 #'     Can be negative or positive, but cannot have infinite or missing values.
+#'     Nothing should be passed to this argument if `x` is a data frame.
 #'
 #' @return A symmetrical numeric matrix with Euclidean distances between points.
 #'
 #' @export
 #'
 make_dist_mat <- function(x, y) {
+    if (is.data.frame(x)) {
+        stopifnot(is.data.frame(x) && all(c("x", "y") %in% colnames(x)))
+        stopifnot(is.data.frame(x) && missing(y))
+        y <- x$y
+        x <- x$x
+    }
     stopifnot(is.numeric(x) && is.numeric(y))
     stopifnot(length(x) == length(y))
     stopifnot(length(x) >= 2)

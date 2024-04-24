@@ -10,12 +10,14 @@ make_dist_mat(x, y)
 \item{x}{Numeric vector of locations in the x dimension.
 Must be at least 2 elements in length and must be the same length
 as argument \code{y}.
-Can be negative or positive, but cannot have infinite or missing values.}
+Can be negative or positive, but cannot have infinite or missing values.
+Can also be a data frame with column names \code{"x"} and \code{"y"}.}
 
 \item{y}{Numeric vector of locations in the y dimension.
 Must be at least 2 elements in length and must be the same length
 as argument \code{x}.
-Can be negative or positive, but cannot have infinite or missing values.}
+Can be negative or positive, but cannot have infinite or missing values.
+Nothing should be passed to this argument if \code{x} is a data frame.}
 }
 \value{
 A symmetrical numeric matrix with Euclidean distances between points.
