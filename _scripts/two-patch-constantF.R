@@ -78,14 +78,13 @@ tibble(# ----------
        # -------------
        # pollinators:
        L_0 = 0.5,          # half saturation ratio for P -> dispersal (**)
-       S_0 = 10,              # strength of B -> P (??)
+       S_0 = 10e3,          # half saturation ratio for B -> P (??)
        X = 0,              # attraction for nearby flowers other than focal plant (??)
-
        #
        # (**)  = value from Song et al. (submitted)
        # (??) = value should be varied bc I have no clue what to use
        #
-       max_t = 500
+       max_t = 800
 ) |>
     high_low_run() |>
     (\(x) {
@@ -98,18 +97,20 @@ tibble(# ----------
         return(x)
     })() |>
     filter(t %% 1 == 0) |>
+    filter(run == "high B") |>
     pivot_longer(Y:P, names_to = "type", values_to = "density") |>
     mutate(type = factor(type, levels = c("Y", "B", "P"),
                          labels = c("yeast", "bacteria", "pollinators"))) |>
     ggplot(aes(t, density)) +
     geom_hline(yintercept = 0, linewidth = 1, color = "gray80") +
     geom_line(aes(color = type, linetype = type), linewidth = 1) +
-    facet_grid(run ~ p) +
+    # facet_grid(run ~ p) +
+    facet_grid( ~ p) +
     xlab("Time (days)") +
     scale_color_manual(NULL, values = spp_pal) +
     scale_linetype_manual(NULL, values = c("solid", "solid", "24")) +
-    # theme(strip.text = element_blank(), strip.background = element_blank(),
-    #       legend.position = "none") +
+    theme(strip.text = element_blank(), strip.background = element_blank(),
+          legend.position = "none", axis.title = element_blank()) +
     NULL
 
 
@@ -201,7 +202,7 @@ if (! file.exists("_data/two-patch-constF-equil.rds")) {
                          # -------------
                          # pollinators:
                          L_0 = c(0.1, 0.5, 0.9),          # for P -> dispersal (**)
-                         S_0 = c(0, 1, 5, 10),              # strength of B -> P (??)
+                         S_0 = c(0.6, 10e3),              # half saturation for B -> P (??)
                          max_t = 10e3L) |>
         (\(x) split(x, 1:nrow(x)))() |>
         map(as.list) |>
@@ -220,8 +221,8 @@ if (! file.exists("_data/two-patch-constF-equil.rds")) {
 outcome_plot_prep <- function(x) {
     x |>
         mutate(Yprop = (Y1 + Y2) / (Y1 + Y2 + B1 + B2),
-               S_0 = factor(S_0, levels = sort(unique(S_0)),
-                          labels = sprintf("S_0 = %i", sort(unique(S_0)))),
+               S_0 = factor(S_0, levels = rev(sort(unique(S_0))),
+                          labels = sprintf("S_0 = %.1f", rev(sort(unique(S_0))))),
                outcome = case_when(Yprop < 1e-3 ~ "bacteria only",
                                    Yprop > (1-1e-3) ~ "yeast only",
                                    Y1 >= 1e-3 & Y1 <= (1-1e-3) &
@@ -257,7 +258,7 @@ equil_df |>
 # For Yosemite talk
 equil_df |>
     filter(L_0 == 0.5, d_bp == 0.4) |>
-    filter(run == "one of each", S_0 %in% c(0, 1, 10)) |>
+    filter(run == "one of each") |>
     outcome_plot_prep() |>
     ggplot(aes(d_yp, d_b0, fill = outcome)) +
     geom_raster() +
