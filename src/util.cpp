@@ -1,6 +1,6 @@
 #define _USE_MATH_DEFINES
 
-#include <Rcpp.h>
+#include <RcppArmadillo.h>
 #include <vector>
 #include <cmath>
 

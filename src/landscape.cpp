@@ -1,7 +1,7 @@
-#include <Rcpp.h>
-#include <vector>
-
 #include "ode.h"
+
+#include <RcppArmadillo.h>
+#include <vector>
 
 using namespace Rcpp;
 
@@ -55,9 +55,9 @@ public:
           S_0(S_0_),
           q(q_),
           X(X_),
-          exp_wz(z_.size1(), z_.size2()),
-          n_plants(z_.size1()),
-          weights(z_.size1()) {
+          exp_wz(z_.n_rows, z_.n_cols),
+          n_plants(z_.n_rows),
+          weights(z_.n_rows) {
         for (size_t i = 0; i < n_plants; i++) {
             for (size_t j = 0; j < n_plants; j++) {
                 if (i == j) {
@@ -166,20 +166,20 @@ NumericMatrix landscape_ode(const std::vector<double>& m,
                             const double& q,
                             const std::vector<double>& X,
                             const double& w,
-                            const NumericMatrix& z,
+                            const arma::mat& z,
                             const std::vector<double>& Y0,
                             const std::vector<double>& B0,
                             const std::vector<double>& N0,
                             const double& dt = 0.1,
                             const double& max_t = 90.0) {
 
-    size_t np = z.nrow();
+    size_t np = z.n_rows;
     /*
      I can't just use 'stop()' because it causes a segfault (or similar).
      The system below is my workaround.
      */
     bool err = false;
-    if (z.ncol() != np) {
+    if (z.n_cols != np) {
         Rcout << "z needs to be square!" << std::endl;
         err = true;
     }
@@ -198,7 +198,7 @@ NumericMatrix landscape_ode(const std::vector<double>& m,
     len_check<double>(err, B0, "B0", np);
     len_check<double>(err, N0, "N0", np);
 
-    if (err) return(NumericMatrix(0,0));
+    if (err) return NumericMatrix(0,0);
 
     size_t n_states = 3U;
     MatType x(np, n_states);
@@ -208,16 +208,9 @@ NumericMatrix landscape_ode(const std::vector<double>& m,
         x(i,2) = N0[i];
     }
 
-    MatType z_boost(np, np);
-    for (size_t i = 0; i < np; i++) {
-        for (size_t j = 0; j < np; j++) {
-            z_boost(i,j) = z(i,j);
-        }
-    }
-
     LandscapeObserver obs;
     LandscapeSystemFunction system(m, R, d_yp, d_b0, d_bp, g_yp, g_b0, g_bp,
-                                   L_0, P_max, S_0, q, X, w, z_boost);
+                                   L_0, P_max, S_0, q, X, w, z);
 
     boost::numeric::odeint::integrate_const(
         MatStepperType(), std::ref(system),

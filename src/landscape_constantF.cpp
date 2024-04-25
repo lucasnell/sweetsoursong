@@ -6,7 +6,7 @@
  of total flowers with non-colonized N = 1 - Y - B.
  */
 
-#include <Rcpp.h>
+#include <RcppArmadillo.h>
 #include <vector>
 
 #include "ode.h"

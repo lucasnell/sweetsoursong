@@ -2,7 +2,7 @@
 # define __SWEETSOURSONG_ODE_H
 
 
-#include <Rcpp.h>
+#include <RcppArmadillo.h>
 #include <vector>
 
 
@@ -22,7 +22,8 @@ typedef std::vector<double> VecType;
 typedef boost::numeric::odeint::runge_kutta_dopri5<VecType> VecStepperType;
 
 // Comment if you want to use boost matrix types:
-typedef boost::numeric::ublas::matrix<double> MatType;
+// typedef boost::numeric::ublas::matrix<double> MatType;
+typedef arma::mat MatType;
 
 typedef boost::numeric::odeint::runge_kutta_dopri5<MatType> MatStepperType;
 

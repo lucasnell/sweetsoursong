@@ -2,7 +2,7 @@
 # define __SWEETSOURSONG_MATH_H
 
 
-#include <Rcpp.h>
+#include <RcppArmadillo.h>
 #include <cmath>
 
 

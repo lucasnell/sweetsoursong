@@ -1,7 +1,7 @@
 #define _USE_MATH_DEFINES
 
 
-#include <Rcpp.h>
+#include <RcppArmadillo.h>
 #include <vector>
 #include <cmath>
 
@@ -68,13 +68,13 @@ public:
           R_hat(R_hat_),
           mu(mu_),
           sigma(sigma_),
-          exp_wz(z_.size1(), z_.size2()),
-          n_plants(z_.size1()),
+          exp_wz(z_.n_rows, z_.n_cols),
+          n_plants(z_.n_rows),
           Y0(Y0_),
           B0(B0_),
           add_F(add_F_),
-          YB_added(z_.size1(), false),
-          weights(z_.size1()) {
+          YB_added(z_.n_rows, false),
+          weights(z_.n_rows) {
         for (size_t i = 0; i < n_plants; i++) {
             for (size_t j = 0; j < n_plants; j++) {
                 if (i == j) {
@@ -210,20 +210,20 @@ NumericMatrix landscape_season_ode(const std::vector<double>& m,
                                    const std::vector<double>& mu,
                                    const std::vector<double>& sigma,
                                    const double& w,
-                                   const NumericMatrix& z,
+                                   const arma::mat& z,
                                    const std::vector<double>& Y0,
                                    const std::vector<double>& B0,
                                    const double& add_F = 1.0,
                                    const double& dt = 0.1,
                                    const double& max_t = 90.0) {
 
-    size_t np = z.nrow();
+    size_t np = z.n_rows;
     /*
      I can't just use 'stop()' because it causes a segfault (or similar).
      The system below is my workaround.
      */
     bool err = false;
-    if (z.ncol() != np) {
+    if (z.n_cols != np) {
         Rcout << "z needs to be square!" << std::endl;
         err = true;
     }
@@ -270,16 +270,9 @@ NumericMatrix landscape_season_ode(const std::vector<double>& m,
         x(i,2) = 0.0;  // N0[i];
     }
 
-    MatType z_boost(np, np);
-    for (size_t i = 0; i < np; i++) {
-        for (size_t j = 0; j < np; j++) {
-            z_boost(i,j) = z(i,j);
-        }
-    }
-
     LandscapeSeasonObserver obs;
     LandscapeSeasonSystemFunction system(m, d_yp, d_b0, d_bp, g_yp, g_b0, g_bp,
-                                   L_0, P_max, S_0, q, X, R_hat, mu, sigma, w, z_boost,
+                                   L_0, P_max, S_0, q, X, R_hat, mu, sigma, w, z,
                                    Y0, B0, add_F);
 
     boost::numeric::odeint::integrate_const(
