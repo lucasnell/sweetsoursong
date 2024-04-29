@@ -156,6 +156,7 @@ phen_fits <- phen_df |>
                val = mod$estimate)
     })
 
+# write_rds(phen_fits, "_data/all-phen-fits.rds")
 
 phen_fits |>
     split(~ model) |>
@@ -211,7 +212,7 @@ norm_fits <- phen_df |>
                sd = mod$estimate[["sd"]])
     })
 
-write_rds(norm_fits, "_data/norm-phen-fits.rds")
+# write_rds(norm_fits, "_data/norm-phen-fits.rds")
 
 norm_fits |>
     print(n = 30)
