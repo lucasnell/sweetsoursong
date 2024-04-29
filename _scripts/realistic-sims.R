@@ -14,6 +14,132 @@ spp_pal <- c("non-colonized" = "gray60",
              "pollinators" = "firebrick3")
 
 
+np <- 3L
+
+set.seed(5467891)
+Y <- runif(np, 0, 150)
+B <- runif(np, 0, 150)
+N <- runif(np, 0, 150)
+Z <- matrix(0, np, np)
+Z[lower.tri(Z)] <- runif(sum(lower.tri(Z)))
+Z <- Z + t(Z)
+
+W <- exp(-10 * Z)
+nW <- W / matrix(colSums(W), np, np, byrow = TRUE)
+
+nW2 <- matrix(0, np, np)
+for (j in 1:np) {
+    nwsum <- 0
+    for (i in 1:np) {
+        nW2[i,j] <- exp(-10 * Z[i,j])
+        nwsum <- nwsum + nW2[i,j]
+    }
+    for (i in 1:np) nW2[i,j] <- nW2[i,j] / nwsum
+}; rm(i, j, nwsum)
+
+nW; nW2; all.equal(nW, nW2)
+
+
+
+
+wts_brute <- rep(0, np)
+for (i in 1:np) {
+    for (j in 1:np) {
+        wts_brute[i] <- wts_brute[i] + (Y[j] * nW[i,j])
+    }
+}; rm(i, j)
+wts_brute
+# [1] 100.24224  96.36550 106.53236 105.88782  98.16278
+
+nW %*% cbind(Y)
+sum(Y) - sum(nW %*% cbind(Y)); sum(Y) - sum(wts_brute)
+
+
+
+Ysims <- map_dfr(1:1000, \(i) {
+    .Y <- runif(np)
+    .YY <- nW %*% cbind(.Y)
+    tibble(Y1 = c(.Y[1], .YY[1]),
+           Y2 = c(.Y[2], .YY[2]),
+           Y3 = c(.Y[3], .YY[3]),
+           type = c("runif", "nW"),
+           rep = factor(i, levels = 1:1000))
+})
+
+Ysims |>
+    (\(x) {
+        p1 <- x |>
+            ggplot(aes(Y1, Y2)) +
+            geom_point() +
+            facet_wrap(~ type) +
+            coord_equal()
+        p2 <- x |>
+            ggplot(aes(Y1, Y3)) +
+            geom_point() +
+            facet_wrap(~ type) +
+            coord_equal()
+        p3 <- x |>
+            ggplot(aes(Y2, Y3)) +
+            geom_point() +
+            facet_wrap(~ type) +
+            coord_equal()
+        p1 / p2 / p3
+    })()
+
+Ysims |>
+    group_by(type) |>
+    summarize(Y12 = cor(Y1, Y2),
+              Y13 = cor(Y1, Y3),
+              Y23 = cor(Y2, Y3))
+
+
+Ysims |>
+    group_by(rep) |>
+    summarize(Yr = Y1[type == "runif"],
+              Yw = Y1[type == "nW"]) |>
+    ggplot(aes(Yr, Yw)) +
+    geom_point()
+
+
+
+
+# rbind(N) %*% nW
+
+
+crossing(b = 1:99 / 100, u = c(0.001, 0.1, 0.5, 1, 2)) |>
+    mutate(p = (1 - b)^(u), u = factor(u)) |>
+    group_by(u) |>
+    mutate(p = p / sum(p)) |>
+    ungroup() |>
+    ggplot(aes(b, p)) +
+    geom_line() +
+    facet_wrap(~ u, scales = "free_y")
+
+
+
+
+
+crossing(b = 1:100 / 100, f = seq(1, 150, length.out = 10),
+         q = c(0.5, 1, 3), h = q) |>
+    mutate(fq = f^q,
+           bh = b^h) |>
+    group_by(q, h) |>
+    mutate(P = P / sum(P)) |>
+    ungroup() |>
+    mutate(q = factor(q), h = factor(h)) |>
+    ggplot(aes(b, P)) +
+    geom_line(aes(color = f, group = factor(f))) +
+    facet_grid(q ~ h) +
+    scale_color_viridis_c()
+
+
+
+
+
+
+
+
+
 
 # Flowering through time fit to normal distributions for 30 plants in JRBP:
 norm_phen_fits <- read_rds("_data/norm-phen-fits.rds") |>
