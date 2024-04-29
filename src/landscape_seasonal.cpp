@@ -5,172 +5,154 @@
 #include <vector>
 #include <cmath>
 
-#include "ode.h"
+#include "landscape.h"
 
 using namespace Rcpp;
 
 
 
-class LandscapeSeasonSystemFunction
+
+
+class SeasonalLandscape : public LandscapeSystemFunction
 {
 public:
-    std::vector<double> m;
-    std::vector<double> d_yp;
-    std::vector<double> d_b0;
-    std::vector<double> d_bp;
-    std::vector<double> g_yp;
-    std::vector<double> g_b0;
-    std::vector<double> g_bp;
-    std::vector<double> L_0;
-    std::vector<double> P_max;
-    double u;
-    double q;
-    std::vector<double> W;
-    std::vector<double> R_hat;
-    std::vector<double> mu;
-    std::vector<double> sigma;
-    MatType exp_wz;
-    size_t n_plants;
+    arma::vec R_hat;
+    arma::vec par1;
+    arma::vec par2;
+    std::vector<char> distr_types;
 
-
-    LandscapeSeasonSystemFunction(const std::vector<double>& m_,
-                            const std::vector<double>& d_yp_,
-                            const std::vector<double>& d_b0_,
-                            const std::vector<double>& d_bp_,
-                            const std::vector<double>& g_yp_,
-                            const std::vector<double>& g_b0_,
-                            const std::vector<double>& g_bp_,
-                            const std::vector<double>& L_0_,
-                            const std::vector<double>& P_max_,
-                            const double& u_,
-                            const double& q_,
-                            const std::vector<double>& W_,
-                            const std::vector<double>& R_hat_,
-                            const std::vector<double>& mu_,
-                            const std::vector<double>& sigma_,
-                            const double& w_,
-                            const MatType& z_,
-                            const std::vector<double>& Y0_,
-                            const std::vector<double>& B0_,
-                            const double& add_F_)
-        : m(m_),
-          d_yp(d_yp_),
-          d_b0(d_b0_),
-          d_bp(d_bp_),
-          g_yp(g_yp_),
-          g_b0(g_b0_),
-          g_bp(g_bp_),
-          L_0(L_0_),
-          P_max(P_max_),
-          u(u_),
-          q(q_),
-          W(W_),
-          R_hat(R_hat_),
-          mu(mu_),
-          sigma(sigma_),
-          exp_wz(z_.n_rows, z_.n_cols),
-          n_plants(z_.n_rows),
-          Y0(Y0_),
-          B0(B0_),
+    SeasonalLandscape(const std::vector<double>& m_,
+                      const std::vector<double>& d_yp_,
+                      const std::vector<double>& d_b0_,
+                      const std::vector<double>& d_bp_,
+                      const std::vector<double>& g_yp_,
+                      const std::vector<double>& g_b0_,
+                      const std::vector<double>& g_bp_,
+                      const std::vector<double>& L_0_,
+                      const std::vector<double>& P_max_,
+                      const double& u_,
+                      const double& q_,
+                      const std::vector<double>& W_,
+                      const double& w_,
+                      const arma::mat& z_,
+                      const std::vector<double>& R_hat_,
+                      const std::vector<double>& par1_,
+                      const std::vector<double>& par2_,
+                      const std::vector<char>& distr_types_,
+                      const std::vector<double>& Y0_,
+                      const std::vector<double>& B0_,
+                      const double& add_F_)
+        : LandscapeSystemFunction(m_, d_yp_, d_b0_, d_bp_, g_yp_, g_b0_, g_bp_,
+                                  L_0_, P_max_, u_, q_, W_, w_, z_),
+          R_hat(arma::conv_to<arma::vec>::from(R_hat_)),
+          par1(arma::conv_to<arma::vec>::from(par1_)),
+          par2(arma::conv_to<arma::vec>::from(par2_)),
+          distr_types(distr_types_),
+          Y0(arma::conv_to<arma::vec>::from(Y0_)),
+          B0(arma::conv_to<arma::vec>::from(B0_)),
           add_F(add_F_),
-          YB_added(z_.n_rows, false),
-          weights(z_.n_rows) {
+          YB_added(z_.n_rows, false) {
+
         for (size_t i = 0; i < n_plants; i++) {
-            for (size_t j = 0; j < n_plants; j++) {
-                if (i == j) {
-                    exp_wz(i,j) = 1;
-                } else {
-                    exp_wz(i,j) = std::exp(-w_ * z_(i, j));
-                }
-            }
+            // No reason to add these if these are set to zero:
+            if ((Y0(i) + B0(i)) == 0) YB_added[i] = true;
         }
+
     };
+
 
     void operator()(const MatType& x,
                     MatType& dxdt,
                     const double t) {
 
-        make_weights(this->weights, x);
+        LandscapeSystemFunction::make_weights(this->weights, x);
+        make_R(t);
+        LandscapeSystemFunction::all_but_R(x, dxdt, t);
 
         for (size_t i = 0; i < n_plants; i++) {
-            one_plant(i, x, dxdt, t);
+            if (F(i) >= add_F && ! YB_added[i]) {
+                const double& N(x(i,2));
+                double& dYdt = dxdt(i,0);
+                double& dBdt = dxdt(i,1);
+                double& dNdt = dxdt(i,2);
+                // note: using 'N + dNdt' below to avoid N going < 0
+                double y0_i = (N + dNdt) * Y0(i);
+                double b0_i = (N + dNdt) * B0(i);
+                dYdt += y0_i;
+                dBdt += b0_i;
+                dNdt -= (y0_i + b0_i);
+                YB_added[i] = true;
+            }
         }
+
 
         return;
     }
 
-    void make_weights(std::vector<double>& wts_vec,
+    void make_weights(arma::vec& wts_vec,
                       const MatType& x) {
-
-        landscape_weights__(wts_vec, x, n_plants, u, q, W);
-
-        return;
+        LandscapeSystemFunction::make_weights(wts_vec, x);
     }
 
 
 
 private:
-
-    std::vector<double> Y0;
-    std::vector<double> B0;
+    arma::vec Y0;
+    arma::vec B0;
     double add_F;
     std::vector<bool> YB_added;
-    std::vector<double> weights;
+    const double sqrt_2pi = std::sqrt(2 * M_PI);
 
-   void one_plant(const size_t& i,
-                   const MatType& x,
-                   MatType& dxdt,
-                   const double t) {
 
-        const double& Y(x(i,0));
-        const double& B(x(i,1));
-        const double& N(x(i,2));
+    void make_R(const double& t) {
 
-        double& dYdt(dxdt(i,0));
-        double& dBdt(dxdt(i,1));
-        double& dNdt(dxdt(i,2));
-
-        double F = Y + B + N;
-
-        double P = P_max[i] * weights[i];
-
-        double PF = 0;
-        double YF = 0;
-        double BF = 0;
-        if (F > 0) {
-            PF = P / F;
-            YF = Y / F;
-            BF = B / F;
+        for (size_t i = 0; i < n_plants; i++) {
+            const char& dtype(distr_types[i]);
+            switch (dtype) {
+            case 'N':
+                // normal
+                normal_R(t, i);
+                break;
+            case 'W':
+                // weibull
+                weibull_R(t, i);
+                break;
+            case 'L':
+                // lognormal
+                lognormal_R(t, i);
+                break;
+            default:
+                // revert to normal
+                normal_R(t, i);
+                break;
+            }
         }
-        double Lambda = PF / (L_0[i] + PF);
-        if (L_0[i] == 0 && F == 0) Lambda = 0;
+    }
 
-        double gamma_y = g_yp[i] * Lambda;
-        double gamma_b = g_b0[i] + g_bp[i] * Lambda;
 
-        double delta_y = d_yp[i] * Lambda;
-        double delta_b = d_b0[i] + d_bp[i] * Lambda;
+    inline void normal_R(const double& t, const size_t& i) {
+        const double& mu(par1(i));
+        const double& sigma(par2(i));
+        double tmp = (t - mu) / sigma;
+        R(i) = (R_hat(i) / (sigma * sqrt_2pi)) *
+            std::exp(-0.5 * (tmp*tmp));
+        return;
+    }
 
-        double disp_y = delta_y * YF + gamma_y;
-        double disp_b = delta_b * BF + gamma_b;
+    inline void weibull_R(const double& t, const size_t& i) {
+        const double& lambda(par1(i));
+        const double& k(par2(i));
+        R(i) = R_hat(i) * (k / lambda) * std::pow(t / lambda, k-1) *
+            std::exp(- std::pow(t / lambda, k));
+        return;
+    }
 
-        double R = (R_hat[i] / (sigma[i] * std::sqrt(2 * M_PI))) *
-            std::exp(-0.5 * std::pow((t - mu[i]) / sigma[i], 2U));
-
-        dYdt = disp_y * N - m[i] * Y;
-        dBdt = disp_b * N - m[i] * B;
-        dNdt = R - N * (m[i] + disp_y + disp_b);
-
-        if (F >= add_F && ! YB_added[i]) {
-            // note: using 'N + dNdt' below to avoid N going < 0
-            double y0_i = (N + dNdt) * Y0[i];
-            double b0_i = (N + dNdt) * B0[i];
-            dYdt += y0_i;
-            dBdt += b0_i;
-            dNdt -= (y0_i + b0_i);
-            YB_added[i] = true;
-        }
-
+    inline void lognormal_R(const double& t, const size_t& i) {
+        const double& mu(par1(i));
+        const double& sigma(par2(i));
+        double tmp = std::log(t) - mu;
+        R(i) = (R_hat(i) / (t * sigma * sqrt_2pi)) *
+            std::exp(- (tmp*tmp) / (2 * sigma * sigma));
         return;
     }
 
@@ -195,8 +177,9 @@ NumericMatrix landscape_season_ode(const std::vector<double>& m,
                                    const double& q,
                                    const std::vector<double>& W,
                                    const std::vector<double>& R_hat,
-                                   const std::vector<double>& mu,
-                                   const std::vector<double>& sigma,
+                                   const std::vector<double>& par1,
+                                   const std::vector<double>& par2,
+                                   const StringVector& distr_types,
                                    const double& w,
                                    const arma::mat& z,
                                    const std::vector<double>& Y0,
@@ -210,88 +193,70 @@ NumericMatrix landscape_season_ode(const std::vector<double>& m,
      I can't just use 'stop()' because it causes a segfault (or similar).
      The system below is my workaround.
      */
-    bool err = false;
-    mat_dim_check(err, z, "z", np);
-    len_check(err, m, "m", np);
-    len_check(err, d_yp, "d_yp", np);
-    len_check(err, d_b0, "d_b0", np);
-    len_check(err, d_bp, "d_bp", np);
-    len_check(err, g_yp, "g_yp", np);
-    len_check(err, g_b0, "g_b0", np);
-    len_check(err, g_bp, "g_bp", np);
-    len_check(err, L_0, "L_0", np);
-    len_check(err, P_max, "P_max", np);
-    len_check(err, W, "W", np);
+    bool err = lanscape_arg_checks(m, d_yp, d_b0, d_bp, g_yp, g_b0, g_bp,
+                                   L_0, P_max, u, q, W, w, z, Y0, B0,
+                                   dt, max_t);
     len_check(err, R_hat, "R_hat", np);
-    len_check(err, mu, "mu", np);
-    len_check(err, sigma, "sigma", np);
-    len_check(err, Y0, "Y0", np);
-    len_check(err, B0, "B0", np);
-
-    // Must be (or contain values) at least certain value (usually zero):
-    min_val_check(err, z, "z", 0);
-    min_val_check(err, m, "m", 0, false);
-    min_val_check(err, d_yp, "d_yp", 0);
-    min_val_check(err, d_b0, "d_b0", 0);
-    min_val_check(err, d_bp, "d_bp", 0);
-    min_val_check(err, g_yp, "g_yp", 0);
-    min_val_check(err, g_b0, "g_b0", 0);
-    min_val_check(err, g_bp, "g_bp", 0);
-    min_val_check(err, L_0, "L_0", 0, false);
-    min_val_check(err, P_max, "P_max", 0, false);
-    min_val_check(err, W, "W", 0);
+    len_check(err, par1, "par1", np);
+    len_check(err, par2, "par2", np);
+    len_check(err, distr_types, "distr_types", np);
     min_val_check(err, R_hat, "R_hat", 0, false);
-    min_val_check(err, mu, "mu", 0, false);
-    min_val_check(err, sigma, "sigma", 0, false);
-    min_val_check(err, Y0, "Y0", 0);
-    min_val_check(err, B0, "B0", 0);
-    min_val_check(err, u, "u", 0);
-    min_val_check(err, q, "q", 0);
-    min_val_check(err, w, "w", 0);
-    min_val_check(err, add_F, "add_F", 0);
-    min_val_check(err, dt, "dt", 0, false);
-    min_val_check(err, max_t, "max_t", 1.0);
+    min_val_check(err, par1, "par1", 0, false);
+    min_val_check(err, par2, "par2", 0, false);
+    std::vector<char> distr_types_char;
+    distr_types_char.reserve(np);
+    std::string d;
+    for (size_t i = 0; i < distr_types.size(); i++) {
+        d = distr_types(i);
+        if (d != "N" && d != "W" && d != "L") {
+            Rcout << "distr_types must only contain 'N', 'W', or 'L'. ";
+            Rcout << "Yours contains at least one '" << d << "'." << std::endl;
+            err = true;
+            break;
+        }
+        distr_types_char.push_back(d[0]);
+    }
+    min_val_check(err, add_F, "add_F", 0, false);
     for (size_t i = 0; i < std::min(B0.size(), Y0.size()); i++) {
-        if ((Y0[i] + B0[i]) > 1) {
-            Rcout << "Y0+B0 must always be <= 1." << std::endl;
+        if ((Y0[i] + B0[i]) > add_F) {
+            Rcout << "Y0+B0 must always be <= `add_F`." << std::endl;
             err = true;
             break;
         }
     }
-
     if (err) return NumericMatrix(0,0);
 
-    size_t n_states = 3U;
-    MatType x(np, n_states);
+    MatType x(np, 3);
     for (size_t i = 0; i < np; i++) {
-        x(i,0) = 0.0;  // Y0[i];
-        x(i,1) = 0.0;  // B0[i];
-        x(i,2) = 0.0;  // N0[i];
+        x(i,0) = 0.0;  // Y
+        x(i,1) = 0.0;  // B
+        x(i,2) = 0.0;  // N
     }
 
     Observer<MatType> obs;
-    LandscapeSeasonSystemFunction system(m, d_yp, d_b0, d_bp, g_yp, g_b0, g_bp,
-                                   L_0, P_max, u, q, W, R_hat, mu, sigma, w, z,
-                                   Y0, B0, add_F);
+    SeasonalLandscape system(m, d_yp, d_b0, d_bp, g_yp, g_b0, g_bp, L_0, P_max,
+                             u, q, W, w, z, R_hat, par1, par2, distr_types_char,
+                             Y0, B0, add_F);
+
 
     boost::numeric::odeint::integrate_const(
         MatStepperType(), std::ref(system),
         x, 0.0, max_t, dt, std::ref(obs));
 
     size_t n_steps = obs.data.size();
-    NumericMatrix output(n_steps * np, n_states+3U);
+    NumericMatrix output(n_steps * np, 6);
     colnames(output) = CharacterVector::create("t", "p", "Y", "B", "N", "P");
-    std::vector<double> wts(np);
+    arma::vec wts(np);
     size_t i = 0;
     for (size_t t = 0; t < n_steps; t++) {
         system.make_weights(wts, obs.data[t]);
         for (size_t k = 0; k < np; k++) {
             output(i,0) = obs.time[t];
             output(i,1) = k;
-            for (size_t j = 0; j < n_states; j++) {
-                output(i,j+2U) = obs.data[t](k,j);
-            }
-            output(i, n_states+2U) = P_max[k] * wts[k];
+            output(i,2) = obs.data[t](k, 0);
+            output(i,3) = obs.data[t](k, 1);
+            output(i,4) = obs.data[t](k, 2);
+            output(i,5) = P_max[k] * wts(k);
             i++;
         }
 
