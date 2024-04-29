@@ -4,6 +4,7 @@
 
 #include <RcppArmadillo.h>
 #include <vector>
+#include <string>
 
 
 // To avoid many warnings from BOOST
@@ -28,7 +29,7 @@ typedef arma::mat MatType;
 typedef boost::numeric::odeint::runge_kutta_dopri5<MatType> MatStepperType;
 
 
-<template class C>
+template< class C >
 struct Observer
 {
     std::vector<C> data;
@@ -112,6 +113,17 @@ inline void len_check(bool& err,
     }
     return;
 }
+inline void len_check(bool& err,
+                      const StringVector& vec,
+                      const std::string& vec_name,
+                      const size_t& req_len) {
+    if (vec.size() != req_len) {
+        Rcout << vec_name << " is length " << std::to_string(vec.size());
+        Rcout << " but should be " << std::to_string(req_len) << "!" << std::endl;
+        err = true;
+    }
+    return;
+}
 
 // check square matrix dimensions:
 inline void mat_dim_check(bool& err,
@@ -119,7 +131,7 @@ inline void mat_dim_check(bool& err,
                           const std::string& mat_name,
                           const size_t& req_rows_cols) {
     if (mat.n_rows != req_rows_cols || mat.n_cols != req_rows_cols) {
-        std:string r = std::to_string(req_rows_cols);
+        std::string r = std::to_string(req_rows_cols);
         Rcout << mat_name << " is " << std::to_string(mat.n_rows) << " x ";
         Rcout << std::to_string(mat.n_cols) << " (rows x columns), but ";
         Rcout << "should be " << r << " x " << r << "!" << std::endl;

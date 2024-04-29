@@ -154,17 +154,17 @@ NumericMatrix landscape_constantF_ode(const std::vector<double>& m,
      The system below is my workaround.
      */
     bool err = false;
-    len_check<double>(err, d_yp, "d_yp", np);
-    len_check<double>(err, d_b0, "d_b0", np);
-    len_check<double>(err, d_bp, "d_bp", np);
-    len_check<double>(err, g_yp, "g_yp", np);
-    len_check<double>(err, g_b0, "g_b0", np);
-    len_check<double>(err, g_bp, "g_bp", np);
-    len_check<double>(err, L_0, "L_0", np);
-    len_check<double>(err, Y0, "Y0", np);
-    len_check<double>(err, B0, "B0", np);
+    len_check(err, d_yp, "d_yp", np);
+    len_check(err, d_b0, "d_b0", np);
+    len_check(err, d_bp, "d_bp", np);
+    len_check(err, g_yp, "g_yp", np);
+    len_check(err, g_b0, "g_b0", np);
+    len_check(err, g_bp, "g_bp", np);
+    len_check(err, L_0, "L_0", np);
+    len_check(err, Y0, "Y0", np);
+    len_check(err, B0, "B0", np);
 
-    if (err) return(NumericMatrix(0,0));
+    if (err) return NumericMatrix(0,0);
 
     size_t n_states = 2U;
     MatType x(np, n_states);
