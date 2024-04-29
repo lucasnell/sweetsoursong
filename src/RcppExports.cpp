@@ -12,8 +12,8 @@ Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
 // landscape_ode
-NumericMatrix landscape_ode(const std::vector<double>& m, const std::vector<double>& R, const std::vector<double>& d_yp, const std::vector<double>& d_b0, const std::vector<double>& d_bp, const std::vector<double>& g_yp, const std::vector<double>& g_b0, const std::vector<double>& g_bp, const std::vector<double>& L_0, const std::vector<double>& P_max, const double& S_0, const double& q, const std::vector<double>& X, const double& w, const NumericMatrix& z, const std::vector<double>& Y0, const std::vector<double>& B0, const std::vector<double>& N0, const double& dt, const double& max_t);
-RcppExport SEXP _sweetsoursong_landscape_ode(SEXP mSEXP, SEXP RSEXP, SEXP d_ypSEXP, SEXP d_b0SEXP, SEXP d_bpSEXP, SEXP g_ypSEXP, SEXP g_b0SEXP, SEXP g_bpSEXP, SEXP L_0SEXP, SEXP P_maxSEXP, SEXP S_0SEXP, SEXP qSEXP, SEXP XSEXP, SEXP wSEXP, SEXP zSEXP, SEXP Y0SEXP, SEXP B0SEXP, SEXP N0SEXP, SEXP dtSEXP, SEXP max_tSEXP) {
+NumericMatrix landscape_ode(const std::vector<double>& m, const std::vector<double>& R, const std::vector<double>& d_yp, const std::vector<double>& d_b0, const std::vector<double>& d_bp, const std::vector<double>& g_yp, const std::vector<double>& g_b0, const std::vector<double>& g_bp, const std::vector<double>& L_0, const std::vector<double>& P_max, const double& u, const double& q, const std::vector<double>& W, const double& w, const arma::mat& z, const std::vector<double>& Y0, const std::vector<double>& B0, const std::vector<double>& N0, const double& dt, const double& max_t);
+RcppExport SEXP _sweetsoursong_landscape_ode(SEXP mSEXP, SEXP RSEXP, SEXP d_ypSEXP, SEXP d_b0SEXP, SEXP d_bpSEXP, SEXP g_ypSEXP, SEXP g_b0SEXP, SEXP g_bpSEXP, SEXP L_0SEXP, SEXP P_maxSEXP, SEXP uSEXP, SEXP qSEXP, SEXP WSEXP, SEXP wSEXP, SEXP zSEXP, SEXP Y0SEXP, SEXP B0SEXP, SEXP N0SEXP, SEXP dtSEXP, SEXP max_tSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -27,17 +27,17 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const std::vector<double>& >::type g_bp(g_bpSEXP);
     Rcpp::traits::input_parameter< const std::vector<double>& >::type L_0(L_0SEXP);
     Rcpp::traits::input_parameter< const std::vector<double>& >::type P_max(P_maxSEXP);
-    Rcpp::traits::input_parameter< const double& >::type S_0(S_0SEXP);
+    Rcpp::traits::input_parameter< const double& >::type u(uSEXP);
     Rcpp::traits::input_parameter< const double& >::type q(qSEXP);
-    Rcpp::traits::input_parameter< const std::vector<double>& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const std::vector<double>& >::type W(WSEXP);
     Rcpp::traits::input_parameter< const double& >::type w(wSEXP);
-    Rcpp::traits::input_parameter< const NumericMatrix& >::type z(zSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type z(zSEXP);
     Rcpp::traits::input_parameter< const std::vector<double>& >::type Y0(Y0SEXP);
     Rcpp::traits::input_parameter< const std::vector<double>& >::type B0(B0SEXP);
     Rcpp::traits::input_parameter< const std::vector<double>& >::type N0(N0SEXP);
     Rcpp::traits::input_parameter< const double& >::type dt(dtSEXP);
     Rcpp::traits::input_parameter< const double& >::type max_t(max_tSEXP);
-    rcpp_result_gen = Rcpp::wrap(landscape_ode(m, R, d_yp, d_b0, d_bp, g_yp, g_b0, g_bp, L_0, P_max, S_0, q, X, w, z, Y0, B0, N0, dt, max_t));
+    rcpp_result_gen = Rcpp::wrap(landscape_ode(m, R, d_yp, d_b0, d_bp, g_yp, g_b0, g_bp, L_0, P_max, u, q, W, w, z, Y0, B0, N0, dt, max_t));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -66,8 +66,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // landscape_season_ode
-NumericMatrix landscape_season_ode(const std::vector<double>& m, const std::vector<double>& d_yp, const std::vector<double>& d_b0, const std::vector<double>& d_bp, const std::vector<double>& g_yp, const std::vector<double>& g_b0, const std::vector<double>& g_bp, const std::vector<double>& L_0, const std::vector<double>& P_max, const double& S_0, const double& q, const std::vector<double>& X, const std::vector<double>& R_hat, const std::vector<double>& mu, const std::vector<double>& sigma, const double& w, const NumericMatrix& z, const std::vector<double>& Y0, const std::vector<double>& B0, const double& add_F, const double& dt, const double& max_t);
-RcppExport SEXP _sweetsoursong_landscape_season_ode(SEXP mSEXP, SEXP d_ypSEXP, SEXP d_b0SEXP, SEXP d_bpSEXP, SEXP g_ypSEXP, SEXP g_b0SEXP, SEXP g_bpSEXP, SEXP L_0SEXP, SEXP P_maxSEXP, SEXP S_0SEXP, SEXP qSEXP, SEXP XSEXP, SEXP R_hatSEXP, SEXP muSEXP, SEXP sigmaSEXP, SEXP wSEXP, SEXP zSEXP, SEXP Y0SEXP, SEXP B0SEXP, SEXP add_FSEXP, SEXP dtSEXP, SEXP max_tSEXP) {
+NumericMatrix landscape_season_ode(const std::vector<double>& m, const std::vector<double>& d_yp, const std::vector<double>& d_b0, const std::vector<double>& d_bp, const std::vector<double>& g_yp, const std::vector<double>& g_b0, const std::vector<double>& g_bp, const std::vector<double>& L_0, const std::vector<double>& P_max, const double& u, const double& q, const std::vector<double>& W, const std::vector<double>& R_hat, const std::vector<double>& mu, const std::vector<double>& sigma, const double& w, const arma::mat& z, const std::vector<double>& Y0, const std::vector<double>& B0, const double& add_F, const double& dt, const double& max_t);
+RcppExport SEXP _sweetsoursong_landscape_season_ode(SEXP mSEXP, SEXP d_ypSEXP, SEXP d_b0SEXP, SEXP d_bpSEXP, SEXP g_ypSEXP, SEXP g_b0SEXP, SEXP g_bpSEXP, SEXP L_0SEXP, SEXP P_maxSEXP, SEXP uSEXP, SEXP qSEXP, SEXP WSEXP, SEXP R_hatSEXP, SEXP muSEXP, SEXP sigmaSEXP, SEXP wSEXP, SEXP zSEXP, SEXP Y0SEXP, SEXP B0SEXP, SEXP add_FSEXP, SEXP dtSEXP, SEXP max_tSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -80,20 +80,20 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const std::vector<double>& >::type g_bp(g_bpSEXP);
     Rcpp::traits::input_parameter< const std::vector<double>& >::type L_0(L_0SEXP);
     Rcpp::traits::input_parameter< const std::vector<double>& >::type P_max(P_maxSEXP);
-    Rcpp::traits::input_parameter< const double& >::type S_0(S_0SEXP);
+    Rcpp::traits::input_parameter< const double& >::type u(uSEXP);
     Rcpp::traits::input_parameter< const double& >::type q(qSEXP);
-    Rcpp::traits::input_parameter< const std::vector<double>& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const std::vector<double>& >::type W(WSEXP);
     Rcpp::traits::input_parameter< const std::vector<double>& >::type R_hat(R_hatSEXP);
     Rcpp::traits::input_parameter< const std::vector<double>& >::type mu(muSEXP);
     Rcpp::traits::input_parameter< const std::vector<double>& >::type sigma(sigmaSEXP);
     Rcpp::traits::input_parameter< const double& >::type w(wSEXP);
-    Rcpp::traits::input_parameter< const NumericMatrix& >::type z(zSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type z(zSEXP);
     Rcpp::traits::input_parameter< const std::vector<double>& >::type Y0(Y0SEXP);
     Rcpp::traits::input_parameter< const std::vector<double>& >::type B0(B0SEXP);
     Rcpp::traits::input_parameter< const double& >::type add_F(add_FSEXP);
     Rcpp::traits::input_parameter< const double& >::type dt(dtSEXP);
     Rcpp::traits::input_parameter< const double& >::type max_t(max_tSEXP);
-    rcpp_result_gen = Rcpp::wrap(landscape_season_ode(m, d_yp, d_b0, d_bp, g_yp, g_b0, g_bp, L_0, P_max, S_0, q, X, R_hat, mu, sigma, w, z, Y0, B0, add_F, dt, max_t));
+    rcpp_result_gen = Rcpp::wrap(landscape_season_ode(m, d_yp, d_b0, d_bp, g_yp, g_b0, g_bp, L_0, P_max, u, q, W, R_hat, mu, sigma, w, z, Y0, B0, add_F, dt, max_t));
     return rcpp_result_gen;
 END_RCPP
 }

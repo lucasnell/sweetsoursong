@@ -20,9 +20,9 @@ public:
     std::vector<double> g_bp;
     std::vector<double> L_0;
     std::vector<double> P_max;
-    double S_0;
+    double u;
     double q;
-    std::vector<double> X;
+    std::vector<double> W;
     MatType exp_wz;
     size_t n_plants;
 
@@ -37,9 +37,9 @@ public:
                             const std::vector<double>& g_bp_,
                             const std::vector<double>& L_0_,
                             const std::vector<double>& P_max_,
-                            const double& S_0_,
+                            const double& u_,
                             const double& q_,
-                            const std::vector<double>& X_,
+                            const std::vector<double>& W_,
                             const double& w_,
                             const MatType& z_)
         : m(m_),
@@ -52,9 +52,9 @@ public:
           g_bp(g_bp_),
           L_0(L_0_),
           P_max(P_max_),
-          S_0(S_0_),
+          u(u_),
           q(q_),
-          X(X_),
+          W(W_),
           exp_wz(z_.n_rows, z_.n_cols),
           n_plants(z_.n_rows),
           weights(z_.n_rows) {
@@ -85,7 +85,7 @@ public:
     void make_weights(std::vector<double>& wts_vec,
                       const MatType& x) {
 
-        landscape_weights__(wts_vec, x, n_plants, S_0, q, X, exp_wz);
+        landscape_weights__(wts_vec, x, n_plants, u, q, W);
 
         return;
     }
@@ -162,9 +162,9 @@ NumericMatrix landscape_ode(const std::vector<double>& m,
                             const std::vector<double>& g_bp,
                             const std::vector<double>& L_0,
                             const std::vector<double>& P_max,
-                            const double& S_0,
+                            const double& u,
                             const double& q,
-                            const std::vector<double>& X,
+                            const std::vector<double>& W,
                             const double& w,
                             const arma::mat& z,
                             const std::vector<double>& Y0,
@@ -179,24 +179,32 @@ NumericMatrix landscape_ode(const std::vector<double>& m,
      The system below is my workaround.
      */
     bool err = false;
-    if (z.n_cols != np) {
-        Rcout << "z needs to be square!" << std::endl;
-        err = true;
-    }
-    len_check<double>(err, m, "m", np);
-    len_check<double>(err, R, "R", np);
-    len_check<double>(err, d_yp, "d_yp", np);
-    len_check<double>(err, d_b0, "d_b0", np);
-    len_check<double>(err, d_bp, "d_bp", np);
-    len_check<double>(err, g_yp, "g_yp", np);
-    len_check<double>(err, g_b0, "g_b0", np);
-    len_check<double>(err, g_bp, "g_bp", np);
-    len_check<double>(err, L_0, "L_0", np);
-    len_check<double>(err, P_max, "P_max", np);
-    len_check<double>(err, X, "X", np);
-    len_check<double>(err, Y0, "Y0", np);
-    len_check<double>(err, B0, "B0", np);
-    len_check<double>(err, N0, "N0", np);
+    mat_dim_check(err, z, "z", np);
+    len_check(err, m, "m", np);
+    len_check(err, R, "R", np);
+    len_check(err, d_yp, "d_yp", np);
+    len_check(err, d_b0, "d_b0", np);
+    len_check(err, d_bp, "d_bp", np);
+    len_check(err, g_yp, "g_yp", np);
+    len_check(err, g_b0, "g_b0", np);
+    len_check(err, g_bp, "g_bp", np);
+    len_check(err, L_0, "L_0", np);
+    len_check(err, P_max, "P_max", np);
+    len_check(err, W, "W", np);
+    len_check(err, Y0, "Y0", np);
+    len_check(err, B0, "B0", np);
+    len_check(err, N0, "N0", np);
+
+    // Must be (or contain values) >= 0:
+    min_val_check(err, Y0, "Y0", 0);
+    min_val_check(err, B0, "B0", 0);
+    min_val_check(err, u, "u", 0);
+    min_val_check(err, q, "q", 0);
+    min_val_check(err, w, "w", 0);
+    min_val_check(err, add_F, "add_F", 0);
+    // other minimum values:
+    min_val_check(err, dt, "dt", 0.001);
+    min_val_check(err, max_t, "max_t", 1.0);
 
     if (err) return NumericMatrix(0,0);
 
@@ -210,7 +218,7 @@ NumericMatrix landscape_ode(const std::vector<double>& m,
 
     LandscapeObserver obs;
     LandscapeSystemFunction system(m, R, d_yp, d_b0, d_bp, g_yp, g_b0, g_bp,
-                                   L_0, P_max, S_0, q, X, w, z);
+                                   L_0, P_max, u, q, W, w, z);
 
     boost::numeric::odeint::integrate_const(
         MatStepperType(), std::ref(system),

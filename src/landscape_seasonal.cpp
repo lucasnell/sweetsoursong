@@ -23,9 +23,9 @@ public:
     std::vector<double> g_bp;
     std::vector<double> L_0;
     std::vector<double> P_max;
-    double S_0;
+    double u;
     double q;
-    std::vector<double> X;
+    std::vector<double> W;
     std::vector<double> R_hat;
     std::vector<double> mu;
     std::vector<double> sigma;
@@ -42,9 +42,9 @@ public:
                             const std::vector<double>& g_bp_,
                             const std::vector<double>& L_0_,
                             const std::vector<double>& P_max_,
-                            const double& S_0_,
+                            const double& u_,
                             const double& q_,
-                            const std::vector<double>& X_,
+                            const std::vector<double>& W_,
                             const std::vector<double>& R_hat_,
                             const std::vector<double>& mu_,
                             const std::vector<double>& sigma_,
@@ -62,9 +62,9 @@ public:
           g_bp(g_bp_),
           L_0(L_0_),
           P_max(P_max_),
-          S_0(S_0_),
+          u(u_),
           q(q_),
-          X(X_),
+          W(W_),
           R_hat(R_hat_),
           mu(mu_),
           sigma(sigma_),
@@ -102,7 +102,7 @@ public:
     void make_weights(std::vector<double>& wts_vec,
                       const MatType& x) {
 
-        landscape_weights__(wts_vec, x, n_plants, S_0, q, X, exp_wz);
+        landscape_weights__(wts_vec, x, n_plants, u, q, W);
 
         return;
     }
@@ -203,9 +203,9 @@ NumericMatrix landscape_season_ode(const std::vector<double>& m,
                                    const std::vector<double>& g_bp,
                                    const std::vector<double>& L_0,
                                    const std::vector<double>& P_max,
-                                   const double& S_0,
+                                   const double& u,
                                    const double& q,
-                                   const std::vector<double>& X,
+                                   const std::vector<double>& W,
                                    const std::vector<double>& R_hat,
                                    const std::vector<double>& mu,
                                    const std::vector<double>& sigma,
@@ -223,40 +223,51 @@ NumericMatrix landscape_season_ode(const std::vector<double>& m,
      The system below is my workaround.
      */
     bool err = false;
-    if (z.n_cols != np) {
-        Rcout << "z needs to be square!" << std::endl;
-        err = true;
-    }
-    len_check<double>(err, m, "m", np);
-    len_check<double>(err, d_yp, "d_yp", np);
-    len_check<double>(err, d_b0, "d_b0", np);
-    len_check<double>(err, d_bp, "d_bp", np);
-    len_check<double>(err, g_yp, "g_yp", np);
-    len_check<double>(err, g_b0, "g_b0", np);
-    len_check<double>(err, g_bp, "g_bp", np);
-    len_check<double>(err, L_0, "L_0", np);
-    len_check<double>(err, P_max, "P_max", np);
-    len_check<double>(err, X, "X", np);
-    len_check<double>(err, R_hat, "R_hat", np);
-    len_check<double>(err, mu, "mu", np);
-    len_check<double>(err, sigma, "sigma", np);
-    len_check<double>(err, Y0, "Y0", np);
-    len_check<double>(err, B0, "B0", np);
-    if ((*std::min_element(Y0.begin(), Y0.end())) < 0) {
-        Rcout << "Y0 must only contain values >= 0." << std::endl;
-        err = true;
-    }
-    if ((*std::min_element(B0.begin(), B0.end())) < 0) {
-        Rcout << "B0 must only contain values >= 0." << std::endl;
-        err = true;
-    }
-    if (B0.size() == Y0.size()) {
-        for (size_t i = 0; i < Y0.size(); i++) {
-            if ((Y0[i] + B0[i]) > 1) {
-                Rcout << "Y0+B0 must always be <= 1." << std::endl;
-                err = true;
-                break;
-            }
+    mat_dim_check(err, z, "z", np);
+    len_check(err, m, "m", np);
+    len_check(err, d_yp, "d_yp", np);
+    len_check(err, d_b0, "d_b0", np);
+    len_check(err, d_bp, "d_bp", np);
+    len_check(err, g_yp, "g_yp", np);
+    len_check(err, g_b0, "g_b0", np);
+    len_check(err, g_bp, "g_bp", np);
+    len_check(err, L_0, "L_0", np);
+    len_check(err, P_max, "P_max", np);
+    len_check(err, W, "W", np);
+    len_check(err, R_hat, "R_hat", np);
+    len_check(err, mu, "mu", np);
+    len_check(err, sigma, "sigma", np);
+    len_check(err, Y0, "Y0", np);
+    len_check(err, B0, "B0", np);
+
+    // Must be (or contain values) at least certain value (usually zero):
+    min_val_check(err, z, "z", 0);
+    min_val_check(err, m, "m", 0, false);
+    min_val_check(err, d_yp, "d_yp", 0);
+    min_val_check(err, d_b0, "d_b0", 0);
+    min_val_check(err, d_bp, "d_bp", 0);
+    min_val_check(err, g_yp, "g_yp", 0);
+    min_val_check(err, g_b0, "g_b0", 0);
+    min_val_check(err, g_bp, "g_bp", 0);
+    min_val_check(err, L_0, "L_0", 0, false);
+    min_val_check(err, P_max, "P_max", 0, false);
+    min_val_check(err, W, "W", 0);
+    min_val_check(err, R_hat, "R_hat", 0, false);
+    min_val_check(err, mu, "mu", 0, false);
+    min_val_check(err, sigma, "sigma", 0, false);
+    min_val_check(err, Y0, "Y0", 0);
+    min_val_check(err, B0, "B0", 0);
+    min_val_check(err, u, "u", 0);
+    min_val_check(err, q, "q", 0);
+    min_val_check(err, w, "w", 0);
+    min_val_check(err, add_F, "add_F", 0);
+    min_val_check(err, dt, "dt", 0, false);
+    min_val_check(err, max_t, "max_t", 1.0);
+    for (size_t i = 0; i < std::min(B0.size(), Y0.size()); i++) {
+        if ((Y0[i] + B0[i]) > 1) {
+            Rcout << "Y0+B0 must always be <= 1." << std::endl;
+            err = true;
+            break;
         }
     }
 
@@ -272,7 +283,7 @@ NumericMatrix landscape_season_ode(const std::vector<double>& m,
 
     LandscapeSeasonObserver obs;
     LandscapeSeasonSystemFunction system(m, d_yp, d_b0, d_bp, g_yp, g_b0, g_bp,
-                                   L_0, P_max, S_0, q, X, R_hat, mu, sigma, w, z,
+                                   L_0, P_max, u, q, W, R_hat, mu, sigma, w, z,
                                    Y0, B0, add_F);
 
     boost::numeric::odeint::integrate_const(
