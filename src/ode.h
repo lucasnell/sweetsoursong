@@ -28,6 +28,21 @@ typedef arma::mat MatType;
 typedef boost::numeric::odeint::runge_kutta_dopri5<MatType> MatStepperType;
 
 
+<template class C>
+struct Observer
+{
+    std::vector<C> data;
+    std::vector<double> time;
+    Observer() : data(), time() {};
+
+    void operator()(const C& x, const double& t) {
+        data.push_back(x);
+        time.push_back(t);
+        return;
+    }
+};
+
+
 
 
 

@@ -127,19 +127,6 @@ private:
 };
 
 
-struct LandConstFObserver
-{
-    std::vector<MatType> data;
-    std::vector<double> time;
-    LandConstFObserver() : data(), time() {};
-
-    void operator()(const MatType& x, const double& t) {
-        data.push_back(x);
-        time.push_back(t);
-        return;
-    }
-};
-
 
 
 
@@ -187,7 +174,7 @@ NumericMatrix landscape_constantF_ode(const std::vector<double>& m,
     }
 
 
-    LandConstFObserver obs;
+    Observer<MatType> obs;
     LandConstFSystemFunction system(m, d_yp, d_b0, d_bp, g_yp, g_b0, g_bp,
                                     L_0, S_0, X);
 

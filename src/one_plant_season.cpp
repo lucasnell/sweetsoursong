@@ -111,18 +111,6 @@ public:
 };
 
 
-struct OnePlantSeasonObserver
-{
-    std::vector<VecType> data;
-    std::vector<double> time;
-    OnePlantSeasonObserver() : data(), time() {};
-
-    void operator()(const VecType& x, const double& t) {
-        data.push_back(x);
-        time.push_back(t);
-        return;
-    }
-};
 
 
 
@@ -158,7 +146,7 @@ NumericMatrix one_plant_season_ode(const double& m,
     x[1] = B0;
     x[2] = N0;
 
-    OnePlantSeasonObserver obs;
+    Observer<VecType> obs;
     OnePlantSeasonSystemFunction system(m, d_yp, d_b0, d_bp, g_yp, g_b0, g_bp,
                                   L_0, P_max, q, s_0, h, f_0, F_tilde, u,
                                   R_hat, t0, k, lambda);

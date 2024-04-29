@@ -135,18 +135,6 @@ private:
 };
 
 
-struct LandscapeObserver
-{
-    std::vector<MatType> data;
-    std::vector<double> time;
-    LandscapeObserver() : data(), time() {};
-
-    void operator()(const MatType& x, const double& t) {
-        data.push_back(x);
-        time.push_back(t);
-        return;
-    }
-};
 
 
 
@@ -216,7 +204,7 @@ NumericMatrix landscape_ode(const std::vector<double>& m,
         x(i,2) = N0[i];
     }
 
-    LandscapeObserver obs;
+    Observer<MatType> obs;
     LandscapeSystemFunction system(m, R, d_yp, d_b0, d_bp, g_yp, g_b0, g_bp,
                                    L_0, P_max, u, q, W, w, z);
 

@@ -161,18 +161,6 @@ public:
     }
 };
 
-struct LocalObserver
-{
-    std::vector<VecType> data;
-    std::vector<double> time;
-    LocalObserver() : data(), time() {};
-
-    void operator()(const VecType& x, const double& t) {
-        data.push_back(x);
-        time.push_back(t);
-        return;
-    }
-};
 
 
 //' @export
@@ -206,7 +194,8 @@ struct LocalObserver
      if (B_delay <= 0) x[1] = B0;
      x[2] = A0;
      x[3] = H0;
-     LocalObserver obs;
+
+     Observer<VecType> obs;
      LocalSystemFunction system(1U, 1U, Y_delay, Y0, B_delay, B0, D, A_0, r_Y, m_Y, q_Y,
                            c_Y, h_Y, r_B, m_B, e_B, q_B, c_B, h_B);
 

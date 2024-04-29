@@ -177,18 +177,6 @@ private:
 };
 
 
-struct LandscapeSeasonObserver
-{
-    std::vector<MatType> data;
-    std::vector<double> time;
-    LandscapeSeasonObserver() : data(), time() {};
-
-    void operator()(const MatType& x, const double& t) {
-        data.push_back(x);
-        time.push_back(t);
-        return;
-    }
-};
 
 
 
@@ -281,7 +269,7 @@ NumericMatrix landscape_season_ode(const std::vector<double>& m,
         x(i,2) = 0.0;  // N0[i];
     }
 
-    LandscapeSeasonObserver obs;
+    Observer<MatType> obs;
     LandscapeSeasonSystemFunction system(m, d_yp, d_b0, d_bp, g_yp, g_b0, g_bp,
                                    L_0, P_max, u, q, W, R_hat, mu, sigma, w, z,
                                    Y0, B0, add_F);
