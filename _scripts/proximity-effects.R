@@ -39,24 +39,16 @@ tibble(x = zz$x, y = zz$y) |>
 
 
 
-# to variance-covariance matrix
-var_cov_mat <- function(dm, q, sigma) {
-    stopifnot(is.numeric(q) && length(q) == 1)
-    stopifnot(is.numeric(sigma) && length(sigma) == 1)
-    vcvm <- sigma * exp(-q * dm)
-    return(vcvm)
-}
-
 dist_mat <- make_dist_mat(zz$x, zz$y)
 ww <- make_spat_wts(dist_mat)
 
 # Generate spatially autocorrelated random variable with q = 1:
-X <- mvrnorm(n = 1, mu = rep(1, nrow(dist_mat)), var_cov_mat(dist_mat, 1, 0.5))
+X <- mvrnorm(n = 1, mu = rep(1, nrow(dist_mat)), make_vcv_mat(dist_mat, 1, 0.5))
 # Calculate Moran's I (spatial autocorrelation measure)
 autocor(X, ww, "moran")
 
 # q = 10 should reduce Moran's I
-X <- mvrnorm(n = 1, mu = rep(1, nrow(dist_mat)), var_cov_mat(dist_mat, 10, 0.5))
+X <- mvrnorm(n = 1, mu = rep(1, nrow(dist_mat)), make_vcv_mat(dist_mat, 10, 0.5))
 autocor(X, ww, "moran")
 
 
