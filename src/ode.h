@@ -29,6 +29,62 @@ typedef arma::mat MatType;
 typedef boost::numeric::odeint::runge_kutta_dopri5<MatType> MatStepperType;
 
 
+// From https://stackoverflow.com/a/41820991
+namespace boost { namespace numeric { namespace odeint {
+
+template <>
+struct is_resizeable<arma::vec>
+{
+    typedef boost::true_type type;
+    const static bool value = type::value;
+};
+
+template <>
+struct same_size_impl<arma::vec, arma::vec>
+{
+    static bool same_size(const arma::vec& x, const arma::vec& y)
+    {
+        return x.n_elem == y.n_elem;
+    }
+};
+
+template<>
+struct resize_impl<arma::vec, arma::vec>
+{
+    static void resize(arma::vec &v1, const arma::vec& v2)
+    {
+        v1.resize(v2.n_elem);
+    }
+};
+
+template <>
+struct is_resizeable<arma::mat>
+{
+    typedef boost::true_type type;
+    const static bool value = type::value;
+};
+
+template <>
+struct same_size_impl<arma::mat, arma::mat>
+{
+    static bool same_size(const arma::mat& x, const arma::mat& y)
+    {
+        return x.n_rows == y.n_rows && x.n_cols == y.n_cols;
+    }
+};
+
+template<>
+struct resize_impl<arma::mat, arma::mat>
+{
+    static void resize(arma::mat &v1, const arma::mat& v2)
+    {
+        v1.resize(v2.n_rows, v2.n_cols);
+    }
+};
+
+} } } // namespace boost::numeric::odeint
+
+
 template< class C >
 struct Observer
 {

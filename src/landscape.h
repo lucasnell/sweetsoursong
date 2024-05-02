@@ -221,8 +221,8 @@ protected:
         arma::vec delta_y = d_yp % Lambda;
         arma::vec delta_b = d_b0 + d_bp % Lambda;
 
-        arma::vec growth_y = Phi * ((delta_y % YF + gamma_y) % N);
-        arma::vec growth_b = Phi * ((delta_b % BF + gamma_b) % N);
+        arma::vec growth_y = (Phi * (delta_y % YF + gamma_y)) % N;
+        arma::vec growth_b = (Phi * (delta_b % BF + gamma_b)) % N;
 
         dYdt = growth_y - m % Y;
         dBdt = growth_b - m % B;
