@@ -36,6 +36,14 @@ stoch_test <- function() {
     .Call(`_sweetsoursong_stoch_test`)
 }
 
+make_dist_mat_rcpp <- function(x, y) {
+    .Call(`_sweetsoursong_make_dist_mat_rcpp`, x, y)
+}
+
+make_spat_wts_rcpp <- function(dm, m) {
+    .Call(`_sweetsoursong_make_spat_wts_rcpp`, dm, m)
+}
+
 test_R <- function(time, mu, sigma) {
     .Call(`_sweetsoursong_test_R`, time, mu, sigma)
 }

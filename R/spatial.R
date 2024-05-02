@@ -28,13 +28,7 @@ make_dist_mat <- function(x, y) {
     stopifnot(length(x) >= 2)
     stopifnot(all(!is.na(x)) && all(!is.na(y)))
     stopifnot(all(is.finite(x)) && all(is.finite(y)))
-    n <- length(x)
-    dm <- matrix(0, n, n)
-    for (i in 1:(n-1)) {
-        for (j in (i+1):n) {
-            dm[i,j] <- dm[j,i] <- sqrt((x[i] - x[j])^2 + (y[i] - y[j])^2)
-        }
-    }
+    dm <- make_dist_mat_rcpp(x, y)
     return(dm)
 }
 
@@ -56,13 +50,41 @@ make_spat_wts <- function(dm, m = 2) {
     stopifnot(is.numeric(m) && length(m) == 1 && is.finite(m))
     stopifnot(is.matrix(dm) && is.numeric(dm) && isSymmetric(dm) && nrow(dm) > 1)
     stopifnot(all(!is.na(dm)) && all(is.finite(dm)) && all(diag(dm) == 0))
-    n <- nrow(dm)
-    sw <- matrix(0, n, n)
-    for (i in 1:(n-1)) {
-        for (j in (i+1):n) {
-            sw[i,j] <- sw[j,i] <- 1 / (dm[i,j]^m)
-        }
-    }
+    sw <- make_spat_wts_rcpp(dm, m)
     return(sw)
+}
+
+
+
+
+#
+
+#' Create variance-covariance matrix from distance matrix
+#'
+#' @param dm Square, numeric distance matrix. Cannot have negative values.
+#' @param q Single number indicating exponential distance decay constant.
+#'     Must be >= 0.
+#' @param sigma Single number or numeric vector of the same length as the
+#'     number of rows in `dm`, indicating the standard deviations for
+#'     all patches (if a single numeric) or for each patch individually
+#'     (if a numeric vector).
+#'     Cannot have negative values.
+#'
+#' @return A square, numeric variance-covariance matrix.
+#'
+#' @export
+#'
+make_vcv_mat <- function(dm, q, sigma) {
+    stopifnot(is.matrix(dm) && is.numeric(dm) && nrow(dm) == ncol(dm))
+    stopifnot(all(dm >= 0))
+    stopifnot(is.numeric(q) && length(q) == 1 && q >= 0)
+    stopifnot(is.numeric(sigma) && all(sigma >= 0))
+    stopifnot(length(sigma) == 1 | length(sigma) == nrow(dm))
+    if (length(sigma) == 1) sigma <- rep(sigma, nrow(dm))
+    if (is.infinite(q)) {
+        vcvm <- diag(nrow(dm))
+    } else vcvm <- exp(-q * dm)
+    diag(vcvm) <- sigma^2
+    return(vcvm)
 }
 

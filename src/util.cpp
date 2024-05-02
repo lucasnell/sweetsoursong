@@ -9,6 +9,50 @@
 using namespace Rcpp;
 
 
+
+//[[Rcpp::export]]
+NumericMatrix make_dist_mat_rcpp(const NumericVector& x,
+                                 const NumericVector& y) {
+
+    size_t n = x.size();
+    NumericMatrix dm(n, n);
+
+    double xdiff, ydiff;
+
+    for (size_t i = 0; i < (n-1); i++) {
+        for (size_t j = i+1; j < n; j++) {
+            xdiff = x(i) - x(j);
+            ydiff = y(i) - y(j);
+            dm(j,i) = std::sqrt(xdiff * xdiff + ydiff * ydiff);
+            dm(i,j) = dm(j,i);
+        }
+    }
+
+    return dm;
+
+}
+
+
+//[[Rcpp::export]]
+NumericMatrix make_spat_wts_rcpp(const NumericMatrix& dm, const double& m) {
+
+    size_t n = dm.nrow();
+
+    NumericMatrix sw(n, n);
+
+    for (size_t i = 0; i < (n-1); i++) {
+        for (size_t j = i+1; j < n; j++) {
+            sw(j,i) = 1 / std::pow(dm(i,j), m);
+            sw(i,j) = sw(j,i);
+        }
+    }
+
+    return sw;
+
+}
+
+
+
 //[[Rcpp::export]]
 NumericVector test_R(NumericVector time, const double& mu, const double& sigma) {
     NumericVector R(time.size());

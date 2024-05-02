@@ -10,5 +10,5 @@
                        axis.text = ggplot2::element_text(color = "black", size = 9),
                        axis.ticks = ggplot2::element_line(color = "black"),
                        legend.background = ggplot2::element_blank(),
-                       plot.title = ggplot2::element_text(size = 14, hjust = 0))))
+                       plot.title = ggplot2::element_text(size = 14, hjust = 0.5))))
 }

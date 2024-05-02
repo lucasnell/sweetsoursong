@@ -206,6 +206,30 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// make_dist_mat_rcpp
+NumericMatrix make_dist_mat_rcpp(const NumericVector& x, const NumericVector& y);
+RcppExport SEXP _sweetsoursong_make_dist_mat_rcpp(SEXP xSEXP, SEXP ySEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericVector& >::type x(xSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type y(ySEXP);
+    rcpp_result_gen = Rcpp::wrap(make_dist_mat_rcpp(x, y));
+    return rcpp_result_gen;
+END_RCPP
+}
+// make_spat_wts_rcpp
+NumericMatrix make_spat_wts_rcpp(const NumericMatrix& dm, const double& m);
+RcppExport SEXP _sweetsoursong_make_spat_wts_rcpp(SEXP dmSEXP, SEXP mSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type dm(dmSEXP);
+    Rcpp::traits::input_parameter< const double& >::type m(mSEXP);
+    rcpp_result_gen = Rcpp::wrap(make_spat_wts_rcpp(dm, m));
+    return rcpp_result_gen;
+END_RCPP
+}
 // test_R
 NumericVector test_R(NumericVector time, const double& mu, const double& sigma);
 RcppExport SEXP _sweetsoursong_test_R(SEXP timeSEXP, SEXP muSEXP, SEXP sigmaSEXP) {
@@ -244,6 +268,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_sweetsoursong_one_plant_ode", (DL_FUNC) &_sweetsoursong_one_plant_ode, 21},
     {"_sweetsoursong_one_plant_season_ode", (DL_FUNC) &_sweetsoursong_one_plant_season_ode, 24},
     {"_sweetsoursong_stoch_test", (DL_FUNC) &_sweetsoursong_stoch_test, 0},
+    {"_sweetsoursong_make_dist_mat_rcpp", (DL_FUNC) &_sweetsoursong_make_dist_mat_rcpp, 2},
+    {"_sweetsoursong_make_spat_wts_rcpp", (DL_FUNC) &_sweetsoursong_make_spat_wts_rcpp, 2},
     {"_sweetsoursong_test_R", (DL_FUNC) &_sweetsoursong_test_R, 3},
     {"_sweetsoursong_landscape_weights", (DL_FUNC) &_sweetsoursong_landscape_weights, 6},
     {NULL, NULL, 0}
