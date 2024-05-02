@@ -25,6 +25,7 @@ inline bool lanscape_arg_checks(const std::vector<double>& m,
                                 const std::vector<double>& W,
                                 const double& w,
                                 const arma::mat& z,
+                                const double& min_F_for_P,
                                 const std::vector<double>& Y0,
                                 const std::vector<double>& B0,
                                 const double& dt,
@@ -65,6 +66,7 @@ inline bool lanscape_arg_checks(const std::vector<double>& m,
     min_val_check(err, W, "W", 0);
     min_val_check(err, w, "w", 0);
     min_val_check(err, z, "z", 0);
+    min_val_check(err, min_F_for_P, "min_F_for_P", 0);
     min_val_check(err, Y0, "Y0", 0);
     min_val_check(err, B0, "B0", 0);
     min_val_check(err, dt, "dt", 0, false);
@@ -96,6 +98,7 @@ public:
     arma::vec W;
     arma::mat Phi;
     size_t n_plants;
+    double min_F_for_P;
 
 
 
@@ -112,7 +115,8 @@ public:
                             const double& q_,
                             const std::vector<double>& W_,
                             const double& w_,
-                            const arma::mat& z_)
+                            const arma::mat& z_,
+                            const double& min_F_for_P_)
         : m(arma::conv_to<arma::vec>::from(m_)),
           d_yp(arma::conv_to<arma::vec>::from(d_yp_)),
           d_b0(arma::conv_to<arma::vec>::from(d_b0_)),
@@ -127,6 +131,7 @@ public:
           W(arma::conv_to<arma::vec>::from(W_)),
           Phi(z_.n_rows, z_.n_cols),
           n_plants(z_.n_rows),
+          min_F_for_P(min_F_for_P_),
           weights(z_.n_rows),
           F(z_.n_rows),
           R(z_.n_rows) {
@@ -147,6 +152,10 @@ public:
         double wt_sum = 0;
         double YN_i;
         for (size_t i = 0; i < n_plants; i++) {
+            if (F(i) < min_F_for_P) {
+                wts_vec(i) = 0;
+                continue;
+            }
             wts_vec(i) = std::pow(F(i), q);
             YN_i = x(i,0) + x(i,2);
             if (F(i) > 0) YN_i /= F(i);
