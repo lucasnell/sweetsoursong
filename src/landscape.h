@@ -1,12 +1,9 @@
 # ifndef __SWEETSOURSONG_LANDSCAPE_H
 # define __SWEETSOURSONG_LANDSCAPE_H
 
-#define _USE_MATH_DEFINES
-
 
 #include <RcppArmadillo.h>
 #include <vector>
-#include <cmath>
 
 #include "ode.h"
 
@@ -26,7 +23,7 @@ inline bool lanscape_arg_checks(const std::vector<double>& m,
                                 const double& u,
                                 const double& q,
                                 const std::vector<double>& W,
-                                const double& a,
+                                const double& w,
                                 const arma::mat& z,
                                 const double& min_F_for_P,
                                 const std::vector<double>& Y0,
@@ -67,7 +64,7 @@ inline bool lanscape_arg_checks(const std::vector<double>& m,
     min_val_check(err, u, "u", 0);
     min_val_check(err, q, "q", 0);
     min_val_check(err, W, "W", 0);
-    min_val_check(err, a, "a", 0);
+    min_val_check(err, w, "w", 0);
     min_val_check(err, z, "z", 0);
     min_val_check(err, min_F_for_P, "min_F_for_P", 0);
     min_val_check(err, Y0, "Y0", 0);
@@ -117,7 +114,7 @@ public:
                             const double& u_,
                             const double& q_,
                             const std::vector<double>& W_,
-                            const double& a_,
+                            const double& w_,
                             const arma::mat& z_,
                             const double& min_F_for_P_)
         : m(arma::conv_to<arma::vec>::from(m_)),
@@ -138,7 +135,7 @@ public:
           weights(z_.n_rows),
           F(z_.n_rows),
           R(z_.n_rows) {
-        fill_Phi__(a_, z_);
+        fill_Phi__(w_, z_);
     };
 
 
@@ -236,7 +233,7 @@ protected:
 
     // fill Phi matrix.
     // `z` should be n_plants x n_plants in size
-    void fill_Phi__(const double& a_, const arma::mat& z_) {
+    void fill_Phi__(const double& w_, const arma::mat& z_) {
 
         Phi.set_size(n_plants, n_plants);
 
@@ -247,22 +244,13 @@ protected:
                 if (i == j) {
                     Phi(i,j) = 1;
                 } else {
-                    Phi(i,j) = disk_model_decay__(z_(i, j), a_);
+                    Phi(i,j) = std::exp(-w_ * z_(i, j));
                 }
                 col_sum += Phi(i,j);
             }
             for (size_t i = 0; i < n_plants; i++) Phi(i,j) /= col_sum;
         }
 
-    }
-
-    // bounded or disk model of distance decay:
-    // https://www.spatialanalysisonline.com/HTML/distance_decay_models.htm
-    inline double disk_model_decay__(const double& d, const double& a) {
-        if (d > a) return 0;
-        double da = d/a;
-        double f = (2 / M_PI) * (std::acos(da) - std::sqrt(da * (1 - (da * da))));
-        return f;
     }
 
 

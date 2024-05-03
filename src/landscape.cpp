@@ -28,12 +28,12 @@ public:
                          const double& u_,
                          const double& q_,
                          const std::vector<double>& W_,
-                         const double& a_,
+                         const double& w_,
                          const arma::mat& z_,
                          const double& min_F_for_P_,
                          const std::vector<double>& R_)
         : LandscapeSystemFunction(m_, d_yp_, d_b0_, d_bp_, g_yp_, g_b0_, g_bp_,
-                                  L_0_, P_max_, u_, q_, W_, a_, z_,
+                                  L_0_, P_max_, u_, q_, W_, w_, z_,
                                   min_F_for_P_) {
 
         this->R = arma::conv_to<arma::vec>::from(R_);
@@ -83,7 +83,7 @@ NumericMatrix landscape_ode(const std::vector<double>& m,
                             const double& u,
                             const double& q,
                             const std::vector<double>& W,
-                            const double& a,
+                            const double& w,
                             const arma::mat& z,
                             const double& min_F_for_P,
                             const std::vector<double>& Y0,
@@ -98,7 +98,7 @@ NumericMatrix landscape_ode(const std::vector<double>& m,
      The system below is my workaround.
      */
     bool err = lanscape_arg_checks(m, d_yp, d_b0, d_bp, g_yp, g_b0, g_bp,
-                                   L_0, P_max, u, q, W, a, z, min_F_for_P,
+                                   L_0, P_max, u, q, W, w, z, min_F_for_P,
                                    Y0, B0, dt, max_t);
     len_check(err, R, "R", np);
     len_check(err, N0, "N0", np);
@@ -116,7 +116,7 @@ NumericMatrix landscape_ode(const std::vector<double>& m,
     Observer<MatType> obs;
 
     NonSeasonalLandscape system(m, d_yp, d_b0, d_bp, g_yp, g_b0, g_bp,
-                                L_0, P_max, u, q, W, a, z, min_F_for_P, R);
+                                L_0, P_max, u, q, W, w, z, min_F_for_P, R);
 
     boost::numeric::odeint::integrate_const(
         MatStepperType(), std::ref(system),
