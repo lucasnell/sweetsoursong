@@ -11,6 +11,7 @@ suppressPackageStartupMessages({
 })
 
 
+
 spp_pal <- c("non-colonized" = "gray60",
              "yeast" = "#FFCC33",
              "bacteria" = "#333399",
@@ -119,7 +120,7 @@ one_run <- function(...) {
 
     for (n in names(other_args)) {
         x <- other_args[[n]]
-        if (n %in% c("u", "q", "a", "add_F", "min_F_for_P")) {
+        if (n %in% c("u", "q", "w", "add_F", "min_F_for_P")) {
             if (length(x) != 1) {
                 stop(sprintf("\nERROR: Argument %s must be length %i, but it's %i.\n",
                              n, 1, length(x)))
@@ -160,7 +161,7 @@ one_run <- function(...) {
                      W = rep(0, .n_plants), # attraction to non-focal flowers (??)
                      u = 0,   # power for B/F -> P (??)
                      q = 0, # affects the strength of F -> P (??)
-                     a = 0, # how quickly effects of nearby focal flowers affect P (??)
+                     w = 0, # how quickly effects of nearby focal flowers affect P (??)
                      min_F_for_P = 0,
                      add_F = 1, # F at which to add Y0 and B0
                      #
@@ -268,13 +269,13 @@ two_patch_phen <- list(R_hat = phen_fits[["sum"]][plt_idx],
 
 
 two_patch_runs <- crossing(.q = c(0, 0.5, 1, 2, 4),
-                           .u = c(0, 1, 5, 10)) |>
+                           .u = c(0, 0.1, 1, 10)) |>
     pmap_dfr(\(.q, .u) {
         run_df <- one_run(z = 1 - diag(2L),
                           W = 50^.q * 0.5^.u,
                           q = .q,
                           u = .u,
-                          a = 0,
+                          w = Inf,
                           min_F_for_P = 0,
                           R_hat = two_patch_phen$R_hat,
                           add_F = 1,
@@ -412,42 +413,42 @@ crossing(x = 1:100, h = c(0.5, 1:3)) |>
 # Takes ~ 5 sec
 rnd_land_runs <- crossing(q = c(0, 1, 2),
                           u = c(0, 10, 100),
-                          a = c(Inf, 0.2, 0.1, 0.05, 0)) |>
-    split(~ q + u + a) |>
+                          w = c(Inf, 100, 10, 0)) |>
+    split(~ q + u + w) |>
     mclapply(\(x) {
         .q <- x[["q"]]
         .u <- x[["u"]]
-        .a <- x[["a"]]
+        .w <- x[["w"]]
         run_df <- one_run(z = dist_mat,
                           W = 50^.q * 0.5^.u,
                           q = .q,
                           u = .u,
-                          a = .a,
+                          w = .w,
                           min_F_for_P = 0,
                           R_hat = rnd_land_phen$R_hat,
                           add_F = 1,
                           par2 = rnd_land_phen$par2,
                           par1 = rnd_land_phen$par1)
         run_df |>
-            mutate(q = .q, u = .u, a = .a)
+            mutate(q = .q, u = .u, w = .w)
     }) |>
     do.call(what = bind_rows) |>
-    mutate(across(q:a, factor)) |>
-    select(q, u, a, everything())
+    mutate(across(q:w, factor)) |>
+    select(q, u, w, everything())
 
 
 
 rnd_land_plots_sep <- rnd_land_runs |>
-    split(~ q + u + a, sep = "_") |>
+    split(~ q + u + w, sep = "_") |>
     map(\(x) {
         P_ymax <- ceiling(max(rnd_land_runs$P) * 100) / 100
         F_ymax <- with(rnd_land_runs, max(pmax(Y, B, N))) |> ceiling()
         p <- time_series(x, ylim_F = c(0, F_ymax), ylim_P = c(0, P_ymax),
                          show_F = FALSE,
-                         main = sprintf("q = %s | u = %s | a = %s",
+                         main = sprintf("q = %s | u = %s | w = %s",
                                         paste(x$q[[1]]),
                                         paste(x$u[[1]]),
-                                        paste(x$a[[1]]))) &
+                                        paste(x$w[[1]]))) &
             theme(plot.title = element_text(hjust = 0.5, size = 9),
                   axis.text = element_text(size = 7),
                   axis.title = element_text(size = 8),
@@ -458,10 +459,10 @@ rnd_land_plots_sep <- rnd_land_runs |>
 
 
 
-rnd_land_plots <- levels(rnd_land_runs$a) |>
+rnd_land_plots <- levels(rnd_land_runs$w) |>
     set_names() |>
-    map(\(a) {
-        idx <- which(grepl(sprintf("_%s$", a), names(rnd_land_plots_sep)))
+    map(\(w) {
+        idx <- which(grepl(sprintf("_%s$", w), names(rnd_land_plots_sep)))
         do.call(wrap_plots, c(rnd_land_plots_sep[idx],
                               list(ncol = length(levels(rnd_land_runs$q)))))
     })
@@ -476,8 +477,8 @@ rnd_land_plots <- levels(rnd_land_runs$a) |>
 
 for (n in names(rnd_land_plots)) {
     if (n == "Inf") {
-        fn <- sprintf("_figures/rnd_land_ts_a=%s.pdf", n)
-    } else fn <- sprintf("_figures/rnd_land_ts_a=%03i.pdf", as.integer(n))
+        fn <- sprintf("_figures/rnd_land_ts_w=%s.pdf", n)
+    } else fn <- sprintf("_figures/rnd_land_ts_w=%03i.pdf", as.integer(n))
     cairo_pdf(fn, width = 3 * length(levels(rnd_land_runs$q)),
               height = 2.5 * length(levels(rnd_land_runs$u)))
     plot(rnd_land_plots[[n]])
@@ -489,7 +490,7 @@ for (n in names(rnd_land_plots)) {
 rnd_land_runs |>
     mutate(f = Y + B + N) |>
     filter(f > 0) |>
-    group_by(a, q, u, p) |>
+    group_by(w, q, u, p) |>
     summarize(P = mean(log10(P)), .groups = "drop") |>
     getElement("P") |>
     hist()
@@ -497,7 +498,7 @@ rnd_land_runs |>
 
 rnd_land_microbe_summs <- rnd_land_runs |>
     filter((Y + B + N) > 0) |>
-    group_by(a, q, u, p) |>
+    group_by(w, q, u, p) |>
     summarize(TFm = median(Y + B + N),
               Ym = median(Y / (Y + B + N)),
               Bm = median(B / (Y + B + N)),
@@ -512,11 +513,11 @@ rnd_land_microbe_summs <- rnd_land_runs |>
 
 
 rnd_land_heats <- rnd_land_microbe_summs |>
-    split(~ a) |>
+    split(~ w) |>
     map(\(x) {
         x |>
             ggplot(aes(Y, B)) +
-            ggtitle(sprintf("a = %s", x$a[[1]])) +
+            ggtitle(sprintf("w = %s", x$w[[1]])) +
             geom_hline(yintercept = 0, linetype = 2, color = "gray60") +
             geom_vline(xintercept = 0, linetype = 2, color = "gray60") +
             stat_bin_2d(aes(fill = after_stat(density)), binwidth = rep(0.05, 2)) +
@@ -539,8 +540,8 @@ rnd_land_heats[["Inf"]]
 
 for (n in names(rnd_land_heats)) {
     if (n == "Inf") {
-        fn <- sprintf("_figures/rnd_land_heats_a=%s.pdf", n)
-    } else fn <- sprintf("_figures/rnd_land_heats_a=%03i.pdf", as.integer(n))
+        fn <- sprintf("_figures/rnd_land_heats_w=%s.pdf", n)
+    } else fn <- sprintf("_figures/rnd_land_heats_w=%03i.pdf", as.integer(n))
     cairo_pdf(fn, width = 2.1 * length(levels(rnd_land_runs$q)),
               height = 2 * length(levels(rnd_land_runs$u)))
     plot(rnd_land_heats[[n]])
@@ -549,16 +550,22 @@ for (n in names(rnd_land_heats)) {
 
 #' Overall, these plots show that both types of feedbacks have an overall
 #' negative effect on yeast in comparison to bacteria.
+#' The exception to this is when w=0 and q=2, u has a positive effect on yeast.
+#' Not sure why...
+
+
+#' ... especially because mean pollinator abundance goes down with all
+#' feedbacks, even when w = 0 and q = 2.
 
 
 
 
 rnd_land_P_plots <- rnd_land_microbe_summs |>
-    split(~ a) |>
+    split(~ w) |>
     map(\(x) {
         x |>
             ggplot(aes(P)) +
-            ggtitle(sprintf("a = %s", x$a[[1]])) +
+            ggtitle(sprintf("w = %s", x$w[[1]])) +
             geom_blank(data = tibble(P = range(rnd_land_microbe_summs$P))) +
             geom_histogram(binwidth = 0.3) +
             scale_x_continuous("Median pollinators",
@@ -603,7 +610,7 @@ for (n in names(rnd_land_P_plots)) {
 cls_land_phen <- rnd_land_phen
 
 cls_radii <- c(0.01, 0.02, 0.05, 1)
-a_vals <- c(0, 0.0001, 0.001, 0.01, 0.2, 0.4, 0.6, 0.8)
+w_vals <- c(2 * 0:5, Inf)
 
 
 
@@ -644,15 +651,15 @@ cls_xy_sims |>
 # Takes ~3 min
 t0 <- Sys.time()
 cls_land_runs <- crossing(r = names(cls_xy_sims),
-                          a = a_vals,
+                          w = w_vals,
                           i = 1:100) |>
     mutate(id = 1:n()) |>
     split(~ id) |>
     mclapply(\(dd) {
         .r <- dd[["r"]]
-        .a <- dd[["a"]]
+        .w <- dd[["w"]]
         .i <- dd[["i"]]
-        # .r = "0.01"; .a = 10; .i = 1
+        # .r = "0.01"; .w = 10; .i = 1
         # rm(.r, cs, dist_mat__, .q, .u, vc_mat, .W, .g_b0, mu, stdev)
         cs <- cls_xy_sims[[.r]][[.i]]
         dist_mat__ <- make_dist_mat(cs$x, cs$y)
@@ -660,33 +667,32 @@ cls_land_runs <- crossing(r = names(cls_xy_sims),
         .q <- 2
         .u <- 1
 
-        a_W <- FALSE
-        a_gb_0 <- FALSE
+        wW <- FALSE
 
-        if (a_W) {
+        if (wW) {
             mu <- 50^.q * 0.5^.u
             stdev <- mu / 20
-            vc_mat <- make_vcv_mat(dist_mat__, stdev, q = .a)
-            if (.a == 0) {
+            vc_mat <- make_vcv_mat(dist_mat__, stdev, q = .w)
+            if (.w == 0) {
                 .W <- rep(mu, np)
             } else .W <- mvrnorm(1, rep(mu, np), vc_mat)
             stopifnot(all(.W > 0))
             ## hist(.W); abline(v = mu, col = "red")
-        } else .W <- rep(50^.q * 0.5^.u, np)
-
-        if (a_gb_0) {
+            .g_b0 <- rep(0.02, np)
+        } else {
             # actual mu is 0.02, but changing it to this so that vc_mat
             # is positive definite:
             mu <- 200
             stdev <- mu / 20
-            vc_mat <- make_vcv_mat(dist_mat__, stdev, q = .a)
-            if (.a == 0) {
+            vc_mat <- make_vcv_mat(dist_mat__, stdev, q = .w)
+            if (.w == 0) {
                 .g_b0 <- rep(mu, np)
             } else .g_b0 <- mvrnorm(1, rep(mu, np), vc_mat)
             .g_b0 <- .g_b0 * (0.02 / 200)
             stopifnot(all(.g_b0 > 0))
             ## hist(.g_b0); abline(v = mu, col = "red")
-        } else .g_b0 <- rep(0.02, np)
+            .W <- rep(50^.q * 0.5^.u, np)
+        }
         # .W <- 50^.q * 0.5^.u
         # .g_b0 <- 0.02
 
@@ -695,7 +701,7 @@ cls_land_runs <- crossing(r = names(cls_xy_sims),
                           W = .W,
                           q = .q,
                           u = .u,
-                          a = .a,
+                          w = .w,
                           g_b0 = .g_b0,
                           min_F_for_P = 0,
                           R_hat = cls_land_phen$R_hat,
@@ -711,9 +717,9 @@ cls_land_runs <- crossing(r = names(cls_xy_sims),
             rename_with(\(x) str_remove(x, "m$")) |>
             mutate(P = ifelse(P < -6, -6, P)) |>
             mutate(r = factor(.r, levels = names(cls_xy_sims)),
-                   a = factor(.a, levels = a_vals),
+                   w = factor(.w, levels = w_vals),
                    i = factor(.i, levels = 1:100)) |>
-            select(r, a, i, everything())
+            select(r, w, i, everything())
         return(run_df)
     }) |>
     do.call(what = bind_rows)
@@ -734,7 +740,7 @@ cls_land_runs |>
     scale_x_continuous("Yeast proportion", limits = c(NA, 1)) +
     scale_y_continuous("Bacteria proportion", limits = c(NA, 1)) +
     scale_fill_viridis_c(option = "rocket", end = 0.9) +
-    facet_grid(r ~ a, labeller = \(x) label_both(x, sep = " = ")) +
+    facet_grid(r ~ w, labeller = \(x) label_both(x, sep = " = ")) +
     theme(plot.title = element_text(hjust = 0.5)) +
     coord_equal()
 
