@@ -171,6 +171,34 @@ noBP_runs |>
     filter(t == max(t))
 
 
+twopatch_constantF_noBP_ode(m = rep(0.1, 2),
+                            d_yp = rep(1, 2),
+                            d_b0 = rep(0.3, 2),
+                            d_bp = rep(0.4, 2),
+                            L_0 = c(0.5, 0.5),
+                            Y0 = c(0.4, 0.2),
+                            B0 = c(0.5, 0.5),
+                            dt = 0.1,
+                            max_t = 500) |>
+    as_tibble() |>
+    mutate(p = factor(p, levels = 0:1, labels = c("patch 1", "patch 2"))) |>
+    pivot_longer(Y:B, names_to = "type", values_to = "density") |>
+    mutate(type = factor(type, levels = c("Y", "B"),
+                         labels = c("yeast", "bacteria"))) |>
+    ggplot(aes(t, density)) +
+    geom_hline(yintercept = 0, linewidth = 1, color = "gray80") +
+    geom_line(aes(color = type, linetype = type), linewidth = 1) +
+    facet_grid( ~ p) +
+    xlab("Time (days)") +
+    # ylim(0, 0.95) +
+    scale_color_manual(NULL, values = spp_pal) +
+    scale_linetype_manual(NULL, values = c("solid", "solid", "24")) +
+    # theme(strip.text = element_blank(), strip.background = element_blank(),
+    #       legend.position = "none", axis.title = element_blank()) +
+    NULL
+
+
+
 
 
 
