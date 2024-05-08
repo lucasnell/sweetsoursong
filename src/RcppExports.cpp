@@ -43,8 +43,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // landscape_constantF_ode
-NumericMatrix landscape_constantF_ode(const std::vector<double>& m, const std::vector<double>& d_yp, const std::vector<double>& d_b0, const std::vector<double>& d_bp, const std::vector<double>& g_yp, const std::vector<double>& g_b0, const std::vector<double>& g_bp, const std::vector<double>& L_0, const double& S_0, const double& X, const std::vector<double>& Y0, const std::vector<double>& B0, const double& dt, const double& max_t);
-RcppExport SEXP _sweetsoursong_landscape_constantF_ode(SEXP mSEXP, SEXP d_ypSEXP, SEXP d_b0SEXP, SEXP d_bpSEXP, SEXP g_ypSEXP, SEXP g_b0SEXP, SEXP g_bpSEXP, SEXP L_0SEXP, SEXP S_0SEXP, SEXP XSEXP, SEXP Y0SEXP, SEXP B0SEXP, SEXP dtSEXP, SEXP max_tSEXP) {
+NumericMatrix landscape_constantF_ode(const std::vector<double>& m, const std::vector<double>& d_yp, const std::vector<double>& d_b0, const std::vector<double>& d_bp, const std::vector<double>& g_yp, const std::vector<double>& g_b0, const std::vector<double>& g_bp, const std::vector<double>& L_0, const double& u, const double& X, const std::vector<double>& Y0, const std::vector<double>& B0, const double& dt, const double& max_t);
+RcppExport SEXP _sweetsoursong_landscape_constantF_ode(SEXP mSEXP, SEXP d_ypSEXP, SEXP d_b0SEXP, SEXP d_bpSEXP, SEXP g_ypSEXP, SEXP g_b0SEXP, SEXP g_bpSEXP, SEXP L_0SEXP, SEXP uSEXP, SEXP XSEXP, SEXP Y0SEXP, SEXP B0SEXP, SEXP dtSEXP, SEXP max_tSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -56,13 +56,13 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const std::vector<double>& >::type g_b0(g_b0SEXP);
     Rcpp::traits::input_parameter< const std::vector<double>& >::type g_bp(g_bpSEXP);
     Rcpp::traits::input_parameter< const std::vector<double>& >::type L_0(L_0SEXP);
-    Rcpp::traits::input_parameter< const double& >::type S_0(S_0SEXP);
+    Rcpp::traits::input_parameter< const double& >::type u(uSEXP);
     Rcpp::traits::input_parameter< const double& >::type X(XSEXP);
     Rcpp::traits::input_parameter< const std::vector<double>& >::type Y0(Y0SEXP);
     Rcpp::traits::input_parameter< const std::vector<double>& >::type B0(B0SEXP);
     Rcpp::traits::input_parameter< const double& >::type dt(dtSEXP);
     Rcpp::traits::input_parameter< const double& >::type max_t(max_tSEXP);
-    rcpp_result_gen = Rcpp::wrap(landscape_constantF_ode(m, d_yp, d_b0, d_bp, g_yp, g_b0, g_bp, L_0, S_0, X, Y0, B0, dt, max_t));
+    rcpp_result_gen = Rcpp::wrap(landscape_constantF_ode(m, d_yp, d_b0, d_bp, g_yp, g_b0, g_bp, L_0, u, X, Y0, B0, dt, max_t));
     return rcpp_result_gen;
 END_RCPP
 }

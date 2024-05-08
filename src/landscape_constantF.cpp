@@ -27,7 +27,7 @@ public:
     std::vector<double> g_b0;
     std::vector<double> g_bp;
     std::vector<double> L_0;
-    double S_0;
+    double u;
     double X;
     size_t n_plants;
 
@@ -40,7 +40,7 @@ public:
                             const std::vector<double>& g_b0_,
                             const std::vector<double>& g_bp_,
                             const std::vector<double>& L_0_,
-                            const double& S_0_,
+                            const double& u_,
                             const double& X_)
         : m(m_),
           d_yp(d_yp_),
@@ -50,7 +50,7 @@ public:
           g_b0(g_b0_),
           g_bp(g_bp_),
           L_0(L_0_),
-          S_0(S_0_),
+          u(u_),
           X(X_),
           n_plants(m_.size()),
           weights(m_.size()) {};
@@ -74,11 +74,10 @@ public:
         if (wts_vec.size() != n_plants) wts_vec.resize(n_plants);
 
         double wt_sum = 0;
-        int power = 3;
-        double pow_S_0 = std::pow(S_0, power);
+        double YN; // proportion palatable nectar
         for (size_t i = 0; i < n_plants; i++) {
-            const double& B(x(i,1));
-            wts_vec[i] = pow_S_0 / (pow_S_0 + std::pow(B, power));
+            YN = 1 - x(i,1);
+            wts_vec[i] = std::pow(YN, u);
             wt_sum += wts_vec[i];
         }
 
@@ -141,7 +140,7 @@ NumericMatrix landscape_constantF_ode(const std::vector<double>& m,
                                       const std::vector<double>& g_b0,
                                       const std::vector<double>& g_bp,
                                       const std::vector<double>& L_0,
-                                      const double& S_0,
+                                      const double& u,
                                       const double& X,
                                       const std::vector<double>& Y0,
                                       const std::vector<double>& B0,
@@ -176,7 +175,7 @@ NumericMatrix landscape_constantF_ode(const std::vector<double>& m,
 
     Observer<MatType> obs;
     LandConstFSystemFunction system(m, d_yp, d_b0, d_bp, g_yp, g_b0, g_bp,
-                                    L_0, S_0, X);
+                                    L_0, u, X);
 
     boost::numeric::odeint::integrate_const(
         MatStepperType(), std::ref(system),
