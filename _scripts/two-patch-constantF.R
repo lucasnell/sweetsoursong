@@ -55,13 +55,9 @@ high_low_run <- function(other_args) {
     stopifnot(inherits(other_args, "list"))
     stopifnot(! is.null(names(other_args)) && ! any(names(other_args) == ""))
 
-    if ("max_t" %in% names(other_args)) {
-        args[["max_t"]] <- other_args[["max_t"]]
-        other_args[["max_t"]] <- NULL
-    }
-
     for (n in names(other_args)) {
-        if (! n %in% c("P_total", "u", "X") && length(other_args[[n]]) == 1) {
+        if (! n %in% c("P_total", "u", "X", "max_t") &&
+            length(other_args[[n]]) == 1) {
             other_args[[n]] <- rep(other_args[[n]], 2)
         }
         args[[n]] <- other_args[[n]]
@@ -89,6 +85,26 @@ high_low_run <- function(other_args) {
 }
 
 
+one_high_low_plot <- function(x, ymax = NULL, no_labs = FALSE) {
+    p <- x |>
+        pivot_longer(Y:P, names_to = "type", values_to = "density") |>
+        mutate(type = factor(type, levels = c("Y", "B", "P"),
+                             labels = c("yeast", "bacteria", "pollinators"))) |>
+        ggplot(aes(t, density)) +
+        geom_hline(yintercept = 0, linewidth = 1, color = "gray80") +
+        geom_line(aes(color = type, linetype = type), linewidth = 1) +
+        facet_grid( ~ p) +
+        xlab("Time (days)") +
+        scale_color_manual(NULL, values = spp_pal) +
+        scale_linetype_manual(NULL, values = c("solid", "solid", "24"))
+    if (no_labs) p <- p +
+            theme(strip.text = element_blank(), strip.background = element_blank(),
+                  legend.position = "none", axis.title = element_blank())
+    if (!is.null(ymax)) p <- p + ylim(0, 0.95)
+    return(p)
+}
+
+
 noBP_runs <- tibble(u = 0) |>
     high_low_run()
 withBP_runs <- tibble(u = 2) |>
@@ -107,23 +123,9 @@ noBP_plots <- noBP_runs |>
     })() |>
     filter(t %% 1 == 0) |>
     split(~ run) |>
-    map(\(x) {
-        x |>
-            pivot_longer(Y:P, names_to = "type", values_to = "density") |>
-            mutate(type = factor(type, levels = c("Y", "B", "P"),
-                                 labels = c("yeast", "bacteria", "pollinators"))) |>
-            ggplot(aes(t, density)) +
-            geom_hline(yintercept = 0, linewidth = 1, color = "gray80") +
-            geom_line(aes(color = type, linetype = type), linewidth = 1) +
-            facet_grid( ~ p) +
-            xlab("Time (days)") +
-            ylim(0, 0.95) +
-            scale_color_manual(NULL, values = spp_pal) +
-            scale_linetype_manual(NULL, values = c("solid", "solid", "24")) +
-            theme(strip.text = element_blank(), strip.background = element_blank(),
-                  legend.position = "none", axis.title = element_blank()) +
-            NULL
-    })
+    map(one_high_low_plot,
+        no_labs = TRUE,
+        ymax = 0.93)
 
 withBP_plots <- withBP_runs |>
     (\(x) {
@@ -137,39 +139,19 @@ withBP_plots <- withBP_runs |>
     })() |>
     filter(t %% 1 == 0) |>
     split(~ run) |>
-    map(\(x) {
-        x |>
-            pivot_longer(Y:P, names_to = "type", values_to = "density") |>
-            mutate(type = factor(type, levels = c("Y", "B", "P"),
-                                 labels = c("yeast", "bacteria", "pollinators"))) |>
-            ggplot(aes(t, density)) +
-            geom_hline(yintercept = 0, linewidth = 1, color = "gray80") +
-            geom_line(aes(color = type, linetype = type), linewidth = 1) +
-            facet_grid( ~ p) +
-            xlab("Time (days)") +
-            ylim(0, 0.95) +
-            scale_color_manual(NULL, values = spp_pal) +
-            scale_linetype_manual(NULL, values = c("solid", "solid", "24")) +
-            theme(strip.text = element_blank(), strip.background = element_blank(),
-                  legend.position = "none", axis.title = element_blank()) +
-            NULL
-    })
+    map(one_high_low_plot,
+        no_labs = TRUE,
+        ymax = 0.93)
 
 
 noBP_plots[["one of each"]]
 withBP_plots[["one of each"]]
 
 # # For talk:
-# ggsave("_figures/2patch-constF-noBP.png", noBP_plots[["high B"]],
+# ggsave("_figures/2patch-constF-noBP.png", noBP_plots[["one of each"]],
 #        width = 5, height = 3)
-# ggsave("_figures/2patch-constF-withBP.png", withBP_plots[["high B"]],
+# ggsave("_figures/2patch-constF-withBP.png", withBP_plots[["one of each"]],
 #        width = 5, height = 3)
-
-
-noBP_runs |>
-    filter(run == "high B") |>
-    filter(t == max(t))
-
 
 
 
@@ -251,17 +233,32 @@ equil_run <- function(other_args, .n_plants = 2L, .precision = 1e-4) {
 
 if (! file.exists("_data/two-patch-constF-equil.rds")) {
 
-    #' 2700 with 6 threads takes ~2 min
+    #' 2430 with 6 threads takes ~2.75 min
     equil_df <- crossing(# ----------*
-                         # within-plant dispersal rates:
-                         d_yp = 1.1 + -4:4/10, # 1.5,  # pollinator-dependent for yeast (**)
-                         d_b0 = 0.3 + -2:2/10,  # pollinator-independent for bacteria (**)
-                         d_bp = 0.4 + -3:1/10,  # pollinator-dependent for bacteria (**)
-                         # -------------*
-                         # pollinators:
-                         L_0 = c(0.1, 0.5, 0.9), # for P -> dispersal (**)
-                         u = c(0, 1, 2),         # power for B -> P (??)
-                         max_t = 10e3L) |>
+        # within-plant dispersal rates:
+        d_yp = 1.1 + -4:4/10, # 1.5,  # pollinator-dependent for yeast (**)
+        d_b0 = 0.3 + -2:2/20,  # pollinator-independent for bacteria (**)
+        d_bp = 0.4 + -3:2/20,  # pollinator-dependent for bacteria (**)
+        # -------------*
+        # pollinators:
+        L_0 = c(0.1, 0.5, 0.9), # for P -> dispersal (**)
+        u = c(0, 1, 2),         # power for B -> P (??)
+        max_t = 20e3L) |>
+        # -------------*
+        # Avoid issues of rounding:
+        mutate(across(d_yp:d_bp, \(x) round(x, 2))) |>
+        # -------------*
+        # When u = 0, avoid (P / L_0 + P) d_yp == d_b0 + (P / L_0 + P) d_bp
+        # (where P = 1/2 when u = 0) because it results in a series of
+        # unstable states where exclusion is nearly impossible
+        mutate(L = 0.5 / (L_0 + 0.5),
+               # using abs difference and > instead of != because of
+               # rounding problems:
+               unstable = abs((L * d_yp) - (d_b0 + L * d_bp)) < 1e-10) |>
+        # When this is the case, change d_yp slightly:
+        mutate(d_yp = ifelse(unstable, d_yp + 0.01, d_yp)) |>
+        select(-L, -unstable) |>
+        # -------------*
         (\(x) split(x, 1:nrow(x)))() |>
         map(as.list) |>
         mclapply(equil_run) |>
@@ -276,8 +273,17 @@ if (! file.exists("_data/two-patch-constF-equil.rds")) {
 }
 
 
-outcome_plot_prep <- function(x) {
-    x |>
+
+# This should be empty:
+equil_df |>
+    outcome_plot_prep() |>
+    filter(outcome == "coexist - within patch")
+
+
+
+
+outcome_plot_prep <- function(x, .round = TRUE) {
+    x <- x |>
         mutate(Yprop = (Y1 + Y2) / (Y1 + Y2 + B1 + B2),
                u = factor(u, levels = sort(unique(u)),
                           labels = sprintf("u = %.0f", sort(unique(u)))),
@@ -286,6 +292,10 @@ outcome_plot_prep <- function(x) {
                                    Y1 >= 1e-3 & Y1 <= (1-1e-3) &
                                        Y2 >= 1e-3 & Y2 <= (1-1e-3) ~ "coexist - within patch",
                                    TRUE ~ "coexist"))
+    if (.round) x <- x |>
+            # this is to avoid issue with me changing d_yp to avoid unstable states:
+            mutate(d_yp = round(d_yp, 1))
+    return(x)
 }
 
 
