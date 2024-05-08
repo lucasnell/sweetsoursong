@@ -341,29 +341,29 @@ two_patch_summ_limit_df <- two_patch_summ |>
                          })) |>
     unnest(density)
 
-two_patch_summ |>
-    ggplot(aes(as.numeric(paste(q)), density)) +
-    geom_blank(data = two_patch_summ_limit_df) +
-    geom_hline(yintercept = 0, linetype = 1, color = "gray70") +
-    geom_point(aes(shape = p, color = type), size = 3) +
-    geom_line(aes(group = interaction(p, type), color = type, linetype = p),
-              linewidth = 0.5) +
-    facet_wrap(~ u + type, labeller = \(x) label_both(x, sep = " = "),
-               ncol = 3, scales = "free_y") +
-    scale_color_manual(NULL, values = spp_pal, guide = "none") +
-    scale_x_continuous("q")
-
-two_patch_summ |>
-    ggplot(aes(as.numeric(paste(u)), density)) +
-    geom_blank(data = two_patch_summ_limit_df) +
-    geom_hline(yintercept = 0, linetype = 1, color = "gray70") +
-    geom_point(aes(shape = p, color = type), size = 3) +
-    geom_line(aes(group = interaction(p, type), color = type, linetype = p),
-              linewidth = 0.5) +
-    facet_wrap(~ q + type, labeller = \(x) label_both(x, sep = " = "),
-               ncol = 3, scales = "free_y") +
-    scale_color_manual(NULL, values = spp_pal, guide = "none") +
-    scale_x_continuous("u")
+# two_patch_summ |>
+#     ggplot(aes(as.numeric(paste(q)), density)) +
+#     geom_blank(data = two_patch_summ_limit_df) +
+#     geom_hline(yintercept = 0, linetype = 1, color = "gray70") +
+#     geom_point(aes(shape = p, color = type), size = 3) +
+#     geom_line(aes(group = interaction(p, type), color = type, linetype = p),
+#               linewidth = 0.5) +
+#     facet_wrap(~ u + type, labeller = \(x) label_both(x, sep = " = "),
+#                ncol = 3, scales = "free_y") +
+#     scale_color_manual(NULL, values = spp_pal, guide = "none") +
+#     scale_x_continuous("q")
+#
+# two_patch_summ |>
+#     ggplot(aes(as.numeric(paste(u)), density)) +
+#     geom_blank(data = two_patch_summ_limit_df) +
+#     geom_hline(yintercept = 0, linetype = 1, color = "gray70") +
+#     geom_point(aes(shape = p, color = type), size = 3) +
+#     geom_line(aes(group = interaction(p, type), color = type, linetype = p),
+#               linewidth = 0.5) +
+#     facet_wrap(~ q + type, labeller = \(x) label_both(x, sep = " = "),
+#                ncol = 3, scales = "free_y") +
+#     scale_color_manual(NULL, values = spp_pal, guide = "none") +
+#     scale_x_continuous("u")
 
 
 
@@ -386,7 +386,9 @@ dist_mat <- make_dist_mat(xy_df)
 #     geom_point() +
 #     coord_equal(xlim = c(0, 1), ylim = c(0, 1))
 
-pmap_dfr(c(rnd_land_phen[-which(names(rnd_land_phen) == "distr_types")], list(p = 1:np)),
+# Example phenologies:
+phen_p <- pmap_dfr(c(rnd_land_phen[-which(names(rnd_land_phen) == "distr_types")],
+           list(p = 1:np)),
          \(R_hat, par2, par1, p) {
              tibble(plant = factor(p, levels = 1:np),
                     time = 0:(flower_stop - flower_start + 20),
@@ -394,11 +396,15 @@ pmap_dfr(c(rnd_land_phen[-which(names(rnd_land_phen) == "distr_types")], list(p 
                     hlt = ifelse(p == np-1L, "yes", "no"))
          }) |>
     ggplot(aes(time, r, group = plant)) +
+    ylab("flowering rate") +
     # geom_line(alpha = 0.25, linewidth = 1) +
     geom_line(aes(alpha = hlt, color = hlt), linewidth = 1) +
     scale_alpha_manual(values = c(0.25, 1), guide = "none") +
-    scale_color_manual(values = c("black", "red"), guide = "none") +
-    theme(axis.title = element_blank())
+    scale_color_manual(values = c("black", "magenta"), guide = "none") +
+    # theme(axis.title = element_blank()) +
+    NULL
+phen_p
+# ggsave("_figures/phen_plots.png", width = 3, height = 2)
 
 # showing effects of q:
 crossing(x = 1:100, h = c(0.5, 1:3)) |>
@@ -436,6 +442,31 @@ rnd_land_runs <- crossing(q = c(0, 1, 2),
     mutate(across(q:w, factor)) |>
     select(q, u, w, everything())
 
+
+# Example of one time series:
+one_ts_p <- rnd_land_runs |>
+    filter(q == 1, u == 10, w == 0, p == np-1L) |>
+    mutate(P = P * 60) |>
+    pivot_longer(Y:P, names_to = "type", values_to = "density") |>
+    mutate(type = factor(type, levels = c("Y", "B", "N", "P"),
+                         labels = c("yeast", "bacteria",
+                                    "non-colonized", "pollinators")),
+           is_P = factor(type == "pollinators")) |>
+    filter(t %% 1 == 0) |>
+    ggplot(aes(t, density)) +
+    geom_hline(yintercept = 0, linewidth = 1, linetype = "22",
+               color = "gray70") +
+    geom_line(aes(color = type, linetype = is_P), linewidth = 1) +
+    xlab("Time (days)") +
+    scale_y_continuous("flower-type density",
+                       sec.axis = sec_axis(~ .x / 60,
+                                           "pollinator density")) +
+    scale_color_manual(NULL, values = spp_pal, guide = "none") +
+    scale_linetype_manual(NULL, values = c(1, 2), guide = "none") +
+    theme(axis.title.x = element_blank(), axis.text.x = element_blank(),
+          plot.title = element_text(hjust = 0.5))
+one_ts_p
+# ggsave("_figures/one_ts_plot.png", width = 4, height = 2)
 
 
 rnd_land_plots_sep <- rnd_land_runs |>
