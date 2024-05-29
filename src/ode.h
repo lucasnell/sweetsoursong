@@ -12,6 +12,7 @@
 #include <boost/numeric/odeint.hpp>
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/io.hpp>
+#include <boost/random.hpp>
 #pragma clang diagnostic warning "-Wlanguage-extension-token"
 
 

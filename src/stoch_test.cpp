@@ -32,30 +32,35 @@ using namespace Rcpp;
 
 
 
+// //[ stochastic_euler_ornstein_uhlenbeck_def
+// const static size_t N = 1;
+// typedef boost::array< double , N > state_type;
 
+
+typedef std::vector<double> state_type;
 
 
 
 //[ stochastic_euler_class
-template< size_t N >
+// template< size_t N >
 class stochastic_euler
 {
 public:
 
-    typedef boost::array< double , N > state_type;
-    typedef boost::array< double , N > deriv_type;
-    typedef double value_type;
-    typedef double time_type;
-    typedef unsigned short order_type;
+    // typedef boost::array< double , N > state_type;
+    // typedef boost::array< double , N > deriv_type;
+    // typedef double value_type;
+    // typedef double time_type;
+    // typedef unsigned short order_type;
 
     typedef boost::numeric::odeint::stepper_tag stepper_category;
 
-    static order_type order( void ) { return 1; }
+    static unsigned short order( void ) { return 1; }
 
     template< class System >
-    void do_step( System system , state_type &x , time_type t , time_type dt ) const
+    void do_step( System system , state_type &x , double t , double dt ) const
     {
-        deriv_type det , stoch ;
+        state_type det(x.size()) , stoch(x.size()) ;
         system.first( x , det );
         system.second( x , stoch );
         for( size_t i=0 ; i<x.size() ; ++i )
@@ -66,9 +71,7 @@ public:
 
 
 
-//[ stochastic_euler_ornstein_uhlenbeck_def
-const static size_t N = 1;
-typedef boost::array< double , N > state_type;
+
 
 struct ornstein_det
 {
@@ -141,12 +144,13 @@ NumericMatrix stoch_test() {
     boost::mt11213b rng;
     rng.seed(seed);
     double dt = 0.1;
-    state_type x = {{ 1.0 }};
+    double max_t = 10.0;
+    state_type x {1.0};
     vec_observer obs;
     boost::numeric::odeint::integrate_const(
-        stochastic_euler< N >() ,
+        stochastic_euler() ,
         std::make_pair( ornstein_det() , ornstein_stoch( rng , 1.0 ) ),
-        x , 0.0 , 10.0 , dt , std::ref(obs) );
+        x , 0.0 , max_t , dt , std::ref(obs) );
 
     size_t n_steps = obs.data.size();
     NumericMatrix output(n_steps, x.size()+1U);

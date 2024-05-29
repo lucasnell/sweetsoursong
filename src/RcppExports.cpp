@@ -66,6 +66,20 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// stoch_test2
+NumericMatrix stoch_test2(const double& mu, const double& sigma, const double& dt, const double& max_t);
+RcppExport SEXP _sweetsoursong_stoch_test2(SEXP muSEXP, SEXP sigmaSEXP, SEXP dtSEXP, SEXP max_tSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const double& >::type mu(muSEXP);
+    Rcpp::traits::input_parameter< const double& >::type sigma(sigmaSEXP);
+    Rcpp::traits::input_parameter< const double& >::type dt(dtSEXP);
+    Rcpp::traits::input_parameter< const double& >::type max_t(max_tSEXP);
+    rcpp_result_gen = Rcpp::wrap(stoch_test2(mu, sigma, dt, max_t));
+    return rcpp_result_gen;
+END_RCPP
+}
 // landscape_season_ode
 NumericMatrix landscape_season_ode(const std::vector<double>& m, const std::vector<double>& d_yp, const std::vector<double>& d_b0, const std::vector<double>& d_bp, const std::vector<double>& g_yp, const std::vector<double>& g_b0, const std::vector<double>& g_bp, const std::vector<double>& L_0, const std::vector<double>& P_max, const double& u, const double& q, const std::vector<double>& W, const std::vector<double>& R_hat, const std::vector<double>& par1, const std::vector<double>& par2, const StringVector& distr_types, const double& w, const arma::mat& z, const double& min_F_for_P, const std::vector<double>& Y0, const std::vector<double>& B0, const double& add_F, const double& dt, const double& max_t);
 RcppExport SEXP _sweetsoursong_landscape_season_ode(SEXP mSEXP, SEXP d_ypSEXP, SEXP d_b0SEXP, SEXP d_bpSEXP, SEXP g_ypSEXP, SEXP g_b0SEXP, SEXP g_bpSEXP, SEXP L_0SEXP, SEXP P_maxSEXP, SEXP uSEXP, SEXP qSEXP, SEXP WSEXP, SEXP R_hatSEXP, SEXP par1SEXP, SEXP par2SEXP, SEXP distr_typesSEXP, SEXP wSEXP, SEXP zSEXP, SEXP min_F_for_PSEXP, SEXP Y0SEXP, SEXP B0SEXP, SEXP add_FSEXP, SEXP dtSEXP, SEXP max_tSEXP) {
@@ -263,6 +277,7 @@ END_RCPP
 static const R_CallMethodDef CallEntries[] = {
     {"_sweetsoursong_landscape_ode", (DL_FUNC) &_sweetsoursong_landscape_ode, 21},
     {"_sweetsoursong_landscape_constantF_ode", (DL_FUNC) &_sweetsoursong_landscape_constantF_ode, 14},
+    {"_sweetsoursong_stoch_test2", (DL_FUNC) &_sweetsoursong_stoch_test2, 4},
     {"_sweetsoursong_landscape_season_ode", (DL_FUNC) &_sweetsoursong_landscape_season_ode, 24},
     {"_sweetsoursong_run_ode_cpp", (DL_FUNC) &_sweetsoursong_run_ode_cpp, 21},
     {"_sweetsoursong_one_plant_ode", (DL_FUNC) &_sweetsoursong_one_plant_ode, 21},
