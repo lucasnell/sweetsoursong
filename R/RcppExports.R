@@ -11,8 +11,9 @@ landscape_constantF_ode <- function(m, d_yp, d_b0, d_bp, g_yp, g_b0, g_bp, L_0, 
     .Call(`_sweetsoursong_landscape_constantF_ode`, m, d_yp, d_b0, d_bp, g_yp, g_b0, g_bp, L_0, u, X, Y0, B0, dt, max_t)
 }
 
-stoch_test2 <- function(mu, sigma, dt = 0.1, max_t = 10.0) {
-    .Call(`_sweetsoursong_stoch_test2`, mu, sigma, dt, max_t)
+#' @export
+landscape_constantF_stoch_ode <- function(m, d_yp, d_b0, d_bp, g_yp, g_b0, g_bp, L_0, u, X, Y0, B0, sigma_y, sigma_b, dt = 0.1, max_t = 100.0) {
+    .Call(`_sweetsoursong_landscape_constantF_stoch_ode`, m, d_yp, d_b0, d_bp, g_yp, g_b0, g_bp, L_0, u, X, Y0, B0, sigma_y, sigma_b, dt, max_t)
 }
 
 #' @export
