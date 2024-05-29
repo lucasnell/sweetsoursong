@@ -144,13 +144,13 @@ withBP_plots <- withBP_runs |>
         ymax = 0.93)
 
 
-noBP_plots[["one of each"]]
-withBP_plots[["one of each"]]
+noBP_plots[["high B"]]
+withBP_plots[["high B"]]
 
 # # For talk:
-# ggsave("_figures/2patch-constF-noBP.png", noBP_plots[["one of each"]],
+# ggsave("_figures/2patch-constF-noBP.png", noBP_plots[["high B"]],
 #        width = 5, height = 3)
-# ggsave("_figures/2patch-constF-withBP.png", withBP_plots[["one of each"]],
+# ggsave("_figures/2patch-constF-withBP.png", withBP_plots[["high B"]],
 #        width = 5, height = 3)
 
 
