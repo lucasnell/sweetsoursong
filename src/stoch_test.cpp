@@ -57,15 +57,20 @@ public:
 
     static unsigned short order( void ) { return 1; }
 
+    stochastic_euler(const size_t& n_states) : det(n_states), stoch(n_states) {}
+
     template< class System >
-    void do_step( System system , state_type &x , double t , double dt ) const
-    {
-        state_type det(x.size()) , stoch(x.size()) ;
+    void do_step( System system , state_type &x , double t , double dt ) {
         system.first( x , det );
         system.second( x , stoch );
         for( size_t i=0 ; i<x.size() ; ++i )
             x[i] += dt * det[i] + sqrt( dt ) * stoch[i];
     }
+
+private:
+
+    state_type det;
+    state_type stoch;
 };
 //]
 
@@ -148,7 +153,7 @@ NumericMatrix stoch_test() {
     state_type x {1.0};
     vec_observer obs;
     boost::numeric::odeint::integrate_const(
-        stochastic_euler() ,
+        stochastic_euler(1U) ,
         std::make_pair( ornstein_det() , ornstein_stoch( rng , 1.0 ) ),
         x , 0.0 , max_t , dt , std::ref(obs) );
 

@@ -217,6 +217,75 @@ inline void min_val_check(bool& err,
 }
 
 
+// ------------------------------------------------------------
+// ------------------------------------------------------------
+// Same but for max
+inline void max_val_check(bool& err,
+                          const double& obj,
+                          const std::string& obj_name,
+                          const double& max_val,
+                          const bool& allow_equal = true) {
+    if (allow_equal) {
+        if (obj > max_val) {
+            Rcout << obj_name << " is " << std::to_string(obj);
+            Rcout << " but should be <= " << std::to_string(max_val) << "!" << std::endl;
+            err = true;
+        }
+    } else {
+        if (obj >= max_val) {
+            Rcout << obj_name << " is " << std::to_string(obj);
+            Rcout << " but should be < " << std::to_string(max_val) << "!" << std::endl;
+            err = true;
+        }
+    }
+    return;
+}
+// overloaded for vector
+inline void max_val_check(bool& err,
+                          const std::vector<double>& obj,
+                          const std::string& obj_name,
+                          const double& max_val,
+                          const bool& allow_equal = true) {
+    double obj_max = *std::max_element(obj.begin(), obj.end());
+    if (allow_equal) {
+        if (obj_max > max_val) {
+            Rcout << obj_name << " has a maximum value of " << std::to_string(obj_max);
+            Rcout << " but should be <= " << std::to_string(max_val) << "!" << std::endl;
+            err = true;
+        }
+    } else {
+        if (obj_max >= max_val) {
+            Rcout << obj_name << " has a maximum value of " << std::to_string(obj_max);
+            Rcout << " but should be < " << std::to_string(max_val) << "!" << std::endl;
+            err = true;
+        }
+    }
+    return;
+}
+// overloaded for matrix
+inline void max_val_check(bool& err,
+                          const arma::mat& obj,
+                          const std::string& obj_name,
+                          const double& max_val,
+                          const bool& allow_equal = true) {
+    double obj_max = obj.max();
+    if (allow_equal) {
+        if (obj_max > max_val) {
+            Rcout << obj_name << " has a maximum value of " << std::to_string(obj_max);
+            Rcout << " but should be <= " << std::to_string(max_val) << "!" << std::endl;
+            err = true;
+        }
+    } else {
+        if (obj_max >= max_val) {
+            Rcout << obj_name << " has a maximum value of " << std::to_string(obj_max);
+            Rcout << " but should be < " << std::to_string(max_val) << "!" << std::endl;
+            err = true;
+        }
+    }
+    return;
+}
+
+
 
 
 
