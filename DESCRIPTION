@@ -12,10 +12,13 @@ Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.1
 LinkingTo: 
     BH,
+    dqrng,
     Rcpp,
-    RcppArmadillo
+    RcppArmadillo,
+    RcppParallel
 Imports: 
     ggplot2,
     Rcpp,
+    RcppParallel,
     tibble
 SystemRequirements: GNU make
