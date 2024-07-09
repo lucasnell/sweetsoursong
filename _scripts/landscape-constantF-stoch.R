@@ -8,8 +8,7 @@ setThreadOptions(numThreads = max(defaultNumThreads() - 2L, 1L))
 
 if (file.exists(".Rprofile")) source(".Rprofile")
 
-closed_sims_file <- "_data/constantF-stoch-closed-sims.rds"
-open_sims_file <- "_data/constantF-stoch-open-sims.rds"
+stoch_sims_file <- "_data/constantF-stoch-sims.rds"
 
 
 outcome_pal <- c("coexist" = "#993399", # "#4477AA",
@@ -28,7 +27,7 @@ spp_pal <- c(yeast = outcome_pal[["yeast only"]],
 
 
 
-even_run <- function(other_args, np, no_error = FALSE, closed = FALSE) {
+even_run <- function(other_args, np, no_error = FALSE) {
 
     if (inherits(other_args, "data.frame")) {
         stopifnot(nrow(other_args) == 1L)
@@ -49,9 +48,9 @@ even_run <- function(other_args, np, no_error = FALSE, closed = FALSE) {
                  d_bp = 0.4,  # pollinator-dependent for bacteria (**)
                  # -------------*
                  # rates of immigration from non-focal-plant sources:
-                 g_yp = 0.005, # pollinator-dependent for yeast (**)
-                 g_b0 = 0.02, # pollinator-independent for bacteria (**)
-                 g_bp = 0.002,  # pollinator-dependent for bacteria
+                 g_yp = 0.0,  # 0.005, # pollinator-dependent for yeast (**)
+                 g_b0 = 0.0,  # 0.02, # pollinator-independent for bacteria (**)
+                 g_bp = 0.0,  # 0.002,  # pollinator-dependent for bacteria
                  # -------------*
                  # pollinators:
                  L_0 = 1 / np,  # half saturation ratio for P -> dispersal (--)
@@ -67,11 +66,6 @@ even_run <- function(other_args, np, no_error = FALSE, closed = FALSE) {
                  season_len = 150,
                  max_t = 3000)
 
-    if (closed) {
-        args[["g_yp"]] <- 0.0
-        args[["g_b0"]] <- 0.0
-        args[["g_bp"]] <- 0.0
-    }
 
     # Arguments that aren't vectors:
     non_vecs <- c("max_t", "dt", "X", "u", "n_sigma", "n_reps",
@@ -147,30 +141,6 @@ summ_run <- function(even_run_output, .threshold = 1e-6) {
 
 }
 
-# Summarize for an open system where extinctions are temporary.
-# In this case, output Bray-Curtis dissimilarity and Shannon diversity index
-summ_open_run <- function(even_run_output) {
-
-    .np <- length(unique(even_run_output$p))
-
-    even_run_output |>
-        group_by(rep) |>
-        summarize(dive = diversity(Y, B),
-                  diss = dissimilarity_vector(Y, B, group_size = .np, TRUE))
-
-}
-
-
-# Remove extinct outcome if it never occurs
-remove_extinct <- function(dd) {
-    any_ext <- any(dd$prob[dd$outcome == "extinct"] > 0)
-    if (! any_ext) {
-        dd <- dd |>
-            filter(outcome != "extinct") |>
-            mutate(outcome = fct_drop(outcome, "extinct"))
-    }
-    return(dd)
-}
 
 
 # These are the bounds of where coexistence starts to occur, plus the middle
@@ -180,45 +150,10 @@ d_yp__ = c(`bacteria only` = 0.886308, coexist = 1.17755, `yeast only` = 1.46879
 
 
 
-if (! file.exists(closed_sims_file)) {
+if (! file.exists(stoch_sims_file)) {
 
     # Takes ~30 min
-    closed_sim_df <- crossing(.u = 0:10,
-                       .d_yp = d_yp__,
-                       .n_sigma = c(100, 200, 400),
-                       .season_surv = c(0.05, 0.1, 0.2),
-                       .season_sigma = c(0, 10),
-                       .np = c(2, 10)) |>
-        # Don't do this in parallel bc landscape_constantF_stoch_ode is already
-        # doing that
-        pmap_dfr(\(.u, .d_yp, .n_sigma, .season_surv, .season_sigma, .np, .closed) {
-            list(u = .u, d_yp = .d_yp, n_sigma = .n_sigma,
-                 season_surv = .season_surv, season_sigma = .season_sigma) |>
-                even_run(np = .np, closed = TRUE) |>
-                summ_run() |>
-                mutate(u = .u, d_yp = .d_yp, n_sigma = .n_sigma,
-                       season_surv = .season_surv,
-                       season_sigma = .season_sigma,
-                       n_plants = .np)
-        })
-    write_rds(closed_sim_df, closed_sims_file)
-
-} else {
-
-    closed_sim_df <- read_rds(closed_sims_file)
-
-}
-
-
-
-
-
-
-
-if (! file.exists(open_sims_file)) {
-
-    # Takes ~75 min
-    open_sim_df <- crossing(.u = 0:10,
+    stoch_sim_df <- crossing(.u = 0:10,
                        .d_yp = d_yp__,
                        .n_sigma = c(100, 200, 400),
                        .season_surv = c(0.05, 0.1, 0.2),
@@ -229,48 +164,20 @@ if (! file.exists(open_sims_file)) {
         pmap_dfr(\(.u, .d_yp, .n_sigma, .season_surv, .season_sigma, .np) {
             list(u = .u, d_yp = .d_yp, n_sigma = .n_sigma,
                  season_surv = .season_surv, season_sigma = .season_sigma) |>
-                even_run(np = .np, closed = FALSE) |>
-                summ_open_run() |>
+                even_run(np = .np) |>
+                summ_run() |>
                 mutate(u = .u, d_yp = .d_yp, n_sigma = .n_sigma,
                        season_surv = .season_surv,
                        season_sigma = .season_sigma,
                        n_plants = .np)
         })
-    write_rds(open_sim_df, open_sims_file)
+    write_rds(stoch_sim_df, stoch_sims_file)
 
 } else {
 
-    open_sim_df <- read_rds(open_sims_file)
+    stoch_sim_df <- read_rds(stoch_sims_file)
 
 }
-
-
-
-
-
-even_run_output |>
-    select(-P) |>
-    pivot_longer(Y:B, names_to = "spp", values_to = "density") |>
-    mutate(spp = factor(spp, levels = c("Y", "B"),
-                        labels = c("yeast", "bacteria")),
-           p = factor(p)) |>
-    split(~ rep) |>
-    map(\(dd) {
-        dd |>
-            ggplot(aes(t, density, color = spp)) +
-            # geom_vline(xintercept = 1:20 * 150, linetype = 1, color = "gray80",
-            #            linewidth = 0.5) +
-            geom_hline(yintercept = 0, linetype = 1, color = "gray60",
-                       linewidth = 1) +
-            geom_line() +
-            scale_color_manual(NULL, values = spp_pal, guide = "none") +
-            facet_wrap(~ p, ncol = 1) +
-            theme(strip.text = element_blank(),
-                  strip.background = element_blank())
-    }) |>
-    c(list(guides = "collect", nrow = 3)) |>
-    do.call(what = wrap_plots)
-
 
 
 
@@ -286,7 +193,7 @@ season_sigma__ <- 10
 n_plants__ <- 2
 
 map(names(d_yp__), \(n) {
-    p <- closed_sim_df |>
+    p <- stoch_sim_df |>
         filter(d_yp == d_yp__[[n]],
                season_sigma == season_sigma__,
                n_plants == n_plants__) |>
@@ -294,6 +201,7 @@ map(names(d_yp__), \(n) {
                season_surv = paste("s ==", season_surv)) |>
         ggplot(aes(u, prob, color = outcome)) +
         ggtitle(paste("Outcome without stochasticity:\n", n)) +
+        geom_hline(yintercept = 0, linetype = 1, color = "gray80") +
         geom_point(aes(shape = outcome)) +
         geom_line() +
         facet_grid(season_surv ~ n_sigma, labeller = label_parsed) +
@@ -319,112 +227,5 @@ map(names(d_yp__), \(n) {
 
 
 
-season_sigma__ <- 0
-n_plants__ <- 2
-
-n = names(d_yp__)[[3]]
-
-dd <- open_sim_df |>
-    filter(d_yp == d_yp__[[n]],
-           season_sigma == season_sigma__,
-           n_plants == n_plants__) |>
-    mutate(n_sigma = paste("n[sigma] ==", n_sigma),
-           season_surv = paste("s ==", season_surv)) |>
-    pivot_longer(dive:diss) |>
-    mutate(name = factor(name, levels = c("diss", "dive"),
-                         labels = c("dissimilarity", "diversity")))
-dds <- dd |>
-    group_by(u, d_yp, n_sigma, season_surv, season_sigma, n_plants, name) |>
-    summarize(value = median(value), .groups = "drop")
-# p <-
-dd |>
-    # filter(name == "diss") |>
-    ggplot(aes(u, value, color = name)) +
-    ggtitle(paste("Outcome without stochasticity:\n", n)) +
-    geom_point(shape = 1) +
-    geom_line(data = dds |>
-                  # filter(name == "diss") |>
-                  identity()) +
-    facet_grid(season_surv ~ n_sigma, labeller = label_parsed) +
-    # scale_y_continuous("Percent of simulations",
-    #                    labels = scales::label_percent()) +
-    scale_x_continuous("u", breaks = seq(0, 10, 2.5),
-                       labels = c("0", "", "5", "", "10")) +
-    scale_color_viridis_d(NULL, option = "magma", begin = 0.3, end = 0.8) +
-    theme(plot.title = element_text(size = 12,
-                                    margin = margin(0,0,0,b=6)))
-
-
-open_sim_df2 <- crossing(.u = 0:10,
-                         .d_yp = d_yp__,
-                         .n_sigma = c(100, 200, 400),
-                         .season_surv = c(0.05, 0.1, 0.2),
-                         .season_sigma = c(0, 10),
-                         .np = c(2, 10)) |>
-    # Don't do this in parallel bc landscape_constantF_stoch_ode is already
-    # doing that
-    pmap_dfr(\(.u, .d_yp, .n_sigma, .season_surv, .season_sigma, .np) {
-        list(u = .u, d_yp = .d_yp, n_sigma = .n_sigma,
-             season_surv = .season_surv, season_sigma = .season_sigma) |>
-            even_run(np = .np, closed = FALSE) |>
-            summ_open_run() |>
-            mutate(u = .u, d_yp = .d_yp, n_sigma = .n_sigma,
-                   season_surv = .season_surv,
-                   season_sigma = .season_sigma,
-                   n_plants = .np)
-    })
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-map(names(d_yp__), \(n) {
-    dd <- open_sim_df |>
-        filter(d_yp == d_yp__[[n]],
-               season_sigma == season_sigma__,
-               n_plants == n_plants__) |>
-        mutate(n_sigma = paste("n[sigma] ==", n_sigma),
-               season_surv = paste("s ==", season_surv)) |>
-        select(-all_ext, -no_ext) |>
-        pivot_longer(Y_ext:B_ext)
-    dds <- dd |>
-        group_by(u, d_yp, n_sigma, season_surv, season_sigma, n_plants, name) |>
-        summarize(value = median(value), .groups = "drop")
-    p <- dd |>
-        ggplot(aes(u, value, color = name)) +
-        ggtitle(paste("Outcome without stochasticity:\n", n)) +
-        geom_point(shape = 1) +
-        geom_line(data = dds) +
-        facet_grid(season_surv ~ n_sigma, labeller = label_parsed) +
-        # scale_y_continuous("Percent of simulations",
-        #                    labels = scales::label_percent()) +
-        scale_x_continuous("u", breaks = seq(0, 10, 2.5),
-                           labels = c("0", "", "5", "", "10")) +
-        scale_color_viridis_d() +
-        theme(plot.title = element_text(size = 12,
-                                        margin = margin(0,0,0,b=6)))
-
-    if (n != names(d_yp__)[[1]]) {
-        p <- p + theme(axis.title.y = element_blank(),
-                       axis.text.y = element_blank())
-    }
-    if (n != tail(names(d_yp__), 1)) {
-        p <- p + theme(strip.text.y = element_blank())
-    }
-    return(p)
-}) |>
-    c(list(guides = "collect")) |>
-    do.call(what = wrap_plots)
 
 
