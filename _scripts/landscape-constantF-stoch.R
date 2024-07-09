@@ -2,22 +2,33 @@
 
 library(sweetsoursong)
 library(tidyverse)
-library(parallel)
+library(patchwork)
+library(RcppParallel)
+setThreadOptions(numThreads = max(defaultNumThreads() - 2L, 1L))
 
-options("mc.cores" = max(1L, detectCores()-2))
+if (file.exists(".Rprofile")) source(".Rprofile")
+
+closed_sims_file <- "_data/constantF-stoch-closed-sims.rds"
+open_sims_file <- "_data/constantF-stoch-open-sims.rds"
+
 
 outcome_pal <- c("coexist" = "#993399", # "#4477AA",
-                 "coexist - within patch" = "#CC6666",  # "#66CCEE",
                  "yeast only" = "#FFCC33", # "#CCBB44",
-                 "bacteria only" = "#333399") # "#AA3377")
+                 "bacteria only" = "#333399", # "#AA3377",
+                 "extinct" = "gray60")
+outcome_shapes <- c("coexist" = 19,
+                    "yeast only" = 19,
+                    "bacteria only" = 19,
+                    "extinct" = 4)
 
 spp_pal <- c(yeast = outcome_pal[["yeast only"]],
              bacteria = outcome_pal[["bacteria only"]],
-             pollinators = "gray60")
+             pollinators = "magenta")
 
 
 
-even_run <- function(other_args, np, no_error = FALSE) {
+
+even_run <- function(other_args, np, no_error = FALSE, closed = FALSE) {
 
     if (inherits(other_args, "data.frame")) {
         stopifnot(nrow(other_args) == 1L)
@@ -38,9 +49,9 @@ even_run <- function(other_args, np, no_error = FALSE) {
                  d_bp = 0.4,  # pollinator-dependent for bacteria (**)
                  # -------------*
                  # rates of immigration from non-focal-plant sources:
-                 g_yp = 0, # 0.005, # pollinator-dependent for yeast (**)
-                 g_b0 = 0, # 0.02, # pollinator-independent for bacteria (**)
-                 g_bp = 0, # 0.002,  # pollinator-dependent for bacteria
+                 g_yp = 0.005, # pollinator-dependent for yeast (**)
+                 g_b0 = 0.02, # pollinator-independent for bacteria (**)
+                 g_bp = 0.002,  # pollinator-dependent for bacteria
                  # -------------*
                  # pollinators:
                  L_0 = 1 / np,  # half saturation ratio for P -> dispersal (--)
@@ -51,12 +62,22 @@ even_run <- function(other_args, np, no_error = FALSE) {
                  # (--)  = value different from Song et al. (submitted)
                  # (??) = value should be varied bc I have no clue what to use
                  #
-                 sigma_y = 0,
-                 sigma_b = 0,
                  dt = 0.1,
-                 max_t = 120)
+                 n_reps = 100,
+                 season_len = 150,
+                 max_t = 3000)
 
-    for (n in names(args)[!names(args) %in% c("max_t","dt","X","u","sigma_y","sigma_b")]) {
+    if (closed) {
+        args[["g_yp"]] <- 0.0
+        args[["g_b0"]] <- 0.0
+        args[["g_bp"]] <- 0.0
+    }
+
+    # Arguments that aren't vectors:
+    non_vecs <- c("max_t", "dt", "X", "u", "n_sigma", "n_reps",
+                  "season_len", "season_surv", "season_sigma")
+
+    for (n in names(args)[!names(args) %in% non_vecs]) {
         args[[n]] <- rep(args[[n]], np)
     }
 
@@ -64,8 +85,7 @@ even_run <- function(other_args, np, no_error = FALSE) {
     stopifnot(! is.null(names(other_args)) && ! any(names(other_args) == ""))
 
     for (n in names(other_args)) {
-        if (! n %in% c("P_total", "u", "X", "max_t","sigma_y","sigma_b") &&
-            length(other_args[[n]]) == 1) {
+        if (! n %in% non_vecs && length(other_args[[n]]) == 1) {
             other_args[[n]] <- rep(other_args[[n]], np)
         }
         args[[n]] <- other_args[[n]]
@@ -74,48 +94,337 @@ even_run <- function(other_args, np, no_error = FALSE) {
 
     args[["Y0"]] <- seq(0.1, 0.4, length.out = np)
     args[["B0"]] <- 0.5 - args[["Y0"]]
+    stopifnot(args[["n_reps"]] %% 1 == 0)
+    args[["n_reps"]] <- as.integer(args[["n_reps"]])
 
     if (no_error) {
-        args[["sigma_y"]] <- NULL
-        args[["sigma_b"]] <- NULL
+        args[["n_sigma"]] <- NULL
     }
 
     run_df <- do.call(run_fun, args) |>
-        as_tibble() |>
-        mutate(p = factor(p, levels = 0:(np-1L),
-                          labels = paste("patch", 1:np)))
+        as_tibble()
+
+    if (is.null(args[["season_len"]])) {
+        sl <- args[["max_t"]] * 0.1
+    } else sl <- args[["season_len"]]
+    if (is.null(args[["n_reps"]])) {
+        nr <- 1L
+    } else nr <- args[["n_reps"]]
+
+    attr(run_df, "season_len") <- sl
+    attr(run_df, "n_reps") <- nr
+    attr(run_df, "dt") <- args[["dt"]]
 
     return(run_df)
 
 }
 
 
-one_even_plot <- function(x, ymax = NULL, no_labs = FALSE) {
-    p <- x |>
-        # filter(t %% 1 == 0) |>
-        pivot_longer(Y:P, names_to = "type", values_to = "density") |>
-        mutate(type = factor(type, levels = c("Y", "B", "P"),
-                             labels = c("yeast", "bacteria", "pollinators"))) |>
-        ggplot(aes(t, density)) +
-        geom_hline(yintercept = 0, linewidth = 1, color = "gray80") +
-        geom_line(aes(color = type, linetype = type), linewidth = 1) +
-        facet_grid( ~ p) +
-        xlab("Time (days)") +
-        scale_color_manual(NULL, values = spp_pal) +
-        scale_linetype_manual(NULL, values = c("solid", "solid", "24"))
-    if (no_labs) p <- p +
-            theme(strip.text = element_blank(), strip.background = element_blank(),
-                  legend.position = "none", axis.title = element_blank())
-    if (!is.null(ymax)) p <- p + ylim(0, ymax)
-    return(p)
+summ_run <- function(even_run_output, .threshold = 1e-6) {
+
+    sl <- attr(even_run_output, "season_len")
+    nr <- attr(even_run_output, "n_reps")
+
+    even_run_output |>
+        # Take median through time (for each rep and plant) for last season:
+        filter(t > max(t) - sl) |>
+        group_by(rep, p) |>
+        summarize(Y = median(Y),
+                  B = median(B),
+                  P = median(P),
+                  .groups = "drop") |>
+        # Take summed Y and B (across entire landscape) for each rep:
+        group_by(rep) |>
+        summarize(Y = sum(Y), B = sum(B)) |>
+        mutate(outcome = case_when(Y > .threshold & B > .threshold ~ "coexist",
+                                   Y > .threshold & B < .threshold ~ "yeast only",
+                                   Y < .threshold & B > .threshold ~ "bacteria only",
+                                   TRUE ~ "extinct") |>
+                   factor(levels = names(outcome_pal))) |>
+        split(~ outcome, drop = FALSE) |>
+        imap_dfr(\(x, n) tibble(outcome = n, prob = nrow(x) / nr)) |>
+        mutate(outcome = factor(outcome, levels = names(outcome_pal)))
+
+}
+
+# Summarize for an open system where extinctions are temporary.
+# In this case, output Bray-Curtis dissimilarity and Shannon diversity index
+summ_open_run <- function(even_run_output) {
+
+    .np <- length(unique(even_run_output$p))
+
+    even_run_output |>
+        group_by(rep) |>
+        summarize(dive = diversity(Y, B),
+                  diss = dissimilarity_vector(Y, B, group_size = .np, TRUE))
+
 }
 
 
-list(u = 0, d_yp = 0.95, sigma_y = 0.1, sigma_b = 0.1) |>
-    even_run(np = 5) |>
-    one_even_plot()
+# Remove extinct outcome if it never occurs
+remove_extinct <- function(dd) {
+    any_ext <- any(dd$prob[dd$outcome == "extinct"] > 0)
+    if (! any_ext) {
+        dd <- dd |>
+            filter(outcome != "extinct") |>
+            mutate(outcome = fct_drop(outcome, "extinct"))
+    }
+    return(dd)
+}
 
-list(u = 0.25, d_yp = 0.95, max_t = 2000) |>
-    even_run(np = 5) |>
-    one_even_plot()
+
+# These are the bounds of where coexistence starts to occur, plus the middle
+# of these bounds (when d_b0 = 0.3 and u = 1):
+d_yp__ = c(`bacteria only` = 0.886308, coexist = 1.17755, `yeast only` = 1.46879) + c(-1, 0, 1) * 0.1
+
+
+
+
+if (! file.exists(closed_sims_file)) {
+
+    # Takes ~30 min
+    closed_sim_df <- crossing(.u = 0:10,
+                       .d_yp = d_yp__,
+                       .n_sigma = c(100, 200, 400),
+                       .season_surv = c(0.05, 0.1, 0.2),
+                       .season_sigma = c(0, 10),
+                       .np = c(2, 10)) |>
+        # Don't do this in parallel bc landscape_constantF_stoch_ode is already
+        # doing that
+        pmap_dfr(\(.u, .d_yp, .n_sigma, .season_surv, .season_sigma, .np, .closed) {
+            list(u = .u, d_yp = .d_yp, n_sigma = .n_sigma,
+                 season_surv = .season_surv, season_sigma = .season_sigma) |>
+                even_run(np = .np, closed = TRUE) |>
+                summ_run() |>
+                mutate(u = .u, d_yp = .d_yp, n_sigma = .n_sigma,
+                       season_surv = .season_surv,
+                       season_sigma = .season_sigma,
+                       n_plants = .np)
+        })
+    write_rds(closed_sim_df, closed_sims_file)
+
+} else {
+
+    closed_sim_df <- read_rds(closed_sims_file)
+
+}
+
+
+
+
+
+
+
+if (! file.exists(open_sims_file)) {
+
+    # Takes ~75 min
+    open_sim_df <- crossing(.u = 0:10,
+                       .d_yp = d_yp__,
+                       .n_sigma = c(100, 200, 400),
+                       .season_surv = c(0.05, 0.1, 0.2),
+                       .season_sigma = c(0, 10),
+                       .np = c(2, 10)) |>
+        # Don't do this in parallel bc landscape_constantF_stoch_ode is already
+        # doing that
+        pmap_dfr(\(.u, .d_yp, .n_sigma, .season_surv, .season_sigma, .np) {
+            list(u = .u, d_yp = .d_yp, n_sigma = .n_sigma,
+                 season_surv = .season_surv, season_sigma = .season_sigma) |>
+                even_run(np = .np, closed = FALSE) |>
+                summ_open_run() |>
+                mutate(u = .u, d_yp = .d_yp, n_sigma = .n_sigma,
+                       season_surv = .season_surv,
+                       season_sigma = .season_sigma,
+                       n_plants = .np)
+        })
+    write_rds(open_sim_df, open_sims_file)
+
+} else {
+
+    open_sim_df <- read_rds(open_sims_file)
+
+}
+
+
+
+
+
+even_run_output |>
+    select(-P) |>
+    pivot_longer(Y:B, names_to = "spp", values_to = "density") |>
+    mutate(spp = factor(spp, levels = c("Y", "B"),
+                        labels = c("yeast", "bacteria")),
+           p = factor(p)) |>
+    split(~ rep) |>
+    map(\(dd) {
+        dd |>
+            ggplot(aes(t, density, color = spp)) +
+            # geom_vline(xintercept = 1:20 * 150, linetype = 1, color = "gray80",
+            #            linewidth = 0.5) +
+            geom_hline(yintercept = 0, linetype = 1, color = "gray60",
+                       linewidth = 1) +
+            geom_line() +
+            scale_color_manual(NULL, values = spp_pal, guide = "none") +
+            facet_wrap(~ p, ncol = 1) +
+            theme(strip.text = element_blank(),
+                  strip.background = element_blank())
+    }) |>
+    c(list(guides = "collect", nrow = 3)) |>
+    do.call(what = wrap_plots)
+
+
+
+
+
+
+
+
+
+
+
+
+season_sigma__ <- 10
+n_plants__ <- 2
+
+map(names(d_yp__), \(n) {
+    p <- closed_sim_df |>
+        filter(d_yp == d_yp__[[n]],
+               season_sigma == season_sigma__,
+               n_plants == n_plants__) |>
+        mutate(n_sigma = paste("n[sigma] ==", n_sigma),
+               season_surv = paste("s ==", season_surv)) |>
+        ggplot(aes(u, prob, color = outcome)) +
+        ggtitle(paste("Outcome without stochasticity:\n", n)) +
+        geom_point(aes(shape = outcome)) +
+        geom_line() +
+        facet_grid(season_surv ~ n_sigma, labeller = label_parsed) +
+        scale_y_continuous("Percent of simulations",
+                           labels = scales::label_percent()) +
+        scale_x_continuous("u", breaks = seq(0, 10, 2.5),
+                           labels = c("0", "", "5", "", "10")) +
+        scale_shape_manual(NULL, values = outcome_shapes) +
+        scale_color_manual(NULL, values = outcome_pal) +
+        theme(plot.title = element_text(size = 12,
+                                        margin = margin(0,0,0,b=6)))
+    if (n != names(d_yp__)[[1]]) {
+        p <- p + theme(axis.title.y = element_blank(),
+                       axis.text.y = element_blank())
+    }
+    if (n != tail(names(d_yp__), 1)) {
+        p <- p + theme(strip.text.y = element_blank())
+    }
+    return(p)
+}) |>
+    c(list(guides = "collect")) |>
+    do.call(what = wrap_plots)
+
+
+
+season_sigma__ <- 0
+n_plants__ <- 2
+
+n = names(d_yp__)[[3]]
+
+dd <- open_sim_df |>
+    filter(d_yp == d_yp__[[n]],
+           season_sigma == season_sigma__,
+           n_plants == n_plants__) |>
+    mutate(n_sigma = paste("n[sigma] ==", n_sigma),
+           season_surv = paste("s ==", season_surv)) |>
+    pivot_longer(dive:diss) |>
+    mutate(name = factor(name, levels = c("diss", "dive"),
+                         labels = c("dissimilarity", "diversity")))
+dds <- dd |>
+    group_by(u, d_yp, n_sigma, season_surv, season_sigma, n_plants, name) |>
+    summarize(value = median(value), .groups = "drop")
+# p <-
+dd |>
+    # filter(name == "diss") |>
+    ggplot(aes(u, value, color = name)) +
+    ggtitle(paste("Outcome without stochasticity:\n", n)) +
+    geom_point(shape = 1) +
+    geom_line(data = dds |>
+                  # filter(name == "diss") |>
+                  identity()) +
+    facet_grid(season_surv ~ n_sigma, labeller = label_parsed) +
+    # scale_y_continuous("Percent of simulations",
+    #                    labels = scales::label_percent()) +
+    scale_x_continuous("u", breaks = seq(0, 10, 2.5),
+                       labels = c("0", "", "5", "", "10")) +
+    scale_color_viridis_d(NULL, option = "magma", begin = 0.3, end = 0.8) +
+    theme(plot.title = element_text(size = 12,
+                                    margin = margin(0,0,0,b=6)))
+
+
+open_sim_df2 <- crossing(.u = 0:10,
+                         .d_yp = d_yp__,
+                         .n_sigma = c(100, 200, 400),
+                         .season_surv = c(0.05, 0.1, 0.2),
+                         .season_sigma = c(0, 10),
+                         .np = c(2, 10)) |>
+    # Don't do this in parallel bc landscape_constantF_stoch_ode is already
+    # doing that
+    pmap_dfr(\(.u, .d_yp, .n_sigma, .season_surv, .season_sigma, .np) {
+        list(u = .u, d_yp = .d_yp, n_sigma = .n_sigma,
+             season_surv = .season_surv, season_sigma = .season_sigma) |>
+            even_run(np = .np, closed = FALSE) |>
+            summ_open_run() |>
+            mutate(u = .u, d_yp = .d_yp, n_sigma = .n_sigma,
+                   season_surv = .season_surv,
+                   season_sigma = .season_sigma,
+                   n_plants = .np)
+    })
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+map(names(d_yp__), \(n) {
+    dd <- open_sim_df |>
+        filter(d_yp == d_yp__[[n]],
+               season_sigma == season_sigma__,
+               n_plants == n_plants__) |>
+        mutate(n_sigma = paste("n[sigma] ==", n_sigma),
+               season_surv = paste("s ==", season_surv)) |>
+        select(-all_ext, -no_ext) |>
+        pivot_longer(Y_ext:B_ext)
+    dds <- dd |>
+        group_by(u, d_yp, n_sigma, season_surv, season_sigma, n_plants, name) |>
+        summarize(value = median(value), .groups = "drop")
+    p <- dd |>
+        ggplot(aes(u, value, color = name)) +
+        ggtitle(paste("Outcome without stochasticity:\n", n)) +
+        geom_point(shape = 1) +
+        geom_line(data = dds) +
+        facet_grid(season_surv ~ n_sigma, labeller = label_parsed) +
+        # scale_y_continuous("Percent of simulations",
+        #                    labels = scales::label_percent()) +
+        scale_x_continuous("u", breaks = seq(0, 10, 2.5),
+                           labels = c("0", "", "5", "", "10")) +
+        scale_color_viridis_d() +
+        theme(plot.title = element_text(size = 12,
+                                        margin = margin(0,0,0,b=6)))
+
+    if (n != names(d_yp__)[[1]]) {
+        p <- p + theme(axis.title.y = element_blank(),
+                       axis.text.y = element_blank())
+    }
+    if (n != tail(names(d_yp__), 1)) {
+        p <- p + theme(strip.text.y = element_blank())
+    }
+    return(p)
+}) |>
+    c(list(guides = "collect")) |>
+    do.call(what = wrap_plots)
+
 
