@@ -57,3 +57,60 @@ landscape_weights <- function(x, S_0, q, X, w, z) {
     .Call(`_sweetsoursong_landscape_weights`, x, S_0, q, X, w, z)
 }
 
+#' Bray–Curtis dissimilarity.
+#'
+#' @param yeast Vector of yeast abundances.
+#' @param bact Vector of bacteria abundances.
+#'
+#' @name dissimilarity
+#'
+#' @return A single number indicating the mean dissimilarity across the
+#'     two vectors.
+#'
+#' @export
+#'
+dissimilarity <- function(yeast, bact) {
+    .Call(`_sweetsoursong_dissimilarity`, yeast, bact)
+}
+
+#' Bray–Curtis dissimilarity on grouped vectors.
+#'
+#' @inheritParams dissimilarity
+#' @param group_size Size of groups within which dissimilarities should be
+#'   calculated. It's assumed that the vectors are
+#'   all sorted by this grouping such that every `group_size` elements
+#'   in the vectors belong to the same group.
+#'   The `yeast` and `bact` vectors' lengths should be divisible by
+#'   `group_size`.
+#' @param overall_mean Single logical for whether to return the overall mean
+#'   dissimilarity after grouping. Defaults to `FALSE`.
+#'
+#'
+#' @return If `overall_mean` is `FALSE`, a numeric vector of length
+#'   `length(yeast) %/% group_size` with the mean dissimilarities across
+#'   the vectors for each group.
+#'   Otherwise, a single number indicating the mean dissimilarity across the
+#'   two vectors after grouping.
+#'
+#' @export
+#'
+dissimilarity_vector <- function(yeast, bact, group_size, overall_mean = FALSE) {
+    .Call(`_sweetsoursong_dissimilarity_vector`, yeast, bact, group_size, overall_mean)
+}
+
+#' Shannon diversity index.
+#'
+#' @param yeast Vector of yeast abundances.
+#' @param bact Vector of bacteria abundances.
+#'
+#' @name diversity
+#'
+#' @return A single number indicating the mean diversity across the
+#'     two vectors.
+#'
+#' @export
+#'
+diversity <- function(yeast, bact, zero_threshold = 2.220446e-16) {
+    .Call(`_sweetsoursong_diversity`, yeast, bact, zero_threshold)
+}
+

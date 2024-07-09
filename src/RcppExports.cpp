@@ -288,6 +288,45 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// dissimilarity
+double dissimilarity(NumericVector yeast, NumericVector bact);
+RcppExport SEXP _sweetsoursong_dissimilarity(SEXP yeastSEXP, SEXP bactSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type yeast(yeastSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type bact(bactSEXP);
+    rcpp_result_gen = Rcpp::wrap(dissimilarity(yeast, bact));
+    return rcpp_result_gen;
+END_RCPP
+}
+// dissimilarity_vector
+NumericVector dissimilarity_vector(NumericVector yeast, NumericVector bact, const size_t& group_size, const bool& overall_mean);
+RcppExport SEXP _sweetsoursong_dissimilarity_vector(SEXP yeastSEXP, SEXP bactSEXP, SEXP group_sizeSEXP, SEXP overall_meanSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type yeast(yeastSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type bact(bactSEXP);
+    Rcpp::traits::input_parameter< const size_t& >::type group_size(group_sizeSEXP);
+    Rcpp::traits::input_parameter< const bool& >::type overall_mean(overall_meanSEXP);
+    rcpp_result_gen = Rcpp::wrap(dissimilarity_vector(yeast, bact, group_size, overall_mean));
+    return rcpp_result_gen;
+END_RCPP
+}
+// diversity
+double diversity(NumericVector yeast, NumericVector bact, double zero_threshold);
+RcppExport SEXP _sweetsoursong_diversity(SEXP yeastSEXP, SEXP bactSEXP, SEXP zero_thresholdSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type yeast(yeastSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type bact(bactSEXP);
+    Rcpp::traits::input_parameter< double >::type zero_threshold(zero_thresholdSEXP);
+    rcpp_result_gen = Rcpp::wrap(diversity(yeast, bact, zero_threshold));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_sweetsoursong_landscape_ode", (DL_FUNC) &_sweetsoursong_landscape_ode, 21},
@@ -302,6 +341,9 @@ static const R_CallMethodDef CallEntries[] = {
     {"_sweetsoursong_make_spat_wts_rcpp", (DL_FUNC) &_sweetsoursong_make_spat_wts_rcpp, 2},
     {"_sweetsoursong_test_R", (DL_FUNC) &_sweetsoursong_test_R, 3},
     {"_sweetsoursong_landscape_weights", (DL_FUNC) &_sweetsoursong_landscape_weights, 6},
+    {"_sweetsoursong_dissimilarity", (DL_FUNC) &_sweetsoursong_dissimilarity, 2},
+    {"_sweetsoursong_dissimilarity_vector", (DL_FUNC) &_sweetsoursong_dissimilarity_vector, 4},
+    {"_sweetsoursong_diversity", (DL_FUNC) &_sweetsoursong_diversity, 3},
     {NULL, NULL, 0}
 };
 
