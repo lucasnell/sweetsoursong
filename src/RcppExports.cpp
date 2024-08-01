@@ -11,37 +11,6 @@ Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
 Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
-// landscape_ode
-NumericMatrix landscape_ode(const std::vector<double>& m, const std::vector<double>& R, const std::vector<double>& d_yp, const std::vector<double>& d_b0, const std::vector<double>& d_bp, const std::vector<double>& g_yp, const std::vector<double>& g_b0, const std::vector<double>& g_bp, const std::vector<double>& L_0, const std::vector<double>& P_max, const double& u, const double& q, const std::vector<double>& W, const double& w, const arma::mat& z, const double& min_F_for_P, const std::vector<double>& Y0, const std::vector<double>& B0, const std::vector<double>& N0, const double& dt, const double& max_t);
-RcppExport SEXP _sweetsoursong_landscape_ode(SEXP mSEXP, SEXP RSEXP, SEXP d_ypSEXP, SEXP d_b0SEXP, SEXP d_bpSEXP, SEXP g_ypSEXP, SEXP g_b0SEXP, SEXP g_bpSEXP, SEXP L_0SEXP, SEXP P_maxSEXP, SEXP uSEXP, SEXP qSEXP, SEXP WSEXP, SEXP wSEXP, SEXP zSEXP, SEXP min_F_for_PSEXP, SEXP Y0SEXP, SEXP B0SEXP, SEXP N0SEXP, SEXP dtSEXP, SEXP max_tSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const std::vector<double>& >::type m(mSEXP);
-    Rcpp::traits::input_parameter< const std::vector<double>& >::type R(RSEXP);
-    Rcpp::traits::input_parameter< const std::vector<double>& >::type d_yp(d_ypSEXP);
-    Rcpp::traits::input_parameter< const std::vector<double>& >::type d_b0(d_b0SEXP);
-    Rcpp::traits::input_parameter< const std::vector<double>& >::type d_bp(d_bpSEXP);
-    Rcpp::traits::input_parameter< const std::vector<double>& >::type g_yp(g_ypSEXP);
-    Rcpp::traits::input_parameter< const std::vector<double>& >::type g_b0(g_b0SEXP);
-    Rcpp::traits::input_parameter< const std::vector<double>& >::type g_bp(g_bpSEXP);
-    Rcpp::traits::input_parameter< const std::vector<double>& >::type L_0(L_0SEXP);
-    Rcpp::traits::input_parameter< const std::vector<double>& >::type P_max(P_maxSEXP);
-    Rcpp::traits::input_parameter< const double& >::type u(uSEXP);
-    Rcpp::traits::input_parameter< const double& >::type q(qSEXP);
-    Rcpp::traits::input_parameter< const std::vector<double>& >::type W(WSEXP);
-    Rcpp::traits::input_parameter< const double& >::type w(wSEXP);
-    Rcpp::traits::input_parameter< const arma::mat& >::type z(zSEXP);
-    Rcpp::traits::input_parameter< const double& >::type min_F_for_P(min_F_for_PSEXP);
-    Rcpp::traits::input_parameter< const std::vector<double>& >::type Y0(Y0SEXP);
-    Rcpp::traits::input_parameter< const std::vector<double>& >::type B0(B0SEXP);
-    Rcpp::traits::input_parameter< const std::vector<double>& >::type N0(N0SEXP);
-    Rcpp::traits::input_parameter< const double& >::type dt(dtSEXP);
-    Rcpp::traits::input_parameter< const double& >::type max_t(max_tSEXP);
-    rcpp_result_gen = Rcpp::wrap(landscape_ode(m, R, d_yp, d_b0, d_bp, g_yp, g_b0, g_bp, L_0, P_max, u, q, W, w, z, min_F_for_P, Y0, B0, N0, dt, max_t));
-    return rcpp_result_gen;
-END_RCPP
-}
 // landscape_constantF_ode
 NumericMatrix landscape_constantF_ode(const std::vector<double>& m, const std::vector<double>& d_yp, const std::vector<double>& d_b0, const std::vector<double>& d_bp, const std::vector<double>& g_yp, const std::vector<double>& g_b0, const std::vector<double>& g_bp, const std::vector<double>& L_0, const double& u, const double& X, const std::vector<double>& Y0, const std::vector<double>& B0, const double& dt, const double& max_t);
 RcppExport SEXP _sweetsoursong_landscape_constantF_ode(SEXP mSEXP, SEXP d_ypSEXP, SEXP d_b0SEXP, SEXP d_bpSEXP, SEXP g_ypSEXP, SEXP g_b0SEXP, SEXP g_bpSEXP, SEXP L_0SEXP, SEXP uSEXP, SEXP XSEXP, SEXP Y0SEXP, SEXP B0SEXP, SEXP dtSEXP, SEXP max_tSEXP) {
@@ -95,40 +64,6 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// landscape_season_ode
-NumericMatrix landscape_season_ode(const std::vector<double>& m, const std::vector<double>& d_yp, const std::vector<double>& d_b0, const std::vector<double>& d_bp, const std::vector<double>& g_yp, const std::vector<double>& g_b0, const std::vector<double>& g_bp, const std::vector<double>& L_0, const std::vector<double>& P_max, const double& u, const double& q, const std::vector<double>& W, const std::vector<double>& R_hat, const std::vector<double>& par1, const std::vector<double>& par2, const StringVector& distr_types, const double& w, const arma::mat& z, const double& min_F_for_P, const std::vector<double>& Y0, const std::vector<double>& B0, const double& add_F, const double& dt, const double& max_t);
-RcppExport SEXP _sweetsoursong_landscape_season_ode(SEXP mSEXP, SEXP d_ypSEXP, SEXP d_b0SEXP, SEXP d_bpSEXP, SEXP g_ypSEXP, SEXP g_b0SEXP, SEXP g_bpSEXP, SEXP L_0SEXP, SEXP P_maxSEXP, SEXP uSEXP, SEXP qSEXP, SEXP WSEXP, SEXP R_hatSEXP, SEXP par1SEXP, SEXP par2SEXP, SEXP distr_typesSEXP, SEXP wSEXP, SEXP zSEXP, SEXP min_F_for_PSEXP, SEXP Y0SEXP, SEXP B0SEXP, SEXP add_FSEXP, SEXP dtSEXP, SEXP max_tSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const std::vector<double>& >::type m(mSEXP);
-    Rcpp::traits::input_parameter< const std::vector<double>& >::type d_yp(d_ypSEXP);
-    Rcpp::traits::input_parameter< const std::vector<double>& >::type d_b0(d_b0SEXP);
-    Rcpp::traits::input_parameter< const std::vector<double>& >::type d_bp(d_bpSEXP);
-    Rcpp::traits::input_parameter< const std::vector<double>& >::type g_yp(g_ypSEXP);
-    Rcpp::traits::input_parameter< const std::vector<double>& >::type g_b0(g_b0SEXP);
-    Rcpp::traits::input_parameter< const std::vector<double>& >::type g_bp(g_bpSEXP);
-    Rcpp::traits::input_parameter< const std::vector<double>& >::type L_0(L_0SEXP);
-    Rcpp::traits::input_parameter< const std::vector<double>& >::type P_max(P_maxSEXP);
-    Rcpp::traits::input_parameter< const double& >::type u(uSEXP);
-    Rcpp::traits::input_parameter< const double& >::type q(qSEXP);
-    Rcpp::traits::input_parameter< const std::vector<double>& >::type W(WSEXP);
-    Rcpp::traits::input_parameter< const std::vector<double>& >::type R_hat(R_hatSEXP);
-    Rcpp::traits::input_parameter< const std::vector<double>& >::type par1(par1SEXP);
-    Rcpp::traits::input_parameter< const std::vector<double>& >::type par2(par2SEXP);
-    Rcpp::traits::input_parameter< const StringVector& >::type distr_types(distr_typesSEXP);
-    Rcpp::traits::input_parameter< const double& >::type w(wSEXP);
-    Rcpp::traits::input_parameter< const arma::mat& >::type z(zSEXP);
-    Rcpp::traits::input_parameter< const double& >::type min_F_for_P(min_F_for_PSEXP);
-    Rcpp::traits::input_parameter< const std::vector<double>& >::type Y0(Y0SEXP);
-    Rcpp::traits::input_parameter< const std::vector<double>& >::type B0(B0SEXP);
-    Rcpp::traits::input_parameter< const double& >::type add_F(add_FSEXP);
-    Rcpp::traits::input_parameter< const double& >::type dt(dtSEXP);
-    Rcpp::traits::input_parameter< const double& >::type max_t(max_tSEXP);
-    rcpp_result_gen = Rcpp::wrap(landscape_season_ode(m, d_yp, d_b0, d_bp, g_yp, g_b0, g_bp, L_0, P_max, u, q, W, R_hat, par1, par2, distr_types, w, z, min_F_for_P, Y0, B0, add_F, dt, max_t));
-    return rcpp_result_gen;
-END_RCPP
-}
 // run_ode_cpp
 NumericMatrix run_ode_cpp(const double& dt, const double& max_t, const double& Y_delay, const double& B_delay, const double& Y0, const double& B0, const double& A0, const double& H0, const double& D, double A_0, const double& r_Y, const double& r_B, const double& m_Y, const double& m_B, const double& e_B, const double& q_Y, const double& q_B, const double& c_Y, const double& c_B, const double& h_B, const double& h_Y);
 RcppExport SEXP _sweetsoursong_run_ode_cpp(SEXP dtSEXP, SEXP max_tSEXP, SEXP Y_delaySEXP, SEXP B_delaySEXP, SEXP Y0SEXP, SEXP B0SEXP, SEXP A0SEXP, SEXP H0SEXP, SEXP DSEXP, SEXP A_0SEXP, SEXP r_YSEXP, SEXP r_BSEXP, SEXP m_YSEXP, SEXP m_BSEXP, SEXP e_BSEXP, SEXP q_YSEXP, SEXP q_BSEXP, SEXP c_YSEXP, SEXP c_BSEXP, SEXP h_BSEXP, SEXP h_YSEXP) {
@@ -157,81 +92,6 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const double& >::type h_B(h_BSEXP);
     Rcpp::traits::input_parameter< const double& >::type h_Y(h_YSEXP);
     rcpp_result_gen = Rcpp::wrap(run_ode_cpp(dt, max_t, Y_delay, B_delay, Y0, B0, A0, H0, D, A_0, r_Y, r_B, m_Y, m_B, e_B, q_Y, q_B, c_Y, c_B, h_B, h_Y));
-    return rcpp_result_gen;
-END_RCPP
-}
-// one_plant_ode
-NumericMatrix one_plant_ode(const double& m, const double& R, const double& d_yp, const double& d_b0, const double& d_bp, const double& g_yp, const double& g_b0, const double& g_bp, const double& L_0, const double& P_max, const double& q, const double& s_0, const double& h, const double& f_0, const double& F_tilde, const double& u, const double& dt, const double& max_t, const double& Y0, const double& B0, const double& N0);
-RcppExport SEXP _sweetsoursong_one_plant_ode(SEXP mSEXP, SEXP RSEXP, SEXP d_ypSEXP, SEXP d_b0SEXP, SEXP d_bpSEXP, SEXP g_ypSEXP, SEXP g_b0SEXP, SEXP g_bpSEXP, SEXP L_0SEXP, SEXP P_maxSEXP, SEXP qSEXP, SEXP s_0SEXP, SEXP hSEXP, SEXP f_0SEXP, SEXP F_tildeSEXP, SEXP uSEXP, SEXP dtSEXP, SEXP max_tSEXP, SEXP Y0SEXP, SEXP B0SEXP, SEXP N0SEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const double& >::type m(mSEXP);
-    Rcpp::traits::input_parameter< const double& >::type R(RSEXP);
-    Rcpp::traits::input_parameter< const double& >::type d_yp(d_ypSEXP);
-    Rcpp::traits::input_parameter< const double& >::type d_b0(d_b0SEXP);
-    Rcpp::traits::input_parameter< const double& >::type d_bp(d_bpSEXP);
-    Rcpp::traits::input_parameter< const double& >::type g_yp(g_ypSEXP);
-    Rcpp::traits::input_parameter< const double& >::type g_b0(g_b0SEXP);
-    Rcpp::traits::input_parameter< const double& >::type g_bp(g_bpSEXP);
-    Rcpp::traits::input_parameter< const double& >::type L_0(L_0SEXP);
-    Rcpp::traits::input_parameter< const double& >::type P_max(P_maxSEXP);
-    Rcpp::traits::input_parameter< const double& >::type q(qSEXP);
-    Rcpp::traits::input_parameter< const double& >::type s_0(s_0SEXP);
-    Rcpp::traits::input_parameter< const double& >::type h(hSEXP);
-    Rcpp::traits::input_parameter< const double& >::type f_0(f_0SEXP);
-    Rcpp::traits::input_parameter< const double& >::type F_tilde(F_tildeSEXP);
-    Rcpp::traits::input_parameter< const double& >::type u(uSEXP);
-    Rcpp::traits::input_parameter< const double& >::type dt(dtSEXP);
-    Rcpp::traits::input_parameter< const double& >::type max_t(max_tSEXP);
-    Rcpp::traits::input_parameter< const double& >::type Y0(Y0SEXP);
-    Rcpp::traits::input_parameter< const double& >::type B0(B0SEXP);
-    Rcpp::traits::input_parameter< const double& >::type N0(N0SEXP);
-    rcpp_result_gen = Rcpp::wrap(one_plant_ode(m, R, d_yp, d_b0, d_bp, g_yp, g_b0, g_bp, L_0, P_max, q, s_0, h, f_0, F_tilde, u, dt, max_t, Y0, B0, N0));
-    return rcpp_result_gen;
-END_RCPP
-}
-// one_plant_season_ode
-NumericMatrix one_plant_season_ode(const double& m, const double& d_yp, const double& d_b0, const double& d_bp, const double& g_yp, const double& g_b0, const double& g_bp, const double& L_0, const double& P_max, const double& q, const double& s_0, const double& h, const double& f_0, const double& F_tilde, const double& u, const double& R_hat, const double& t0, const double& k, const double& lambda, const double& dt, const double& max_t, const double& Y0, const double& B0, const double& N0);
-RcppExport SEXP _sweetsoursong_one_plant_season_ode(SEXP mSEXP, SEXP d_ypSEXP, SEXP d_b0SEXP, SEXP d_bpSEXP, SEXP g_ypSEXP, SEXP g_b0SEXP, SEXP g_bpSEXP, SEXP L_0SEXP, SEXP P_maxSEXP, SEXP qSEXP, SEXP s_0SEXP, SEXP hSEXP, SEXP f_0SEXP, SEXP F_tildeSEXP, SEXP uSEXP, SEXP R_hatSEXP, SEXP t0SEXP, SEXP kSEXP, SEXP lambdaSEXP, SEXP dtSEXP, SEXP max_tSEXP, SEXP Y0SEXP, SEXP B0SEXP, SEXP N0SEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const double& >::type m(mSEXP);
-    Rcpp::traits::input_parameter< const double& >::type d_yp(d_ypSEXP);
-    Rcpp::traits::input_parameter< const double& >::type d_b0(d_b0SEXP);
-    Rcpp::traits::input_parameter< const double& >::type d_bp(d_bpSEXP);
-    Rcpp::traits::input_parameter< const double& >::type g_yp(g_ypSEXP);
-    Rcpp::traits::input_parameter< const double& >::type g_b0(g_b0SEXP);
-    Rcpp::traits::input_parameter< const double& >::type g_bp(g_bpSEXP);
-    Rcpp::traits::input_parameter< const double& >::type L_0(L_0SEXP);
-    Rcpp::traits::input_parameter< const double& >::type P_max(P_maxSEXP);
-    Rcpp::traits::input_parameter< const double& >::type q(qSEXP);
-    Rcpp::traits::input_parameter< const double& >::type s_0(s_0SEXP);
-    Rcpp::traits::input_parameter< const double& >::type h(hSEXP);
-    Rcpp::traits::input_parameter< const double& >::type f_0(f_0SEXP);
-    Rcpp::traits::input_parameter< const double& >::type F_tilde(F_tildeSEXP);
-    Rcpp::traits::input_parameter< const double& >::type u(uSEXP);
-    Rcpp::traits::input_parameter< const double& >::type R_hat(R_hatSEXP);
-    Rcpp::traits::input_parameter< const double& >::type t0(t0SEXP);
-    Rcpp::traits::input_parameter< const double& >::type k(kSEXP);
-    Rcpp::traits::input_parameter< const double& >::type lambda(lambdaSEXP);
-    Rcpp::traits::input_parameter< const double& >::type dt(dtSEXP);
-    Rcpp::traits::input_parameter< const double& >::type max_t(max_tSEXP);
-    Rcpp::traits::input_parameter< const double& >::type Y0(Y0SEXP);
-    Rcpp::traits::input_parameter< const double& >::type B0(B0SEXP);
-    Rcpp::traits::input_parameter< const double& >::type N0(N0SEXP);
-    rcpp_result_gen = Rcpp::wrap(one_plant_season_ode(m, d_yp, d_b0, d_bp, g_yp, g_b0, g_bp, L_0, P_max, q, s_0, h, f_0, F_tilde, u, R_hat, t0, k, lambda, dt, max_t, Y0, B0, N0));
-    return rcpp_result_gen;
-END_RCPP
-}
-// stoch_test
-NumericMatrix stoch_test();
-RcppExport SEXP _sweetsoursong_stoch_test() {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    rcpp_result_gen = Rcpp::wrap(stoch_test());
     return rcpp_result_gen;
 END_RCPP
 }
@@ -343,14 +203,9 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_sweetsoursong_landscape_ode", (DL_FUNC) &_sweetsoursong_landscape_ode, 21},
     {"_sweetsoursong_landscape_constantF_ode", (DL_FUNC) &_sweetsoursong_landscape_constantF_ode, 14},
     {"_sweetsoursong_landscape_constantF_stoch_ode", (DL_FUNC) &_sweetsoursong_landscape_constantF_stoch_ode, 19},
-    {"_sweetsoursong_landscape_season_ode", (DL_FUNC) &_sweetsoursong_landscape_season_ode, 24},
     {"_sweetsoursong_run_ode_cpp", (DL_FUNC) &_sweetsoursong_run_ode_cpp, 21},
-    {"_sweetsoursong_one_plant_ode", (DL_FUNC) &_sweetsoursong_one_plant_ode, 21},
-    {"_sweetsoursong_one_plant_season_ode", (DL_FUNC) &_sweetsoursong_one_plant_season_ode, 24},
-    {"_sweetsoursong_stoch_test", (DL_FUNC) &_sweetsoursong_stoch_test, 0},
     {"_sweetsoursong_make_dist_mat_rcpp", (DL_FUNC) &_sweetsoursong_make_dist_mat_rcpp, 2},
     {"_sweetsoursong_make_spat_wts_rcpp", (DL_FUNC) &_sweetsoursong_make_spat_wts_rcpp, 2},
     {"_sweetsoursong_test_R", (DL_FUNC) &_sweetsoursong_test_R, 3},
