@@ -10,7 +10,7 @@
 #include <vector>
 
 #include "ode.h"
-#include "landscape_constantF.h"
+#include "plant-metacomm.h"
 
 using namespace Rcpp;
 
@@ -19,20 +19,20 @@ using namespace Rcpp;
 
 //' @export
 // [[Rcpp::export]]
-NumericMatrix landscape_constantF_ode(const std::vector<double>& m,
-                                      const std::vector<double>& d_yp,
-                                      const std::vector<double>& d_b0,
-                                      const std::vector<double>& d_bp,
-                                      const std::vector<double>& g_yp,
-                                      const std::vector<double>& g_b0,
-                                      const std::vector<double>& g_bp,
-                                      const std::vector<double>& L_0,
-                                      const double& u,
-                                      const double& X,
-                                      const std::vector<double>& Y0,
-                                      const std::vector<double>& B0,
-                                      const double& dt = 0.1,
-                                      const double& max_t = 90.0) {
+NumericMatrix plant_metacomm(const std::vector<double>& m,
+                             const std::vector<double>& d_yp,
+                             const std::vector<double>& d_b0,
+                             const std::vector<double>& d_bp,
+                             const std::vector<double>& g_yp,
+                             const std::vector<double>& g_b0,
+                             const std::vector<double>& g_bp,
+                             const std::vector<double>& L_0,
+                             const double& u,
+                             const double& X,
+                             const std::vector<double>& Y0,
+                             const std::vector<double>& B0,
+                             const double& dt = 0.1,
+                             const double& max_t = 90.0) {
 
     size_t np = m.size();
     /*

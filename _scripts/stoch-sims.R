@@ -35,8 +35,8 @@ even_run <- function(other_args, np, no_error = FALSE) {
         other_args <- as.list(other_args)
     }
 
-    run_fun <- landscape_constantF_stoch_ode
-    if (no_error) run_fun <- landscape_constantF_ode
+    run_fun <- plant_metacomm_stoch
+    if (no_error) run_fun <- plant_metacomm
 
     stopifnot(length(np) == 1 && is.numeric(np) && np %% 1 == 0 && np >= 2)
     np <- as.integer(np)
@@ -160,7 +160,7 @@ if (! file.exists(stoch_sims_file)) {
                        .season_surv = c(0.05, 0.1, 0.2),
                        .season_sigma = c(0, 10),
                        .np = c(2, 10)) |>
-        # Don't do this in parallel bc landscape_constantF_stoch_ode is already
+        # Don't do this in parallel bc plant_metacomm_stoch is already
         # doing that
         pmap_dfr(\(.u, .d_yp, .n_sigma, .season_surv, .season_sigma, .np) {
             list(u = .u, d_yp = .d_yp, n_sigma = .n_sigma,
@@ -266,7 +266,7 @@ if (! file.exists(open_stoch_sims_file)) {
                                   .season_surv = c(0.05, 0.1, 0.2),
                                   .season_sigma = c(0, 10),
                                   .np = c(2, 10)) |>
-        # Don't do this in parallel bc landscape_constantF_stoch_ode is already
+        # Don't do this in parallel bc plant_metacomm_stoch is already
         # doing that
         pmap_dfr(\(.u, .d_yp, .n_sigma, .season_surv, .season_sigma, .np) {
             list(u = .u, d_yp = .d_yp, n_sigma = .n_sigma,

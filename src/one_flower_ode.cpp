@@ -1,3 +1,12 @@
+
+/*
+ This is for a model of a single plant where one species is a better
+ consumer of the shared resource and the other produces an inhibiting
+ compound.
+ It doesn't work to create the priority effects we see in our system, so
+ it's not used.
+ */
+
 #include <RcppArmadillo.h>
 #include <vector>
 
@@ -165,27 +174,27 @@ public:
 
 //' @export
  // [[Rcpp::export]]
- NumericMatrix run_ode_cpp(const double& dt = 0.01,
-                           const double& max_t = 36.0,
-                           const double& Y_delay = 0,
-                           const double& B_delay = 0,
-                           const double& Y0 = 1.0,
-                           const double& B0 = 1.0,
-                           const double& A0 = 1.46,
-                           const double& H0 = 0.0,
-                           const double& D = 0.214,
-                           double A_0 = -999,
-                           const double& r_Y = 0.44,
-                           const double& r_B = 0.264,
-                           const double& m_Y = 0.01,
-                           const double& m_B = 0.01,
-                           const double& e_B = 0.84,
-                           const double& q_Y = 0.022,
-                           const double& q_B = 0.0,
-                           const double& c_Y = 0.152,
-                           const double& c_B = 1,
-                           const double& h_B = 0.124,
-                           const double& h_Y = 0.044) {
+ NumericMatrix one_flower_ode(const double& dt = 0.01,
+                              const double& max_t = 36.0,
+                              const double& Y_delay = 0,
+                              const double& B_delay = 0,
+                              const double& Y0 = 1.0,
+                              const double& B0 = 1.0,
+                              const double& A0 = 1.46,
+                              const double& H0 = 0.0,
+                              const double& D = 0.214,
+                              double A_0 = -999,
+                              const double& r_Y = 0.44,
+                              const double& r_B = 0.264,
+                              const double& m_Y = 0.01,
+                              const double& m_B = 0.01,
+                              const double& e_B = 0.84,
+                              const double& q_Y = 0.022,
+                              const double& q_B = 0.0,
+                              const double& c_Y = 0.152,
+                              const double& c_B = 1,
+                              const double& h_B = 0.124,
+                              const double& h_Y = 0.044) {
 
      if (A_0 == -999) A_0 = A0;
 

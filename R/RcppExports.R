@@ -2,34 +2,18 @@
 # Generator token: 10BE3573-1514-4C36-9D1C-5A225CD40393
 
 #' @export
-landscape_constantF_ode <- function(m, d_yp, d_b0, d_bp, g_yp, g_b0, g_bp, L_0, u, X, Y0, B0, dt = 0.1, max_t = 90.0) {
-    .Call(`_sweetsoursong_landscape_constantF_ode`, m, d_yp, d_b0, d_bp, g_yp, g_b0, g_bp, L_0, u, X, Y0, B0, dt, max_t)
+one_flower_ode <- function(dt = 0.01, max_t = 36.0, Y_delay = 0, B_delay = 0, Y0 = 1.0, B0 = 1.0, A0 = 1.46, H0 = 0.0, D = 0.214, A_0 = -999, r_Y = 0.44, r_B = 0.264, m_Y = 0.01, m_B = 0.01, e_B = 0.84, q_Y = 0.022, q_B = 0.0, c_Y = 0.152, c_B = 1, h_B = 0.124, h_Y = 0.044) {
+    .Call(`_sweetsoursong_one_flower_ode`, dt, max_t, Y_delay, B_delay, Y0, B0, A0, H0, D, A_0, r_Y, r_B, m_Y, m_B, e_B, q_Y, q_B, c_Y, c_B, h_B, h_Y)
 }
 
 #' @export
-landscape_constantF_stoch_ode <- function(n_reps, m, d_yp, d_b0, d_bp, g_yp, g_b0, g_bp, L_0, u, X, Y0, B0, n_sigma, season_len = NULL, season_surv = 0.01, season_sigma = 0, dt = 0.1, max_t = 100.0) {
-    .Call(`_sweetsoursong_landscape_constantF_stoch_ode`, n_reps, m, d_yp, d_b0, d_bp, g_yp, g_b0, g_bp, L_0, u, X, Y0, B0, n_sigma, season_len, season_surv, season_sigma, dt, max_t)
+plant_metacomm_stoch <- function(n_reps, m, d_yp, d_b0, d_bp, g_yp, g_b0, g_bp, L_0, u, X, Y0, B0, n_sigma, season_len = NULL, season_surv = 0.01, season_sigma = 0, dt = 0.1, max_t = 100.0) {
+    .Call(`_sweetsoursong_plant_metacomm_stoch`, n_reps, m, d_yp, d_b0, d_bp, g_yp, g_b0, g_bp, L_0, u, X, Y0, B0, n_sigma, season_len, season_surv, season_sigma, dt, max_t)
 }
 
 #' @export
-run_ode_cpp <- function(dt = 0.01, max_t = 36.0, Y_delay = 0, B_delay = 0, Y0 = 1.0, B0 = 1.0, A0 = 1.46, H0 = 0.0, D = 0.214, A_0 = -999, r_Y = 0.44, r_B = 0.264, m_Y = 0.01, m_B = 0.01, e_B = 0.84, q_Y = 0.022, q_B = 0.0, c_Y = 0.152, c_B = 1, h_B = 0.124, h_Y = 0.044) {
-    .Call(`_sweetsoursong_run_ode_cpp`, dt, max_t, Y_delay, B_delay, Y0, B0, A0, H0, D, A_0, r_Y, r_B, m_Y, m_B, e_B, q_Y, q_B, c_Y, c_B, h_B, h_Y)
-}
-
-make_dist_mat_rcpp <- function(x, y) {
-    .Call(`_sweetsoursong_make_dist_mat_rcpp`, x, y)
-}
-
-make_spat_wts_rcpp <- function(dm, m) {
-    .Call(`_sweetsoursong_make_spat_wts_rcpp`, dm, m)
-}
-
-test_R <- function(time, mu, sigma) {
-    .Call(`_sweetsoursong_test_R`, time, mu, sigma)
-}
-
-landscape_weights <- function(x, S_0, q, X, w, z) {
-    .Call(`_sweetsoursong_landscape_weights`, x, S_0, q, X, w, z)
+plant_metacomm <- function(m, d_yp, d_b0, d_bp, g_yp, g_b0, g_bp, L_0, u, X, Y0, B0, dt = 0.1, max_t = 90.0) {
+    .Call(`_sweetsoursong_plant_metacomm`, m, d_yp, d_b0, d_bp, g_yp, g_b0, g_bp, L_0, u, X, Y0, B0, dt, max_t)
 }
 
 #' Bray–Curtis dissimilarity.

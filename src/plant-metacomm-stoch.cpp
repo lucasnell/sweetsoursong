@@ -16,7 +16,7 @@
 #include <random>
 
 #include "ode.h"
-#include "landscape_constantF.h"
+#include "plant-metacomm.h"
 
 #include <RcppParallel.h>
 #include <pcg_random.hpp>
@@ -272,25 +272,25 @@ struct StochLandCFWorker : public RcppParallel::Worker {
 
 //' @export
 // [[Rcpp::export]]
-NumericMatrix landscape_constantF_stoch_ode(const uint32_t& n_reps,
-                                            const std::vector<double>& m,
-                                            const std::vector<double>& d_yp,
-                                            const std::vector<double>& d_b0,
-                                            const std::vector<double>& d_bp,
-                                            const std::vector<double>& g_yp,
-                                            const std::vector<double>& g_b0,
-                                            const std::vector<double>& g_bp,
-                                            const std::vector<double>& L_0,
-                                            const double& u,
-                                            const double& X,
-                                            const std::vector<double>& Y0,
-                                            const std::vector<double>& B0,
-                                            const double& n_sigma,
-                                            SEXP season_len = R_NilValue,
-                                            const double& season_surv = 0.01,
-                                            const double& season_sigma = 0,
-                                            const double& dt = 0.1,
-                                            const double& max_t = 100.0) {
+NumericMatrix plant_metacomm_stoch(const uint32_t& n_reps,
+                                   const std::vector<double>& m,
+                                   const std::vector<double>& d_yp,
+                                   const std::vector<double>& d_b0,
+                                   const std::vector<double>& d_bp,
+                                   const std::vector<double>& g_yp,
+                                   const std::vector<double>& g_b0,
+                                   const std::vector<double>& g_bp,
+                                   const std::vector<double>& L_0,
+                                   const double& u,
+                                   const double& X,
+                                   const std::vector<double>& Y0,
+                                   const std::vector<double>& B0,
+                                   const double& n_sigma,
+                                   SEXP season_len = R_NilValue,
+                                   const double& season_surv = 0.01,
+                                   const double& season_sigma = 0,
+                                   const double& dt = 0.1,
+                                   const double& max_t = 100.0) {
 
     /*
      I can't just use 'stop()' because it causes a segfault (or similar).

@@ -70,7 +70,7 @@ even_run <- function(other_args, np) {
     args[["Y0"]] <- seq(0.1, 0.4, length.out = np)
     args[["B0"]] <- 0.5 - args[["Y0"]]
 
-    run_df <- do.call(landscape_constantF_ode, args) |>
+    run_df <- do.call(plant_metacomm, args) |>
                 as_tibble() |>
         mutate(p = factor(p, levels = 0:(np-1L),
                           labels = paste("patch", 1:np)))
