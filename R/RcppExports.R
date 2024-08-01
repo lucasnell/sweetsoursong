@@ -114,3 +114,24 @@ diversity <- function(yeast, bact, zero_threshold = 2.220446e-16) {
     .Call(`_sweetsoursong_diversity`, yeast, bact, zero_threshold)
 }
 
+#' Shannon diversity index after summing by groups.
+#'
+#'
+#' @inheritParams diversity
+#' @param group_size Size of groups within which abundances should be
+#'   summed before diversities are calculated.
+#'   It's assumed that the vectors are all sorted by this grouping such
+#'   that every `group_size` elements in the vectors belong to the same group.
+#'   The `yeast` and `bact` vectors' lengths should be divisible by
+#'   `group_size`.
+#'
+#'
+#' @return A single number indicating the mean diversities across the
+#'   two vectors after summing species by groups.
+#'
+#' @export
+#'
+diversity_vector <- function(yeast, bact, group_size, zero_threshold = 2.220446e-16) {
+    .Call(`_sweetsoursong_diversity_vector`, yeast, bact, group_size, zero_threshold)
+}
+

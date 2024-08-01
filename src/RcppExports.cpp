@@ -327,6 +327,20 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// diversity_vector
+double diversity_vector(NumericVector yeast, NumericVector bact, const size_t& group_size, double zero_threshold);
+RcppExport SEXP _sweetsoursong_diversity_vector(SEXP yeastSEXP, SEXP bactSEXP, SEXP group_sizeSEXP, SEXP zero_thresholdSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type yeast(yeastSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type bact(bactSEXP);
+    Rcpp::traits::input_parameter< const size_t& >::type group_size(group_sizeSEXP);
+    Rcpp::traits::input_parameter< double >::type zero_threshold(zero_thresholdSEXP);
+    rcpp_result_gen = Rcpp::wrap(diversity_vector(yeast, bact, group_size, zero_threshold));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_sweetsoursong_landscape_ode", (DL_FUNC) &_sweetsoursong_landscape_ode, 21},
@@ -344,6 +358,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_sweetsoursong_dissimilarity", (DL_FUNC) &_sweetsoursong_dissimilarity, 2},
     {"_sweetsoursong_dissimilarity_vector", (DL_FUNC) &_sweetsoursong_dissimilarity_vector, 4},
     {"_sweetsoursong_diversity", (DL_FUNC) &_sweetsoursong_diversity, 3},
+    {"_sweetsoursong_diversity_vector", (DL_FUNC) &_sweetsoursong_diversity_vector, 4},
     {NULL, NULL, 0}
 };
 

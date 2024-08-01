@@ -3,6 +3,7 @@
 export(dissimilarity)
 export(dissimilarity_vector)
 export(diversity)
+export(diversity_vector)
 export(landscape_constantF_ode)
 export(landscape_constantF_stoch_ode)
 export(landscape_ode)

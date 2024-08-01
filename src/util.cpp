@@ -265,3 +265,59 @@ double diversity(NumericVector yeast, NumericVector bact,
     H_mean /= static_cast<double>(n);
     return H_mean;
 }
+
+
+//' Shannon diversity index after summing by groups.
+//'
+//'
+//' @inheritParams diversity
+//' @param group_size Size of groups within which abundances should be
+//'   summed before diversities are calculated.
+//'   It's assumed that the vectors are all sorted by this grouping such
+//'   that every `group_size` elements in the vectors belong to the same group.
+//'   The `yeast` and `bact` vectors' lengths should be divisible by
+//'   `group_size`.
+//'
+//'
+//' @return A single number indicating the mean diversities across the
+//'   two vectors after summing species by groups.
+//'
+//' @export
+//'
+//[[Rcpp::export]]
+double diversity_vector(NumericVector yeast,
+                        NumericVector bact,
+                        const size_t& group_size,
+                        double zero_threshold = 2.220446e-16) {
+
+    if (yeast.size() != bact.size()) stop("lengths do not match");
+    if (yeast.size() % group_size != 0) stop("vector lengths aren't divisible by group_size");
+
+    size_t total_groups = yeast.size() / group_size;
+
+    double p_yeast, p_bact, total, H_i, y, b;
+    double H_mean = 0;
+
+    const size_t& n(group_size);
+
+    for (size_t i0 = 0; i0 < yeast.size(); i0+=group_size) {
+        // First sum within group:
+        y = 0;
+        b = 0;
+        for (size_t i = i0; i < (i0+n); i++) {
+            y += yeast(i);
+            b += bact(i);
+        }
+        // Now calculate H:
+        if (b > zero_threshold && y > zero_threshold) {
+            total = y + b;
+            p_yeast = y / total;
+            p_bact = b / total;
+            H_i = - p_yeast * log(p_yeast) - p_bact * log(p_bact);
+            H_mean += H_i;
+        }
+    }
+    H_mean /= static_cast<double>(total_groups);
+
+    return H_mean;
+}
