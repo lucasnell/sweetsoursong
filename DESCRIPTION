@@ -17,6 +17,7 @@ LinkingTo:
     RcppArmadillo,
     RcppParallel
 Imports: 
+    dplyr,
     ggplot2,
     Rcpp,
     RcppParallel,

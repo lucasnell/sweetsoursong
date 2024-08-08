@@ -11,9 +11,8 @@ plant_metacomm_stoch <- function(n_reps, m, d_yp, d_b0, d_bp, g_yp, g_b0, g_bp, 
     .Call(`_sweetsoursong_plant_metacomm_stoch`, n_reps, m, d_yp, d_b0, d_bp, g_yp, g_b0, g_bp, L_0, u, X, Y0, B0, n_sigma, season_len, season_surv, season_sigma, dt, max_t)
 }
 
-#' @export
-plant_metacomm <- function(m, d_yp, d_b0, d_bp, g_yp, g_b0, g_bp, L_0, u, X, Y0, B0, dt = 0.1, max_t = 90.0) {
-    .Call(`_sweetsoursong_plant_metacomm`, m, d_yp, d_b0, d_bp, g_yp, g_b0, g_bp, L_0, u, X, Y0, B0, dt, max_t)
+plant_metacomm_cpp <- function(m, d_yp, d_b0, d_bp, g_yp, g_b0, g_bp, L_0, u, X, Y0, B0, dt, max_t) {
+    .Call(`_sweetsoursong_plant_metacomm_cpp`, m, d_yp, d_b0, d_bp, g_yp, g_b0, g_bp, L_0, u, X, Y0, B0, dt, max_t)
 }
 
 #' Bray–Curtis dissimilarity.

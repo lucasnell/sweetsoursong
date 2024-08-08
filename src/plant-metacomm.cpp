@@ -17,22 +17,21 @@ using namespace Rcpp;
 
 
 
-//' @export
 // [[Rcpp::export]]
-NumericMatrix plant_metacomm(const std::vector<double>& m,
-                             const std::vector<double>& d_yp,
-                             const std::vector<double>& d_b0,
-                             const std::vector<double>& d_bp,
-                             const std::vector<double>& g_yp,
-                             const std::vector<double>& g_b0,
-                             const std::vector<double>& g_bp,
-                             const std::vector<double>& L_0,
-                             const double& u,
-                             const double& X,
-                             const std::vector<double>& Y0,
-                             const std::vector<double>& B0,
-                             const double& dt = 0.1,
-                             const double& max_t = 90.0) {
+NumericMatrix plant_metacomm_cpp(const std::vector<double>& m,
+                                 const std::vector<double>& d_yp,
+                                 const std::vector<double>& d_b0,
+                                 const std::vector<double>& d_bp,
+                                 const std::vector<double>& g_yp,
+                                 const std::vector<double>& g_b0,
+                                 const std::vector<double>& g_bp,
+                                 const std::vector<double>& L_0,
+                                 const double& u,
+                                 const double& X,
+                                 const std::vector<double>& Y0,
+                                 const std::vector<double>& B0,
+                                 const double& dt,
+                                 const double& max_t) {
 
     size_t np = m.size();
     /*
