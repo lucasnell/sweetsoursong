@@ -270,27 +270,26 @@ struct StochLandCFWorker : public RcppParallel::Worker {
 
 
 
-//' @export
 // [[Rcpp::export]]
-NumericMatrix plant_metacomm_stoch(const uint32_t& n_reps,
-                                   const std::vector<double>& m,
-                                   const std::vector<double>& d_yp,
-                                   const std::vector<double>& d_b0,
-                                   const std::vector<double>& d_bp,
-                                   const std::vector<double>& g_yp,
-                                   const std::vector<double>& g_b0,
-                                   const std::vector<double>& g_bp,
-                                   const std::vector<double>& L_0,
-                                   const double& u,
-                                   const double& X,
-                                   const std::vector<double>& Y0,
-                                   const std::vector<double>& B0,
-                                   const double& n_sigma,
-                                   SEXP season_len = R_NilValue,
-                                   const double& season_surv = 0.01,
-                                   const double& season_sigma = 0,
-                                   const double& dt = 0.1,
-                                   const double& max_t = 100.0) {
+NumericMatrix plant_metacomm_stoch_cpp(const uint32_t& n_reps,
+                                       const std::vector<double>& m,
+                                       const std::vector<double>& d_yp,
+                                       const std::vector<double>& d_b0,
+                                       const std::vector<double>& d_bp,
+                                       const std::vector<double>& g_yp,
+                                       const std::vector<double>& g_b0,
+                                       const std::vector<double>& g_bp,
+                                       const std::vector<double>& L_0,
+                                       const double& u,
+                                       const double& X,
+                                       const std::vector<double>& Y0,
+                                       const std::vector<double>& B0,
+                                       const double& n_sigma,
+                                       const double& season_len,
+                                       const double& season_surv,
+                                       const double& season_sigma,
+                                       const double& dt,
+                                       const double& max_t) {
 
     /*
      I can't just use 'stop()' because it causes a segfault (or similar).
@@ -299,12 +298,11 @@ NumericMatrix plant_metacomm_stoch(const uint32_t& n_reps,
     bool err = lanscape_constF_arg_checks(m, d_yp, d_b0, d_bp, g_yp, g_b0, g_bp,
                                           L_0, u, X, Y0, B0, dt, max_t);
     min_val_check(err, n_sigma, "n_sigma", 0, false);
-    double season_len_ = (season_len == R_NilValue) ? max_t + 1.0 : as<double>(season_len);
-    min_val_check(err, season_len_, "season_len", 0, false);
+    min_val_check(err, season_len, "season_len", 0, false);
     min_val_check(err, season_surv, "season_surv", 0);
     max_val_check(err, season_surv, "season_surv", 1);
-    if (season_len_ < max_t && ! zero_remainder(season_len_, dt)) {
-        Rcout << "season_len is " << std::to_string(season_len_);
+    if (season_len < max_t && ! zero_remainder(season_len, dt)) {
+        Rcout << "season_len is " << std::to_string(season_len);
         Rcout << " but should be divisible by dt (";
         Rcout << std::to_string(dt) << ")!" << std::endl;
         err = true;
@@ -315,7 +313,7 @@ NumericMatrix plant_metacomm_stoch(const uint32_t& n_reps,
 
     StochLandCFWorker worker(n_reps, m, d_yp, d_b0, d_bp, g_yp, g_b0, g_bp,
                              L_0, u, X, Y0, B0, n_sigma,
-                             season_len_, season_surv, season_sigma,
+                             season_len, season_surv, season_sigma,
                              dt, max_t);
 
     RcppParallel::parallelFor(0, n_reps, worker);
