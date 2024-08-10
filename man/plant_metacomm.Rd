@@ -7,8 +7,8 @@
 plant_metacomm(
   np,
   u,
-  Y0,
-  B0,
+  Y0 = NULL,
+  B0 = NULL,
   m = 0.1,
   d_yp = 1.1,
   d_b0 = 0.3,
@@ -29,9 +29,15 @@ plant_metacomm(
 \item{u}{Affects how strongly pollinators are attracted to plants with the
 greatest proportion of palatable nectar.}
 
-\item{Y0}{Starting yeast proportions.}
+\item{Y0}{Starting yeast proportions.
+If \code{NULL}, both yeast and bacteria are evenly distributed among
+plants where \code{all(Y0 + B0) == 0.5}.
+If \code{NULL}, \code{B0} must also be.}
 
-\item{B0}{Starting bacteria proportions.}
+\item{B0}{Starting bacteria proportions.
+If \code{NULL}, both yeast and bacteria are evenly distributed among
+plants where \code{all(Y0 + B0) == 0.5}.
+If \code{NULL}, \code{Y0} must also be.}
 
 \item{m}{Flower senescence.}
 

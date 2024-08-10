@@ -33,7 +33,13 @@ dbl_check <- function(x, l, n, .min = NULL, .max = NULL) {
 #' @param u Affects how strongly pollinators are attracted to plants with the
 #'     greatest proportion of palatable nectar.
 #' @param Y0 Starting yeast proportions.
+#'     If `NULL`, both yeast and bacteria are evenly distributed among
+#'     plants where `all(Y0 + B0) == 0.5`.
+#'     If `NULL`, `B0` must also be.
 #' @param B0 Starting bacteria proportions.
+#'     If `NULL`, both yeast and bacteria are evenly distributed among
+#'     plants where `all(Y0 + B0) == 0.5`.
+#'     If `NULL`, `Y0` must also be.
 #' @param m Flower senescence.
 #' @param d_yp Pollinator-dependent, within-plant dispersal rate for yeast.
 #' @param d_b0 Pollinator-independent, within-plant dispersal rate for bacteria.
@@ -62,8 +68,8 @@ dbl_check <- function(x, l, n, .min = NULL, .max = NULL) {
 #'
 plant_metacomm <- function(np,
                            u,
-                           Y0,
-                           B0,
+                           Y0 = NULL,
+                           B0 = NULL,
                            m = 0.1,
                            d_yp = 1.1,
                            d_b0 = 0.3,
@@ -78,6 +84,15 @@ plant_metacomm <- function(np,
                            closed = TRUE) {
 
     int_check(np, 1, "np", .min = 2)
+
+    if ((!is.null(Y0) && is.null(B0)) || (is.null(Y0) && !is.null(B0))) {
+        stop("ERROR: If Y0 is NULL, B0 must also be (and vice versa).")
+    }
+    if (is.null(Y0)) {
+        Y0 <- seq(0.1, 0.4, length.out = np)
+        B0 <- 0.5 - Y0
+    }
+
     dbl_check(u, 1, "u", .min = 0)
     dbl_check(Y0, c(1, np), "Y0", .min = 0, .max = 1)
     dbl_check(B0, c(1, np), "B0", .min = 0, .max = 1)
