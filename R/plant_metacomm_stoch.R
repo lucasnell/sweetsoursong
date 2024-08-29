@@ -36,9 +36,10 @@ dbl_check <- function(x, l, n, .min = NULL, .max = NULL) {
 #' @param season_len Length of seasons. Set to `NULL` to not have seasons.
 #' @param season_surv Survival of microbes from the end of one season to
 #'     the start of the next.
-#' @param season_sigma Standard deviation of the normal distribution used to
-#'     generate between-season variation in logit-transformed relative
-#'     species compositions.
+#' @param rand_season Logical for whether to have abundances to start a season
+#'     generated from a uniform random distribution. The alternative
+#'     is for starting abundances be `season_surv` multiplied by the
+#'     ending abundance from the previous season. Defaults to `FALSE`.
 #' @param n_reps Number of reps to simulate.
 #'
 #' @return A data frame of yeast, bacteria, and pollinator densities at each
@@ -63,7 +64,7 @@ plant_metacomm_stoch <- function(np,
                                  n_sigma = 200,
                                  season_len = 150,
                                  season_surv = 0.1,
-                                 season_sigma = 0,
+                                 rand_season = FALSE,
                                  n_reps = 100,
                                  dt = 0.1,
                                  max_t = 3000,
@@ -98,7 +99,7 @@ plant_metacomm_stoch <- function(np,
     dbl_check(n_sigma, 1, "n_sigma", .min = 1)
     if (!is.null(season_len)) dbl_check(season_len, 1, "season_len", .min = 1)
     dbl_check(season_surv, 1, "season_surv", .min = NotQuiteZero)
-    dbl_check(season_sigma, 1, "season_sigma", .min = 0)
+    stopifnot(length(rand_season) == 1 && is.logical(rand_season))
     int_check(n_reps, 1, "n_reps", .min = 1)
 
     dbl_check(dt, 1, "dt", .min = NotQuiteZero)
@@ -134,7 +135,7 @@ plant_metacomm_stoch <- function(np,
 
     plant_metacomm_stoch_cpp(n_reps, m, d_yp, d_b0, d_bp, g_yp, g_b0, g_bp,
                              L_0, u, X, Y0, B0,
-                             n_sigma, season_len, season_surv, season_sigma,
+                             n_sigma, season_len, season_surv, rand_season,
                              dt, max_t) |>
         tibble::as_tibble() |>
         dplyr::mutate(p = factor(as.integer(p), levels = 0:(np-1L),

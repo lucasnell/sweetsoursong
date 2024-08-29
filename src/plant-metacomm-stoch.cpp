@@ -49,6 +49,14 @@ inline void inv_logit(double& p) {
     return;
 }
 
+// Generate from ~U(0,1) using a pcg32 object:
+namespace pcg {
+    const double max = static_cast<double>(pcg32::max());
+}
+inline double runif_01(pcg32& eng) {
+    return (static_cast<double>(eng()) + 1) / (pcg::max + 2);
+}
+
 
 
 class StochLandscapeStepper
@@ -63,44 +71,37 @@ public:
                           const size_t& n_states,
                           const double& season_len_,
                           const double& season_surv_,
-                          const double& season_sigma_)
+                          const bool& rand_season_)
         : det(n_plants, n_states),
           stoch(n_plants, n_states),
           season_len(season_len_),
           season_surv(season_surv_),
-          season_sigma(season_sigma_) {}
+          rand_season(rand_season_) {}
 
     template< class System >
     void do_step(System system, MatType& x, double t, double dt) {
         // New season:
         if (t > 0 && zero_remainder(t, season_len)) {
-            // If no seasonal variation included:
-            if (season_sigma <= 0) {
+
+            if (!rand_season) {
+
+                // If starting abundances are based on previous season:
 
                 x *= season_surv;
 
             } else {
 
-                // If seasonal variation included:
-
-                x.elem( arma::find(x < 1) ) += 1e-6; // to remove zeros
+                // If starting abundances are NOT based on previous season:
 
                 pcg32& rng(system.second.m_rng);
-                std::normal_distribution<double>& norm(system.second.m_dist);
-                double YB, xij;
+                double YB, rnd_u;
                 for (size_t i = 0 ; i < x.n_rows ; i++) {
                     YB = arma::accu(x.row(i)); // Y+B for this plant
-                    for (size_t j = 0 ; j < x.n_cols ; j++) {
-                        xij = x(i,j) / YB;
-                        logit(xij);
-                        xij += (season_sigma * norm(rng));
-                        inv_logit(xij);
-                        x(i,j) = xij;
-                    }
-                    // This makes sure it always sums to (YB * season_surv):
-                    x.row(i) /= arma::accu(x.row(i));
-                    x.row(i) *= (YB * season_surv);
+                    rnd_u = runif_01(rng);
+                    x(i,0) = season_surv * rnd_u * YB;
+                    x(i,1) = season_surv * (1 - rnd_u) * YB;
                 }
+
             }
             return;
         }
@@ -123,7 +124,7 @@ private:
     MatType stoch;
     double season_len;
     double season_surv;
-    double season_sigma;
+    bool rand_season;
 };
 
 
@@ -173,7 +174,7 @@ struct StochLandCFWorker : public RcppParallel::Worker {
     double max_t;
     double season_len;
     double season_surv;
-    double season_sigma;
+    bool rand_season;
 
     StochLandCFWorker(const uint32_t& n_reps,
                       const std::vector<double>& m,
@@ -191,7 +192,7 @@ struct StochLandCFWorker : public RcppParallel::Worker {
                       const double& n_sigma_,
                       const double& season_len_,
                       const double& season_surv_,
-                      const double& season_sigma_,
+                      const bool& rand_season_,
                       const double& dt_,
                       const double& max_t_)
         : output(n_reps, MatType(0,0)),
@@ -203,7 +204,7 @@ struct StochLandCFWorker : public RcppParallel::Worker {
           max_t(max_t_),
           season_len(season_len_),
           season_surv(season_surv_),
-          season_sigma(season_sigma_) {
+          rand_season(rand_season_) {
 
         std::vector<uint64_t> tmp_seeds(4);
         for (uint32_t i = 0; i < n_reps; i++) {
@@ -238,7 +239,7 @@ struct StochLandCFWorker : public RcppParallel::Worker {
             obs.time.clear();
 
             boost::numeric::odeint::integrate_const(
-                StochLandscapeStepper(np, 2U, season_len, season_surv, season_sigma),
+                StochLandscapeStepper(np, 2U, season_len, season_surv, rand_season),
                 std::make_pair(determ_sys0,
                                StochLandscapeStochProcess(rng, n_sigma)),
                                x, 0.0, max_t, dt, std::ref(obs));
@@ -287,7 +288,7 @@ NumericMatrix plant_metacomm_stoch_cpp(const uint32_t& n_reps,
                                        const double& n_sigma,
                                        const double& season_len,
                                        const double& season_surv,
-                                       const double& season_sigma,
+                                       const bool& rand_season,
                                        const double& dt,
                                        const double& max_t) {
 
@@ -307,13 +308,12 @@ NumericMatrix plant_metacomm_stoch_cpp(const uint32_t& n_reps,
         Rcout << std::to_string(dt) << ")!" << std::endl;
         err = true;
     }
-    min_val_check(err, season_sigma, "season_sigma", 0);
     if (err) return NumericMatrix(0,0);
 
 
     StochLandCFWorker worker(n_reps, m, d_yp, d_b0, d_bp, g_yp, g_b0, g_bp,
                              L_0, u, X, Y0, B0, n_sigma,
-                             season_len, season_surv, season_sigma,
+                             season_len, season_surv, rand_season,
                              dt, max_t);
 
     RcppParallel::parallelFor(0, n_reps, worker);

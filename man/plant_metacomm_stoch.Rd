@@ -21,7 +21,7 @@ plant_metacomm_stoch(
   n_sigma = 200,
   season_len = 150,
   season_surv = 0.1,
-  season_sigma = 0,
+  rand_season = FALSE,
   n_reps = 100,
   dt = 0.1,
   max_t = 3000,
@@ -76,9 +76,10 @@ generates stochasticity at each time step.}
 \item{season_surv}{Survival of microbes from the end of one season to
 the start of the next.}
 
-\item{season_sigma}{Standard deviation of the normal distribution used to
-generate between-season variation in logit-transformed relative
-species compositions.}
+\item{rand_season}{Logical for whether to have abundances to start a season
+generated from a uniform random distribution. The alternative
+is for starting abundances be \code{season_surv} multiplied by the
+ending abundance from the previous season. Defaults to \code{FALSE}.}
 
 \item{n_reps}{Number of reps to simulate.}
 
