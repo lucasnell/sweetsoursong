@@ -51,13 +51,13 @@ d_yp__ = c(`bacteria only` = 0.886308,
 
 
 
-closed_sims <- function(.u, .d_yp, .n_sigma, .season_surv, .season_sigma, .np,
+closed_sims <- function(.u, .d_yp, .n_sigma, .season_surv, .rand_season, .np,
                         .threshold = 1e-6) {
 
     closed_sim_df <- plant_metacomm_stoch(np = .np, u = .u, d_yp = .d_yp,
                                        n_sigma = .n_sigma,
                                        season_surv = .season_surv,
-                                       season_sigma = .season_sigma)
+                                       rand_season = .rand_season)
     season_len <- formals(plant_metacomm_stoch)[["season_len"]]
     n_reps <- formals(plant_metacomm_stoch)[["n_reps"]]
 
@@ -82,18 +82,18 @@ closed_sims <- function(.u, .d_yp, .n_sigma, .season_surv, .season_sigma, .np,
         mutate(outcome = factor(outcome, levels = names(outcome_pal))) |>
         mutate(u = .u, d_yp = .d_yp, n_sigma = .n_sigma,
                season_surv = .season_surv,
-               season_sigma = .season_sigma,
+               rand_season = .rand_season,
                n_plants = .np)
 }
 
 
 
-open_sims <- function(.u, .d_yp, .n_sigma, .season_surv, .season_sigma, .np) {
+open_sims <- function(.u, .d_yp, .n_sigma, .season_surv, .rand_season, .np) {
 
     open_sim_df <- plant_metacomm_stoch(np = .np, u = .u, d_yp = .d_yp,
                                         n_sigma = .n_sigma,
                                         season_surv = .season_surv,
-                                        season_sigma = .season_sigma,
+                                        rand_season = .rand_season,
                                         closed = FALSE)
 
     open_sim_df |>
@@ -102,7 +102,7 @@ open_sims <- function(.u, .d_yp, .n_sigma, .season_surv, .season_sigma, .np) {
                   diss = dissimilarity_vector(Y, B, group_size = .np, TRUE)) |>
         mutate(u = .u, d_yp = .d_yp, n_sigma = .n_sigma,
                season_surv = .season_surv,
-               season_sigma = .season_sigma,
+               rand_season = .rand_season,
                n_plants = .np)
 }
 
@@ -119,13 +119,13 @@ open_sims <- function(.u, .d_yp, .n_sigma, .season_surv, .season_sigma, .np) {
 
 if (! file.exists(big_stoch_sims_file)) {
 
-    # Takes ~30 min
+    # Takes ~40 min
     set.seed(1472844374)
     stoch_sim_df <- crossing(.u = 0:10,
                              .d_yp = d_yp__,
                              .n_sigma = c(100, 200, 400),
                              .season_surv = c(0.05, 0.1, 0.2),
-                             .season_sigma = c(0, 10),
+                             .rand_season = c(TRUE, FALSE),
                              .np = c(2, 10)) |>
         # Don't do this in parallel bc plant_metacomm_stoch is already
         # doing that
@@ -150,7 +150,7 @@ if (! file.exists(big_open_stoch_sims_file)) {
                                   .d_yp = d_yp__,
                                   .n_sigma = c(100, 200, 400),
                                   .season_surv = c(0.05, 0.1, 0.2),
-                                  .season_sigma = c(0, 10),
+                                  .rand_season = c(TRUE, FALSE),
                                   .np = c(2, 10)) |>
         # Don't do this in parallel bc plant_metacomm_stoch is already
         # doing that
@@ -182,9 +182,9 @@ if (! file.exists(big_open_stoch_sims_file)) {
 # ------------*
 
 
-#' This creates separate plots by season_sigma and n_plants for closed
-#' simulations, where I'm going to create group plots by season_sigma.
-closed_plots <- function(season_sigma__, n_plants__) {
+#' This creates separate plots by rand_season and n_plants for closed
+#' simulations, where I'm going to create group plots by rand_season.
+closed_plots <- function(rand_season__, n_plants__) {
 
     xtitle <- textGrob(paste("'Strength of microbe effects on pollinators",
                              "('*italic(u)*')'") |>
@@ -200,7 +200,7 @@ closed_plots <- function(season_sigma__, n_plants__) {
     map(names(d_yp__), \(n) {
         p <- stoch_sim_df |>
             filter(d_yp == d_yp__[[n]],
-                   season_sigma == season_sigma__,
+                   rand_season == rand_season__,
                    n_plants == n_plants__) |>
             mutate(n_sigma = paste("*n<sub>&sigma;</sub>* =", n_sigma),
                    season_surv = paste("*s* =", season_surv)) |>
@@ -245,9 +245,9 @@ closed_plots <- function(season_sigma__, n_plants__) {
 }
 
 
-closed_plots_list <- crossing(season_sigma__ = unique(stoch_sim_df$season_sigma),
+closed_plots_list <- crossing(rand_season__ = unique(stoch_sim_df$rand_season),
                               n_plants__ = unique(stoch_sim_df$n_plants)) |>
-    arrange(season_sigma__, n_plants__) |>
+    arrange(rand_season__, n_plants__) |>
     pmap(closed_plots)
 
 
@@ -267,10 +267,10 @@ closed_plot_combined <- function(i) {
 
 
 for (i in 1:2) {
-    .ss <- sort(unique(stoch_sim_df$season_sigma))[[i]]
-    fn <- sprintf("_figures/stoch-closed-supp-ss%02i.pdf", .ss)
+    .rs <- sort(unique(stoch_sim_df$rand_season))[[i]]
+    fn <- sprintf("_figures/stoch-closed-supp-rand_season%s.pdf", .rs)
     save_plot(fn, closed_plot_combined, 10, 10, fun_args = list(i))
-}; rm(i, .ss, fn)
+}; rm(i, .rs, fn)
 
 
 
@@ -280,9 +280,9 @@ for (i in 1:2) {
 # ------------*
 
 
-#' This creates separate plots by season_sigma and n_plants for open
-#' simulations, where I'm going to create group plots by season_sigma.
-open_plots <- function(season_sigma__, n_plants__) {
+#' This creates separate plots by rand_season and n_plants for open
+#' simulations, where I'm going to create group plots by rand_season.
+open_plots <- function(rand_season__, n_plants__) {
 
     xtitle <- textGrob(paste("'Strength of microbe effects on pollinators",
                              "('*italic(u)*')'") |>
@@ -298,7 +298,7 @@ open_plots <- function(season_sigma__, n_plants__) {
     map(names(d_yp__), \(n) {
         dd <- open_stoch_sim_df |>
             filter(d_yp == d_yp__[[n]],
-                   season_sigma == season_sigma__,
+                   rand_season == rand_season__,
                    n_plants == n_plants__) |>
             mutate(n_sigma = paste("*n<sub>&sigma;</sub>* =", n_sigma),
                    season_surv = paste("*s* =", season_surv)) |>
@@ -306,10 +306,11 @@ open_plots <- function(season_sigma__, n_plants__) {
             mutate(name = factor(name, levels = c("diss", "dive"),
                                  labels = c("dissimilarity", "diversity")))
         dds <- dd |>
-            group_by(u, d_yp, n_sigma, season_surv, season_sigma, name) |>
+            group_by(u, d_yp, n_sigma, season_surv, rand_season, name) |>
             summarize(value = median(value), .groups = "drop")
-        # Because mximum metric values vary a lot by d_yp:
-        ymax <- c(0.5, 1, 1)[which(names(d_yp__) == n)]
+        # Because maximum metric values vary a lot by d_yp:
+        ymax <- c(0.53, 1, 1)[which(names(d_yp__) == n)]
+        ymax1 <- round(ymax, 1)
         p <- dd |>
             ggplot(aes(u, value, color = name)) +
             ggtitle(paste("Outcome without stochasticity:\n", n)) +
@@ -318,9 +319,9 @@ open_plots <- function(season_sigma__, n_plants__) {
             facet_grid(season_surv ~ n_sigma) +
             scale_y_continuous("Statistic value",
                                limits = c(0, ymax),
-                               breaks = (0:4 * ymax / 4),
-                               labels = paste(c("0.0", "", ymax/2, "",
-                                                sprintf("%.01f", ymax)))) +
+                               breaks = (0:4 * ymax1 / 4),
+                               labels = paste(c("0.0", "", ymax1/2, "",
+                                                sprintf("%.01f", ymax1)))) +
             scale_x_continuous(breaks = seq(0, 10, 2.5),
                                labels = c("0", "", "5", "", "10")) +
             scale_color_viridis_d(NULL, option = "magma", begin = 0.3, end = 0.8) +
@@ -352,14 +353,15 @@ open_plots <- function(season_sigma__, n_plants__) {
 
 
 
-open_plots_list <- crossing(season_sigma__ = unique(stoch_sim_df$season_sigma),
+open_plots_list <- crossing(rand_season__ = unique(stoch_sim_df$rand_season),
                               n_plants__ = unique(stoch_sim_df$n_plants)) |>
-    arrange(season_sigma__, n_plants__) |>
+    arrange(rand_season__, n_plants__) |>
     pmap(open_plots)
 
 
 open_plots_list |> length()
 open_plots_list[[3]]
+
 
 open_plot_combined <- function(i) {
     stopifnot(i %in% 1:2)
@@ -374,11 +376,9 @@ open_plot_combined <- function(i) {
 
 
 for (i in 1:2) {
-    .ss <- sort(unique(stoch_sim_df$season_sigma))[[i]]
-    fn <- sprintf("_figures/stoch-open-supp-ss%02i.pdf", .ss)
+    .rs <- sort(unique(stoch_sim_df$rand_season))[[i]]
+    fn <- sprintf("_figures/stoch-open-supp-rand_season%s.pdf", .rs)
     save_plot(fn, open_plot_combined, 10, 10, fun_args = list(i))
-}; rm(i, .ss, fn)
-
-
+}; rm(i, .rs, fn)
 
 
