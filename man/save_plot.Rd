@@ -4,7 +4,7 @@
 \alias{save_plot}
 \title{Save a plot to a PDF file using \code{cairo_pdf}}
 \usage{
-save_plot(fn, p, w, h, seed = NULL, ...)
+save_plot(fn, p, w, h, seed = NULL, fun_args = NULL, ...)
 }
 \arguments{
 \item{fn}{Filename of plot}
@@ -16,6 +16,9 @@ save_plot(fn, p, w, h, seed = NULL, ...)
 \item{h}{Height in inches}
 
 \item{seed}{Integer to seed RNG for consistent jittering.}
+
+\item{fun_args}{List containing arguments to \code{p} if it's a function and has
+required arguments.}
 
 \item{...}{Other arguments to \code{cairo_pdf}}
 }
