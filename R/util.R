@@ -12,7 +12,8 @@
 #' @return `NULL`
 #' @export
 #'
-save_plot <- function(fn, p, w, h, seed = NULL, fun_args = NULL, ...) {
+save_plot <- function(fn, p, w, h, seed = NULL, fun_args = list(), ...) {
+    stopifnot(is.list(fun_args))
     ext <- tail(strsplit(fn, "\\.")[[1]], 1)
     if (ext != "pdf") stop("ERROR: file name extension must be \".pdf\"")
     fn_dir <- dirname(fn)
@@ -20,11 +21,7 @@ save_plot <- function(fn, p, w, h, seed = NULL, fun_args = NULL, ...) {
     if (!is.null(seed)) set.seed(seed)
     cairo_pdf(filename = fn, width = w, height = h, ...)
     if (is.function(p)) {
-        if (is.null(fun_args)) {
-            p()
-        } else {
-            do.call(p, fun_args)
-        }
+        do.call(p, fun_args)
     } else {
         plot(p)
     }

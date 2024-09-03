@@ -4,7 +4,7 @@
 \alias{save_plot}
 \title{Save a plot to a PDF file using \code{cairo_pdf}}
 \usage{
-save_plot(fn, p, w, h, seed = NULL, fun_args = NULL, ...)
+save_plot(fn, p, w, h, seed = NULL, fun_args = list(), ...)
 }
 \arguments{
 \item{fn}{Filename of plot}
