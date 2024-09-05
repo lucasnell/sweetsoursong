@@ -224,3 +224,85 @@ for (np in unique(stoch_sim_df$n_plants)) {
 
 
 
+
+set.seed(1701361777)
+ex_nonrand_sims <- plant_metacomm_stoch(np = 2, u = 0, d_yp = d_yp__[[3]],
+                                  rand_season = FALSE, closed = TRUE,
+                                  max_t = 300)
+set.seed(381552468)
+ex_rand_sims <- plant_metacomm_stoch(np = 2, u = 0, d_yp = d_yp__[[3]],
+                     rand_season = TRUE, closed = TRUE,
+                     max_t = 300)
+
+ex_nonrand_sims |>
+    filter(t == 150 | t == 150.1) |>
+    select(rep, p, t, Y, B) |>
+    pivot_longer(Y:B, names_to = "type", values_to = "density") |>
+    mutate(type = factor(type, levels = c("Y", "B"),
+                         labels = c("yeast", "bacteria"))) |>
+    pivot_wider(names_from = t, values_from = density, names_prefix = "t") |>
+    ggplot(aes(t150, t150.1)) +
+    geom_hline(yintercept = 0, linetype = 1, color = "gray80") +
+    geom_vline(xintercept = 0, linetype = 1, color = "gray80") +
+    geom_abline(intercept = 0, slope = 1/10, linetype = 2, color = "gray80") +
+    geom_point(aes(color = type), size = 2) +
+    scale_color_manual(values = spp_pal, guide = "none") +
+    theme(axis.title = element_blank(),
+          axis.text = element_blank(),
+          axis.ticks = element_blank())
+ex_rand_sims |>
+    filter(t == 150 | t == 150.1) |>
+    select(rep, p, t, Y, B) |>
+    pivot_longer(Y:B, names_to = "type", values_to = "density") |>
+    mutate(type = factor(type, levels = c("Y", "B"),
+                         labels = c("yeast", "bacteria"))) |>
+    pivot_wider(names_from = t, values_from = density, names_prefix = "t") |>
+    ggplot(aes(t150, t150.1)) +
+    geom_hline(yintercept = 0, linetype = 1, color = "gray80") +
+    geom_vline(xintercept = 0, linetype = 1, color = "gray80") +
+    geom_abline(intercept = 0, slope = 1/10, linetype = 2, color = "gray80") +
+    geom_point(aes(color = type), size = 2) +
+    scale_color_manual(values = spp_pal, guide = "none") +
+    theme(axis.title = element_blank(),
+          axis.text = element_blank(),
+          axis.ticks = element_blank())
+
+dt <- 2
+
+ex_nonrand_p <- ex_nonrand_sims |>
+    filter(p == "patch 2") |>
+    filter(t >= (150 - dt), t <= (150 + dt)) |>
+    select(-P) |>
+    pivot_longer(Y:B, names_to = "type", values_to = "density") |>
+    mutate(type = factor(type, levels = c("Y", "B"),
+                         labels = c("yeast", "bacteria")),
+           id = interaction(type, p, rep, drop = TRUE)) |>
+    ggplot(aes(t, density, group = id)) +
+    geom_hline(yintercept = 0, linewidth = 1, color = "gray80") +
+    geom_line(aes(color = type), linewidth = 1, alpha = 0.1) +
+    xlab("Time (days)") +
+    scale_color_manual(NULL, values = spp_pal, guide = "none") +
+    theme(axis.title = element_blank(),
+          axis.text = element_blank(),
+          axis.ticks = element_blank())
+ex_rand_p <- ex_rand_sims |>
+    filter(p == "patch 2") |>
+    filter(t >= (150 - dt), t <= (150 + dt)) |>
+    select(-P) |>
+    pivot_longer(Y:B, names_to = "type", values_to = "density") |>
+    mutate(type = factor(type, levels = c("Y", "B"),
+                         labels = c("yeast", "bacteria")),
+           id = interaction(type, p, rep, drop = TRUE)) |>
+    ggplot(aes(t, density, group = id)) +
+    geom_hline(yintercept = 0, linewidth = 1, color = "gray80") +
+    geom_line(aes(color = type), linewidth = 1, alpha = 0.1) +
+    xlab("Time (days)") +
+    scale_color_manual(NULL, values = spp_pal, guide = "none") +
+    theme(axis.title = element_blank(),
+          axis.text = element_blank(),
+          axis.ticks = element_blank())
+
+
+
+# save_plot("_figures/stoch-season-nonrand.pdf", ex_nonrand_p, w = 2.5, h = 2)
+# save_plot("_figures/stoch-season-rand.pdf", ex_rand_p, w = 2.5, h = 2)
