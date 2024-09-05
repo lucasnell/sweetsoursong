@@ -150,6 +150,7 @@ one_stoch_plot <- function(n_plants__,
                            closed__,
                            no_labs = FALSE,
                            add_title = FALSE,
+                           ribbon = TRUE,
                            ...) {
     dd <- stoch_sim_df |>
         filter(n_plants == n_plants__,
@@ -166,11 +167,24 @@ one_stoch_plot <- function(n_plants__,
                                                "random<br>starts")))
     dds <- dd |>
         group_by(rand_season, u, d_yp, name) |>
-        summarize(value = mean(value), .groups = "drop")
-    p <- dd |>
-        ggplot(aes(u, value, color = name)) +
-        geom_point(shape = 1, alpha = 0.1) +
-        geom_line(data = dds, linewidth = 1) +
+        summarize(lo = min(value),  # quantile(value, 0.05),
+                  hi = max(value),  # quantile(value, 0.95),
+                  value = mean(value), .groups = "drop")
+    if (ribbon) {
+        p <- dds |>
+            ggplot(aes(u, value, color = name)) +
+            geom_hline(yintercept = 0, linetype = 1, color = "gray80") +
+            geom_ribbon(aes(ymin = lo, ymax = hi, fill = name),
+                        color = NA, alpha = 0.25) +
+            geom_line(linewidth = 1)
+    } else {
+        p <- dd |>
+            ggplot(aes(u, value, color = name)) +
+            geom_hline(yintercept = 0, linetype = 1, color = "gray80") +
+            geom_point(shape = 1, alpha = 0.1) +
+            geom_line(data = dds, linewidth = 1)
+    }
+    p <- p +
         facet_grid(rand_season ~ d_yp) +
         scale_y_continuous("Community metric value (*H* or *BC*)",
                            limits = c(0, 1),
@@ -194,47 +208,19 @@ one_stoch_plot <- function(n_plants__,
 
 
 
+
 #' Closed simulations will be shown in main text and final figure will be
 #' edited in Illustrator, so these need to be simpler:
 for (np in unique(stoch_sim_df$n_plants)) {
-    fn <- sprintf("_figures/stoch-closed-np=%02i.pdf", np)
-    fxn <- \() plot(one_stoch_plot(np, closed__ = TRUE, no_labs = TRUE))
-    save_plot(fn, fxn, 4, 2)
-}; rm(np, fn, fxn)
+    for (cl in c(TRUE, FALSE)) {
+        fn <- sprintf("_figures/stoch-%s-np=%02i.pdf",
+                      ifelse(cl, "closed", "open"), np)
+        fxn <- \() plot(one_stoch_plot(np, closed__ = cl, no_labs = TRUE))
+        save_plot(fn, fxn, 4, 2)
+    }
+}; rm(np, cl, fn, fxn)
 
 
 
-#' Open simulations will be shown in supplement so will be combined here:
-open_plot <- (one_stoch_plot(2L, closed__ = FALSE, add_title = TRUE,
-                             axis.title.y = element_markdown(size = 14),
-                             axis.title.x = element_blank()) +
-                  geom_text(data = tibble(u = rep(10, 2),
-                                          value = c(0.6, 0.92),
-                                          d_yp = factor(rep(names(d_yp__)[2],2),
-                                                        levels = names(d_yp__)),
-                                          rand_season = factor(
-                                              c(1, 1), levels = 1:2,
-                                              labels = c(
-                                                  "non-random<br>starts",
-                                                  "random<br>starts")),
-                                          name = factor(1:2, labels = c(
-                                              "diversity", "dissimilarity"))),
-                            aes(label = name), hjust = 1, vjust = c(1, 0),
-                            fontface = "bold", size = 10, size.unit = "pt")) +
-    one_stoch_plot(10L, closed__ = FALSE, add_title = TRUE,
-                   axis.title.y = element_blank(),
-                   axis.title.x = element_blank()) +
-    textGrob(paste("'Strength of microbe effects on pollinators",
-                   "('*italic(u)*')'") |>
-                 (\(x) parse(text = x))(),
-             x = 0.5, y = 0.5, hjust = 0.5, vjust = 0.5,
-             gp = gpar(fontsize = 14)) +
-    plot_layout(design = "AB\nCC", heights = c(20, 1)) +
-    plot_annotation(tag_levels = list(c("(a)", "(b)", ""))) &
-    theme(plot.tag = element_text(size = 16, face = "bold"),
-          legend.position = "none")
 
-open_plot
-
-save_plot("_figures/stoch-open.pdf", open_plot, w = 8, h = 5)
 
