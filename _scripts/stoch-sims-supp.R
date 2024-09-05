@@ -18,7 +18,7 @@ big_stoch_sims_file <- "_data/big-stoch-sims.rds"
 big_open_stoch_sims_file <- "_data/big-stoch-open-sims.rds"
 
 
-outcome_pal <- c("coexistence" = "#993399",
+outcome_pal <- c("coexistence" = "#008B00",
                  "yeast only" = "#FFCC33",
                  "bacteria only" = "#333399",
                  "extinct" = "gray60")
@@ -29,7 +29,7 @@ outcome_shapes <- c("coexistence" = 19,
 
 spp_pal <- c(yeast = outcome_pal[["yeast only"]],
              bacteria = outcome_pal[["bacteria only"]],
-             pollinators = "magenta")
+             pollinators = "gray60")
 
 
 # ===========================================================================*
@@ -178,7 +178,8 @@ one_stoch_plot <- function(n_plants__,
                            labels = paste(c("0.0", "", "0.5", "", "1.0"))) +
         scale_x_continuous(breaks = seq(0, 10, 2.5),
                            labels = c("0", "", "5", "", "10")) +
-        scale_color_viridis_d(NULL, option = "viridis", begin = 0.3, end = 0.9) +
+        scale_color_viridis_d(NULL, option = "plasma", begin = 0.1, end = 0.5,
+                              aesthetics = c("color", "fill")) +
         theme(strip.text = element_markdown(),
               axis.title = element_markdown(),
               plot.title = element_text(size = 14,

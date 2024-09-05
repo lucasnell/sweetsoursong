@@ -12,7 +12,7 @@ stoch_sims_file <- "_data/stoch-sims.rds"
 open_stoch_sims_file <- "_data/stoch-open-sims.rds"
 
 
-outcome_pal <- c("coexist" = "#993399",
+outcome_pal <- c("coexist" = "#008B00",
                  "yeast only" = "#FFCC33",
                  "bacteria only" = "#333399",
                  "extinct" = "gray60")
@@ -23,7 +23,7 @@ outcome_shapes <- c("coexist" = 19,
 
 spp_pal <- c(yeast = outcome_pal[["yeast only"]],
              bacteria = outcome_pal[["bacteria only"]],
-             pollinators = "magenta")
+             pollinators = "gray60")
 
 
 

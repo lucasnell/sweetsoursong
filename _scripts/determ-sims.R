@@ -3,7 +3,7 @@ library(sweetsoursong)
 library(tidyverse)
 
 
-outcome_pal <- c("coexist" = "#993399",
+outcome_pal <- c("coexist" = "#008B00",
                  "yeast only" = "#FFCC33",
                  "bacteria only" = "#333399")
 
