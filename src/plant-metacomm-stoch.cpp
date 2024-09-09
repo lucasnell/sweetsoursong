@@ -71,9 +71,10 @@ public:
                           const size_t& n_states,
                           const double& season_len_,
                           const double& season_surv_,
-                          const bool& rand_season_)
+                          const int& rand_season_)
         : det(n_plants, n_states),
           stoch(n_plants, n_states),
+          season_rands(n_plants, n_states),
           season_len(season_len_),
           season_surv(season_surv_),
           rand_season(rand_season_) {}
@@ -83,15 +84,43 @@ public:
         // New season:
         if (t > 0 && zero_remainder(t, season_len)) {
 
-            if (!rand_season) {
+            if (rand_season == 0) {
 
                 // If starting abundances are based on previous season:
 
                 x *= season_surv;
 
+            } else if (rand_season == 1) {
+
+                // If starting abundances are NOT based on previous season,
+                // but still result in a CLOSED system:
+
+                double n_plants = static_cast<double>(x.n_rows);
+
+                pcg32& rng(system.second.m_rng);
+                // Fill `season_rands` with ~ U(0,1), then make each column
+                // sum to `n`:
+                for (size_t j = 0 ; j < season_rands.n_cols; j++) {
+                    double rand_sum = 0;
+                    for (double& rnd : season_rands.col(j)) {
+                        rnd = runif_01(rng);
+                        rand_sum += rnd;
+                    }
+                    season_rands.col(j) *= (n_plants / rand_sum);
+                }
+                // Average abundance of each microbe type:
+                double Ybar = arma::mean(x.col(0));
+                double Bbar = arma::mean(x.col(1));
+                // Now fill in new season's starting abundances:
+                for (size_t i = 0 ; i < x.n_rows ; i++) {
+                    x(i,0) = season_surv * Ybar * season_rands(i,0);
+                    x(i,1) = season_surv * Bbar * season_rands(i,1);
+                }
+
             } else {
 
-                // If starting abundances are NOT based on previous season:
+                // If starting abundances are NOT based on previous season,
+                // but result in an OPEN system:
 
                 pcg32& rng(system.second.m_rng);
                 double YB, rnd_u;
@@ -122,9 +151,10 @@ public:
 private:
     MatType det;
     MatType stoch;
+    MatType season_rands;
     double season_len;
     double season_surv;
-    bool rand_season;
+    int rand_season;
 };
 
 
@@ -174,7 +204,7 @@ struct StochLandCFWorker : public RcppParallel::Worker {
     double max_t;
     double season_len;
     double season_surv;
-    bool rand_season;
+    int rand_season;
 
     StochLandCFWorker(const uint32_t& n_reps,
                       const std::vector<double>& m,
@@ -192,7 +222,7 @@ struct StochLandCFWorker : public RcppParallel::Worker {
                       const double& n_sigma_,
                       const double& season_len_,
                       const double& season_surv_,
-                      const bool& rand_season_,
+                      const int& rand_season_,
                       const double& dt_,
                       const double& max_t_)
         : output(n_reps, MatType(0,0)),
@@ -288,7 +318,7 @@ NumericMatrix plant_metacomm_stoch_cpp(const uint32_t& n_reps,
                                        const double& n_sigma,
                                        const double& season_len,
                                        const double& season_surv,
-                                       const bool& rand_season,
+                                       const int& rand_season,
                                        const double& dt,
                                        const double& max_t) {
 

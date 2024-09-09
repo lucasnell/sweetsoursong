@@ -36,10 +36,17 @@ dbl_check <- function(x, l, n, .min = NULL, .max = NULL) {
 #' @param season_len Length of seasons. Set to `NULL` to not have seasons.
 #' @param season_surv Survival of microbes from the end of one season to
 #'     the start of the next.
-#' @param rand_season Logical for whether to have abundances to start a season
-#'     generated from a uniform random distribution. The alternative
-#'     is for starting abundances be `season_surv` multiplied by the
-#'     ending abundance from the previous season. Defaults to `FALSE`.
+#' @param rand_season Character for whether (and how) to have abundances
+#'     to start a season generated randomly. If `rand_season = "none"`,
+#'     then starting abundances are `season_surv` multiplied by the
+#'     ending abundance from the previous season.
+#'     If `rand_season = "closed"`, then starting abundances are randomly
+#'     generated but without any microbes added to the system (i.e., each
+#'     species total abundance across the landscape never changes).
+#'     If `rand_season = "closed"`, then starting abundances are
+#'     truly random except that the overall abundance of microbes at each
+#'     plant doesn't change, except being multiplied by `season_surv`.
+#'     Defaults to `"none"`.
 #' @param n_reps Number of reps to simulate.
 #'
 #' @return A data frame of yeast, bacteria, and pollinator densities at each
@@ -64,7 +71,7 @@ plant_metacomm_stoch <- function(np,
                                  n_sigma = 200,
                                  season_len = 150,
                                  season_surv = 0.1,
-                                 rand_season = FALSE,
+                                 rand_season = "none",
                                  n_reps = 100,
                                  dt = 0.1,
                                  max_t = 3000,
@@ -99,7 +106,9 @@ plant_metacomm_stoch <- function(np,
     dbl_check(n_sigma, 1, "n_sigma", .min = 1)
     if (!is.null(season_len)) dbl_check(season_len, 1, "season_len", .min = 1)
     dbl_check(season_surv, 1, "season_surv", .min = NotQuiteZero)
-    stopifnot(length(rand_season) == 1 && is.logical(rand_season))
+    stopifnot(length(rand_season) == 1 && is.character(rand_season))
+    rand_season <- match.arg(rand_season, c("none", "closed", "open"))
+    rand_season <- which(c("none", "closed", "open") == rand_season) - 1L
     int_check(n_reps, 1, "n_reps", .min = 1)
 
     dbl_check(dt, 1, "dt", .min = NotQuiteZero)

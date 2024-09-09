@@ -21,7 +21,7 @@ plant_metacomm_stoch(
   n_sigma = 200,
   season_len = 150,
   season_surv = 0.1,
-  rand_season = FALSE,
+  rand_season = "none",
   n_reps = 100,
   dt = 0.1,
   max_t = 3000,
@@ -76,10 +76,17 @@ generates stochasticity at each time step.}
 \item{season_surv}{Survival of microbes from the end of one season to
 the start of the next.}
 
-\item{rand_season}{Logical for whether to have abundances to start a season
-generated from a uniform random distribution. The alternative
-is for starting abundances be \code{season_surv} multiplied by the
-ending abundance from the previous season. Defaults to \code{FALSE}.}
+\item{rand_season}{Character for whether (and how) to have abundances
+to start a season generated randomly. If \code{rand_season = "none"},
+then starting abundances are \code{season_surv} multiplied by the
+ending abundance from the previous season.
+If \code{rand_season = "closed"}, then starting abundances are randomly
+generated but without any microbes added to the system (i.e., each
+species total abundance across the landscape never changes).
+If \code{rand_season = "closed"}, then starting abundances are
+truly random except that the overall abundance of microbes at each
+plant doesn't change, except being multiplied by \code{season_surv}.
+Defaults to \code{"none"}.}
 
 \item{n_reps}{Number of reps to simulate.}
 
