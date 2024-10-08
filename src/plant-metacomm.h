@@ -323,8 +323,11 @@ struct MetaObsStoch : public ObserverBurnIn<MatType> {
     }
 };
 
+// For stochastic simulations with potential burnin, reps that need recorded,
+// and summarizing by both rep and time point
+struct MetaObsStochSumm : public ObserverBurnIn<MatType> {
 
-struct MetaObsStochSummary : public MetaObsStoch {
+    MetaObsStochSumm(const double& burnin_) : ObserverBurnIn<MatType>(burnin_) {};
 
     void operator()(const MatType& x, const double& t) {
         if (t > burnin) {
@@ -338,8 +341,13 @@ struct MetaObsStochSummary : public MetaObsStoch {
         return;
     }
 
-    // Fill output for one repetition:
+    /*
+     Fill output for one repetition.
+     Note: `system` only used as argument here for template compatibility
+     with MetaObsStoch
+     */
     void fill_output(MatType& output,
+                     const LandscapeConstF& system,
                      const double& dbl_rep) {
 
         size_t n_steps = this->data.size();
@@ -361,17 +369,8 @@ struct MetaObsStochSummary : public MetaObsStoch {
 
     }
 
-    // Overloaded to override `MetaObsStoch` class version
-    void fill_output(MatType& output,
-                     const LandscapeConstF& system,
-                     const double& dbl_rep) {
-        this->fill_output(output, dbl_rep);
-        return;
-    }
 
-
-
-private:
+protected:
 
 
     // mean community dissimilarity at one time point:
@@ -429,6 +428,53 @@ private:
 };
 
 
+
+// For stochastic simulations with potential burnin, reps that need recorded,
+// and summarizing by just rep.
+// Mostly the same as MetaObsStochSumm, except for the `fill_output` method
+struct MetaObsStochSummRep : public MetaObsStochSumm {
+
+    MetaObsStochSummRep(const double& burnin_) : MetaObsStochSumm(burnin_) {};
+
+    /*
+     Fill output for one repetition.
+     Note: `system` only used as argument here for template compatibility
+     with MetaObsStoch
+     */
+    void fill_output(MatType& output,
+                     const LandscapeConstF& system,
+                     const double& dbl_rep) {
+
+        size_t n_steps = this->data.size();
+
+        if (n_steps < 1) return;
+
+        double dbl_n = static_cast<double>(n_steps); // for mean calcs
+
+        // colnames = "rep", "BC", "H", "minY", "minB"
+        output.set_size(1U, 5U);
+
+        output(0,0) = dbl_rep;
+        output(0,1) = 0.0;  // mean BC
+        output(0,2) = 0.0;  // mean H
+        output(0,3) = this->data[0](0,2);  // minimum(sum(Y))
+        output(0,4) = this->data[0](0,3);  // minimum(sum(B))
+
+        for (const MatType& m : this->data) {
+            output(0,1) += m(0,0);
+            output(0,2) += m(0,1);
+            if (output(0,3) > m(0,2)) output(0,3) = m(0,2);
+            if (output(0,4) > m(0,3)) output(0,4) = m(0,3);
+        }
+
+        output(0,1) /= dbl_n;
+        output(0,2) /= dbl_n;
+
+        return;
+
+    }
+
+};
 
 
 

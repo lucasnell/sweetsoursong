@@ -206,6 +206,7 @@ struct StochLandCFWorker : public RcppParallel::Worker {
     double dt;
     double max_t;
     double burnin;
+    int summarize;
     double season_len;
     double season_surv;
     int rand_season;
@@ -230,7 +231,8 @@ struct StochLandCFWorker : public RcppParallel::Worker {
                       const bool& open_sys,
                       const double& dt_,
                       const double& max_t_,
-                      const double& burnin_)
+                      const double& burnin_,
+                      const int& summarize_)
         : output(n_reps, MatType(0,0)),
           seeds(n_reps, std::vector<uint64_t>(2)),
           x0(m.size(), 2U),
@@ -239,6 +241,7 @@ struct StochLandCFWorker : public RcppParallel::Worker {
           dt(dt_),
           max_t(max_t_),
           burnin(burnin_),
+          summarize(summarize_),
           season_len(season_len_),
           season_surv(season_surv_),
           rand_season(rand_season_) {
@@ -261,19 +264,64 @@ struct StochLandCFWorker : public RcppParallel::Worker {
 
     void operator()(size_t begin, size_t end) {
 
+        if (summarize == 0) {
+            do_work<MetaObsStoch>(begin, end);
+        } else if (summarize == 1) {
+            do_work<MetaObsStochSumm>(begin, end);
+        } else {
+            do_work<MetaObsStochSummRep>(begin, end);
+        }
+
+        return;
+    }
+
+    // make final output matrix and move `output` items there (removing them
+    // from this object) as you go
+    MatType make_output() {
+
+        size_t n_rows = 0;
+        size_t n_cols = this->output.front().n_cols;
+        for (const MatType& m : this->output) {
+            n_rows += m.n_rows;
+            if (m.n_cols > n_cols) n_cols = m.n_cols;
+        }
+
+        MatType final_out(n_rows, n_cols, arma::fill::none);
+        size_t i = 0;
+        for (size_t rep = 0; rep < this->output.size(); rep++) {
+            MatType& m(this->output[rep]);
+            for (size_t k = 0; k < m.n_rows; k++) {
+                for (size_t j = 0; j < m.n_cols; j++) {
+                    final_out(i,j) = m(k,j);
+                }
+                i++;
+            }
+            m.reset();
+
+        }
+        return final_out;
+    }
+
+private:
+
+    /*
+     Main function that does most of the work, can be used for the
+     MetaObsStoch, MetaObsStochSumm, or MetaObsStochSummRep classed
+     defined in `plant-metacomm.h`
+     */
+    template <class C>
+    void do_work(const size_t& begin, const size_t& end) {
         pcg32 rng;
         const size_t& np(determ_sys0.n_plants);
         MatType x;
-        MetaObsStoch obs(burnin);
-        std::vector<double> wts(np);
+        C obs(burnin);
 
         for (size_t rep = begin; rep < end; rep++) {
 
             rng.seed(seeds[rep][0], seeds[rep][1]);
 
             x = x0;
-            obs.data.clear();
-            obs.time.clear();
+            obs.clear();
 
             boost::numeric::odeint::integrate_const(
                 StochLandscapeStepper(np, 2U, season_len, season_surv, rand_season),
@@ -293,27 +341,28 @@ struct StochLandCFWorker : public RcppParallel::Worker {
 
 
 // [[Rcpp::export]]
-NumericMatrix plant_metacomm_stoch_cpp(const uint32_t& n_reps,
-                                       const std::vector<double>& m,
-                                       const std::vector<double>& d_yp,
-                                       const std::vector<double>& d_b0,
-                                       const std::vector<double>& d_bp,
-                                       const std::vector<double>& g_yp,
-                                       const std::vector<double>& g_b0,
-                                       const std::vector<double>& g_bp,
-                                       const std::vector<double>& L_0,
-                                       const double& u,
-                                       const double& X,
-                                       const std::vector<double>& Y0,
-                                       const std::vector<double>& B0,
-                                       const double& n_sigma,
-                                       const double& season_len,
-                                       const double& season_surv,
-                                       const int& rand_season,
-                                       const bool& open_sys,
-                                       const double& dt,
-                                       const double& max_t,
-                                       const double& burnin) {
+arma::mat plant_metacomm_stoch_cpp(const uint32_t& n_reps,
+                                   const std::vector<double>& m,
+                                   const std::vector<double>& d_yp,
+                                   const std::vector<double>& d_b0,
+                                   const std::vector<double>& d_bp,
+                                   const std::vector<double>& g_yp,
+                                   const std::vector<double>& g_b0,
+                                   const std::vector<double>& g_bp,
+                                   const std::vector<double>& L_0,
+                                   const double& u,
+                                   const double& X,
+                                   const std::vector<double>& Y0,
+                                   const std::vector<double>& B0,
+                                   const double& n_sigma,
+                                   const double& season_len,
+                                   const double& season_surv,
+                                   const int& rand_season,
+                                   const bool& open_sys,
+                                   const double& dt,
+                                   const double& max_t,
+                                   const double& burnin,
+                                   const int& summarize) {
 
     /*
      I can't just use 'stop()' because it causes a segfault (or similar).
@@ -331,31 +380,17 @@ NumericMatrix plant_metacomm_stoch_cpp(const uint32_t& n_reps,
         Rcout << std::to_string(dt) << ")!" << std::endl;
         err = true;
     }
-    if (err) return NumericMatrix(0,0);
+    if (err) return arma::mat(0,0);
 
 
     StochLandCFWorker worker(n_reps, m, d_yp, d_b0, d_bp, g_yp, g_b0, g_bp,
                              L_0, u, X, Y0, B0, n_sigma,
                              season_len, season_surv, rand_season, open_sys,
-                             dt, max_t, burnin);
+                             dt, max_t, burnin, summarize);
 
     RcppParallel::parallelFor(0, n_reps, worker);
 
-    size_t n_rows = 0;
-    for (const MatType& m : worker.output) n_rows += m.n_rows;
+    arma::mat output = worker.make_output();
 
-    NumericMatrix output(n_rows, 6U);
-    colnames(output) = CharacterVector::create("rep", "t", "p", "Y", "B", "P");
-    size_t i = 0;
-    for (size_t rep = 0; rep < worker.output.size(); rep++) {
-        const MatType& m(worker.output[rep]);
-        for (size_t k = 0; k < m.n_rows; k++) {
-            for (size_t j = 0; j < m.n_cols; j++) {
-                output(i,j) = m(k,j);
-            }
-            i++;
-        }
-
-    }
     return output;
 }

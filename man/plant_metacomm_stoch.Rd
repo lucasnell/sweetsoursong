@@ -27,7 +27,8 @@ plant_metacomm_stoch(
   max_t = 3000,
   burnin = 0,
   no_immig = TRUE,
-  open_sys = TRUE
+  open_sys = TRUE,
+  summarize = "none"
 )
 }
 \arguments{
@@ -109,6 +110,22 @@ from outside the system. If \code{FALSE}, immigration for each species
 is affected by their mean abundance across all plants.
 If \code{TRUE}, immigration is a constant trickle from outside the landscape.
 Defaults to \code{TRUE}.}
+
+\item{summarize}{Single string for how and whether to summarize output.
+If \code{"none"}, no summarizing happens, and the output is a time series of
+microbial abundances and pollinator visits by plant.
+If \code{"time"}, summarizing happens by rep and time point, so you'll get a
+single row of output per rep and time step.
+Each row will have the mean dissimilarity between plant communities
+(\code{"BC"}), mean species diversity (\code{"H"}), total yeast abundance
+across all plants (\code{"sumY"}), and total bacteria abundance (\code{"sumB"}).
+If \code{"rep"}, summarizing happens by rep, so you'll get a single row
+of output per rep.
+Each row will have the mean dissimilarity between plant communities
+with median taken through time (\code{"BC"}),
+mean species diversity (\code{"H"}), minimum total yeast abundance
+through time (\code{"minY"}), and minimum total bacteria abundance (\code{"minB"}).
+Defaults to \code{"none"}.}
 }
 \value{
 A data frame of yeast, bacteria, and pollinator densities at each

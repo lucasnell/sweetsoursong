@@ -43,8 +43,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // plant_metacomm_stoch_cpp
-NumericMatrix plant_metacomm_stoch_cpp(const uint32_t& n_reps, const std::vector<double>& m, const std::vector<double>& d_yp, const std::vector<double>& d_b0, const std::vector<double>& d_bp, const std::vector<double>& g_yp, const std::vector<double>& g_b0, const std::vector<double>& g_bp, const std::vector<double>& L_0, const double& u, const double& X, const std::vector<double>& Y0, const std::vector<double>& B0, const double& n_sigma, const double& season_len, const double& season_surv, const int& rand_season, const bool& open_sys, const double& dt, const double& max_t, const double& burnin);
-RcppExport SEXP _sweetsoursong_plant_metacomm_stoch_cpp(SEXP n_repsSEXP, SEXP mSEXP, SEXP d_ypSEXP, SEXP d_b0SEXP, SEXP d_bpSEXP, SEXP g_ypSEXP, SEXP g_b0SEXP, SEXP g_bpSEXP, SEXP L_0SEXP, SEXP uSEXP, SEXP XSEXP, SEXP Y0SEXP, SEXP B0SEXP, SEXP n_sigmaSEXP, SEXP season_lenSEXP, SEXP season_survSEXP, SEXP rand_seasonSEXP, SEXP open_sysSEXP, SEXP dtSEXP, SEXP max_tSEXP, SEXP burninSEXP) {
+arma::mat plant_metacomm_stoch_cpp(const uint32_t& n_reps, const std::vector<double>& m, const std::vector<double>& d_yp, const std::vector<double>& d_b0, const std::vector<double>& d_bp, const std::vector<double>& g_yp, const std::vector<double>& g_b0, const std::vector<double>& g_bp, const std::vector<double>& L_0, const double& u, const double& X, const std::vector<double>& Y0, const std::vector<double>& B0, const double& n_sigma, const double& season_len, const double& season_surv, const int& rand_season, const bool& open_sys, const double& dt, const double& max_t, const double& burnin, const int& summarize);
+RcppExport SEXP _sweetsoursong_plant_metacomm_stoch_cpp(SEXP n_repsSEXP, SEXP mSEXP, SEXP d_ypSEXP, SEXP d_b0SEXP, SEXP d_bpSEXP, SEXP g_ypSEXP, SEXP g_b0SEXP, SEXP g_bpSEXP, SEXP L_0SEXP, SEXP uSEXP, SEXP XSEXP, SEXP Y0SEXP, SEXP B0SEXP, SEXP n_sigmaSEXP, SEXP season_lenSEXP, SEXP season_survSEXP, SEXP rand_seasonSEXP, SEXP open_sysSEXP, SEXP dtSEXP, SEXP max_tSEXP, SEXP burninSEXP, SEXP summarizeSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -69,7 +69,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const double& >::type dt(dtSEXP);
     Rcpp::traits::input_parameter< const double& >::type max_t(max_tSEXP);
     Rcpp::traits::input_parameter< const double& >::type burnin(burninSEXP);
-    rcpp_result_gen = Rcpp::wrap(plant_metacomm_stoch_cpp(n_reps, m, d_yp, d_b0, d_bp, g_yp, g_b0, g_bp, L_0, u, X, Y0, B0, n_sigma, season_len, season_surv, rand_season, open_sys, dt, max_t, burnin));
+    Rcpp::traits::input_parameter< const int& >::type summarize(summarizeSEXP);
+    rcpp_result_gen = Rcpp::wrap(plant_metacomm_stoch_cpp(n_reps, m, d_yp, d_b0, d_bp, g_yp, g_b0, g_bp, L_0, u, X, Y0, B0, n_sigma, season_len, season_surv, rand_season, open_sys, dt, max_t, burnin, summarize));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -154,7 +155,7 @@ END_RCPP
 
 static const R_CallMethodDef CallEntries[] = {
     {"_sweetsoursong_one_flower_ode", (DL_FUNC) &_sweetsoursong_one_flower_ode, 21},
-    {"_sweetsoursong_plant_metacomm_stoch_cpp", (DL_FUNC) &_sweetsoursong_plant_metacomm_stoch_cpp, 21},
+    {"_sweetsoursong_plant_metacomm_stoch_cpp", (DL_FUNC) &_sweetsoursong_plant_metacomm_stoch_cpp, 22},
     {"_sweetsoursong_plant_metacomm_cpp", (DL_FUNC) &_sweetsoursong_plant_metacomm_cpp, 15},
     {"_sweetsoursong_dissimilarity", (DL_FUNC) &_sweetsoursong_dissimilarity, 2},
     {"_sweetsoursong_dissimilarity_vector", (DL_FUNC) &_sweetsoursong_dissimilarity_vector, 4},

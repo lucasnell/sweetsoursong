@@ -110,6 +110,11 @@ struct Observer
         time.push_back(t);
         return;
     }
+
+    void clear() {
+        data.clear();
+        time.clear();
+    }
 };
 
 /*
@@ -129,6 +134,11 @@ struct ObserverBurnIn
             time.push_back(t);
         }
         return;
+    }
+
+    void clear() {
+        data.clear();
+        time.clear();
     }
 };
 
