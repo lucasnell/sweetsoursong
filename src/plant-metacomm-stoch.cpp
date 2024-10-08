@@ -86,14 +86,16 @@ public:
 
             if (rand_season == 0) {
 
-                // If starting abundances are based on previous season:
+                // If starting abundances for each flower are based on
+                // that flower's abundances from the previous season:
 
                 x *= season_surv;
 
             } else if (rand_season == 1) {
 
-                // If starting abundances are NOT based on previous season,
-                // but still result in a CLOSED system:
+                // If each flower's starting abundances are NOT based on
+                // previous season, but still result in a CLOSED system
+                // (i.e., the landscape-level abundances do NOT change):
 
                 double n_plants = static_cast<double>(x.n_rows);
 
@@ -120,7 +122,8 @@ public:
             } else {
 
                 // If starting abundances are NOT based on previous season,
-                // but result in an OPEN system:
+                // but result in an OPEN system
+                // (i.e., the landscape-level abundances do change):
 
                 pcg32& rng(system.second.m_rng);
                 double YB, rnd_u;
@@ -202,6 +205,7 @@ struct StochLandCFWorker : public RcppParallel::Worker {
     double n_sigma;
     double dt;
     double max_t;
+    double burnin;
     double season_len;
     double season_surv;
     int rand_season;
@@ -223,15 +227,18 @@ struct StochLandCFWorker : public RcppParallel::Worker {
                       const double& season_len_,
                       const double& season_surv_,
                       const int& rand_season_,
+                      const bool& open_sys,
                       const double& dt_,
-                      const double& max_t_)
+                      const double& max_t_,
+                      const double& burnin_)
         : output(n_reps, MatType(0,0)),
           seeds(n_reps, std::vector<uint64_t>(2)),
           x0(m.size(), 2U),
-          determ_sys0(m, d_yp, d_b0, d_bp, g_yp, g_b0, g_bp, L_0, u, X),
+          determ_sys0(m, d_yp, d_b0, d_bp, g_yp, g_b0, g_bp, L_0, u, X, open_sys),
           n_sigma(n_sigma_),
           dt(dt_),
           max_t(max_t_),
+          burnin(burnin_),
           season_len(season_len_),
           season_surv(season_surv_),
           rand_season(rand_season_) {
@@ -257,7 +264,7 @@ struct StochLandCFWorker : public RcppParallel::Worker {
         pcg32 rng;
         const size_t& np(determ_sys0.n_plants);
         MatType x;
-        Observer<MatType> obs;
+        ObserverBI<MatType> obs(burnin);
         std::vector<double> wts(np);
 
         for (size_t rep = begin; rep < end; rep++) {
@@ -319,8 +326,10 @@ NumericMatrix plant_metacomm_stoch_cpp(const uint32_t& n_reps,
                                        const double& season_len,
                                        const double& season_surv,
                                        const int& rand_season,
+                                       const bool& open_sys,
                                        const double& dt,
-                                       const double& max_t) {
+                                       const double& max_t,
+                                       const double& burnin) {
 
     /*
      I can't just use 'stop()' because it causes a segfault (or similar).
@@ -343,8 +352,8 @@ NumericMatrix plant_metacomm_stoch_cpp(const uint32_t& n_reps,
 
     StochLandCFWorker worker(n_reps, m, d_yp, d_b0, d_bp, g_yp, g_b0, g_bp,
                              L_0, u, X, Y0, B0, n_sigma,
-                             season_len, season_surv, rand_season,
-                             dt, max_t);
+                             season_len, season_surv, rand_season, open_sys,
+                             dt, max_t, burnin);
 
     RcppParallel::parallelFor(0, n_reps, worker);
 

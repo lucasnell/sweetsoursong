@@ -99,6 +99,24 @@ struct Observer
     }
 };
 
+// Same as above but with a burn-in period
+template< class C >
+struct ObserverBI
+{
+    double burnin;
+    std::vector<C> data;
+    std::vector<double> time;
+    ObserverBI(const double& burnin_) : burnin(burnin_), data(), time() {};
+
+    void operator()(const C& x, const double& t) {
+        if (t > burnin) {
+            data.push_back(x);
+            time.push_back(t);
+        }
+        return;
+    }
+};
+
 
 
 

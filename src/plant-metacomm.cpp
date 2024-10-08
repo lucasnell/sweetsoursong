@@ -30,6 +30,7 @@ NumericMatrix plant_metacomm_cpp(const std::vector<double>& m,
                                  const double& X,
                                  const std::vector<double>& Y0,
                                  const std::vector<double>& B0,
+                                 const bool& open_sys,
                                  const double& dt,
                                  const double& max_t) {
 
@@ -51,7 +52,7 @@ NumericMatrix plant_metacomm_cpp(const std::vector<double>& m,
 
 
     Observer<MatType> obs;
-    LandscapeConstF system(m, d_yp, d_b0, d_bp, g_yp, g_b0, g_bp, L_0, u, X);
+    LandscapeConstF system(m, d_yp, d_b0, d_bp, g_yp, g_b0, g_bp, L_0, u, X, open_sys);
 
     boost::numeric::odeint::integrate_const(
         MatStepperType(), std::ref(system),

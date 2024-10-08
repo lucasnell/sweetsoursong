@@ -16,7 +16,7 @@ plant_metacomm_stoch(
   g_yp = 0.005,
   g_b0 = 0.02,
   g_bp = 0.002,
-  L_0 = 1/np,
+  L_0 = 0.5,
   X = 0,
   n_sigma = 200,
   season_len = 150,
@@ -25,7 +25,9 @@ plant_metacomm_stoch(
   n_reps = 100,
   dt = 0.1,
   max_t = 3000,
-  closed = TRUE
+  burnin = 0,
+  no_immig = TRUE,
+  open_sys = TRUE
 )
 }
 \arguments{
@@ -54,15 +56,15 @@ If \code{NULL}, \code{Y0} must also be.}
 
 \item{g_yp}{Pollinator-dependent rate of dispersal from sources other
 than the focal plant for yeast.
-This is overridden by the \code{closed} parameter by default!}
+This is overridden by the \code{no_immig} parameter by default!}
 
 \item{g_b0}{Pollinator-independent rate of dispersal from sources other
 than the focal plant for bacteria.
-This is overridden by the \code{closed} parameter by default!}
+This is overridden by the \code{no_immig} parameter by default!}
 
 \item{g_bp}{Pollinator-dependent rate of dispersal from sources other
 than the focal plant for bacteria.
-This is overridden by the \code{closed} parameter by default!}
+This is overridden by the \code{no_immig} parameter by default!}
 
 \item{L_0}{Half saturation ratio for the effect of pollinators on dispersal.}
 
@@ -94,8 +96,19 @@ Defaults to \code{"none"}.}
 
 \item{max_t}{Number of days to simulate.}
 
-\item{closed}{Single logical for a closed system, which will override
-all the \verb{g_*} parameters and set them to zero. Defaults to TRUE.}
+\item{burnin}{Number of time steps to count as "burn-in" and not record
+in output. This can help to avoid vector memory limit error in
+simulations that use many plants.}
+
+\item{no_immig}{Single logical for whether to disallow immigration, which
+will (if set to \code{TRUE}), override all the \verb{g_*} parameters and set them
+to zero. Defaults to \code{TRUE}.}
+
+\item{open_sys}{Single logical for whether immigration is "open" and comes
+from outside the system. If \code{FALSE}, immigration for each species
+is affected by their mean abundance across all plants.
+If \code{TRUE}, immigration is a constant trickle from outside the landscape.
+Defaults to \code{TRUE}.}
 }
 \value{
 A data frame of yeast, bacteria, and pollinator densities at each

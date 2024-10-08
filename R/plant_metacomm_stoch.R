@@ -48,6 +48,9 @@ dbl_check <- function(x, l, n, .min = NULL, .max = NULL) {
 #'     plant doesn't change, except being multiplied by `season_surv`.
 #'     Defaults to `"none"`.
 #' @param n_reps Number of reps to simulate.
+#' @param burnin Number of time steps to count as "burn-in" and not record
+#'     in output. This can help to avoid vector memory limit error in
+#'     simulations that use many plants.
 #'
 #' @return A data frame of yeast, bacteria, and pollinator densities at each
 #'     plant through time and for each repetition.
@@ -66,7 +69,7 @@ plant_metacomm_stoch <- function(np,
                                  g_yp = 0.005,
                                  g_b0 = 0.02,
                                  g_bp = 0.002,
-                                 L_0 = 1 / np,
+                                 L_0 = 0.5,
                                  X = 0,
                                  n_sigma = 200,
                                  season_len = 150,
@@ -75,7 +78,9 @@ plant_metacomm_stoch <- function(np,
                                  n_reps = 100,
                                  dt = 0.1,
                                  max_t = 3000,
-                                 closed = TRUE) {
+                                 burnin = 0,
+                                 no_immig = TRUE,
+                                 open_sys = TRUE) {
 
     NotQuiteZero <- 1e-6  # used below for checking
 
@@ -113,11 +118,12 @@ plant_metacomm_stoch <- function(np,
 
     dbl_check(dt, 1, "dt", .min = NotQuiteZero)
     dbl_check(max_t, 1, "max_t", .min = 1)
-    stopifnot(length(closed) == 1 && is.logical(closed))
+    dbl_check(burnin, 1, "burnin")
+    stopifnot(length(no_immig) == 1 && is.logical(no_immig))
 
     if (is.null(season_len)) season_len <- max_t + 1.0
 
-    if (closed) {
+    if (no_immig) {
         g_yp <- 0
         g_b0 <- 0
         g_bp <- 0
@@ -143,9 +149,9 @@ plant_metacomm_stoch <- function(np,
     }
 
     plant_metacomm_stoch_cpp(n_reps, m, d_yp, d_b0, d_bp, g_yp, g_b0, g_bp,
-                             L_0, u, X, Y0, B0,
-                             n_sigma, season_len, season_surv, rand_season,
-                             dt, max_t) |>
+                             L_0, u, X, Y0, B0, n_sigma,
+                             season_len, season_surv, rand_season, open_sys,
+                             dt, max_t, burnin) |>
         tibble::as_tibble() |>
         dplyr::mutate(p = factor(as.integer(p), levels = 0:(np-1L),
                                  labels = paste("patch", 1:np)),

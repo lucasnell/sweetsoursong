@@ -92,6 +92,7 @@ public:
     double u;
     double X;
     size_t n_plants;
+    bool open_sys;
 
 
     LandscapeConstF(const std::vector<double>& m_,
@@ -103,7 +104,8 @@ public:
                     const std::vector<double>& g_bp_,
                     const std::vector<double>& L_0_,
                     const double& u_,
-                    const double& X_)
+                    const double& X_,
+                    const bool& open_sys_)
         : m(m_),
           d_yp(d_yp_),
           d_b0(d_b0_),
@@ -115,6 +117,7 @@ public:
           u(u_),
           X(X_),
           n_plants(m_.size()),
+          open_sys(open_sys_),
           weights(m_.size()) {};
 
 
@@ -130,6 +133,7 @@ public:
           u(other.u),
           X(other.X),
           n_plants(other.n_plants),
+          open_sys(other.open_sys),
           weights(other.weights) {};
 
     LandscapeConstF& operator=(const LandscapeConstF& other) {
@@ -144,6 +148,7 @@ public:
         u = other.u;
         X = other.X;
         n_plants = other.n_plants;
+        open_sys = other.open_sys;
         weights = other.weights;
         return *this;
     }
@@ -154,8 +159,11 @@ public:
 
         make_weights(this->weights, x);
 
+        double Ybar = arma::mean(x.col(0));
+        double Bbar = arma::mean(x.col(1));
+
         for (size_t i = 0; i < n_plants; i++) {
-            one_plant(i, x, dxdt);
+            one_plant(i, Ybar, Bbar, x, dxdt);
         }
 
         return;
@@ -182,7 +190,8 @@ public:
             wt_sum += wts_vec[i];
         }
 
-        for (double& w : wts_vec) w /= (X + wt_sum);
+        double mult = static_cast<double>(n_plants) / (2 * (X + wt_sum));
+        for (double& w : wts_vec) w *= mult;
 
         return;
     }
@@ -194,8 +203,10 @@ private:
     std::vector<double> weights;
 
    void one_plant(const size_t& i,
-                   const MatType& x,
-                   MatType& dxdt) {
+                  const double& Ybar,
+                  const double& Bbar,
+                  const MatType& x,
+                  MatType& dxdt) {
 
         const double& Y(x(i,0));
         const double& B(x(i,1));
@@ -208,17 +219,18 @@ private:
 
         double Lambda = P / (L_0[i] + P);
 
-        double gamma_y = g_yp[i] * Lambda;
-        double gamma_b = g_b0[i] + g_bp[i] * Lambda;
+        double delta, gamma;
 
-        double delta_y = d_yp[i] * Lambda;
-        double delta_b = d_b0[i] + d_bp[i] * Lambda;
+        if (open_sys) {
+            delta = (g_yp[i] + d_yp[i] * Y) * Lambda;
+            gamma = g_b0[i] + (d_b0[i] * B) + (g_bp[i] + d_bp[i] * B) * Lambda;
+        } else {
+            delta = (g_yp[i] * Ybar + d_yp[i] * Y) * Lambda;
+            gamma = g_b0[i] * Bbar + (d_b0[i] * B) + (g_bp[i] * Bbar + d_bp[i] * B) * Lambda;
+        }
 
-        double disp_y = delta_y * Y + gamma_y;
-        double disp_b = delta_b * B + gamma_b;
-
-        dYdt = disp_y * N - m[i] * Y;
-        dBdt = disp_b * N - m[i] * B;
+        dYdt = delta * N - m[i] * Y;
+        dBdt = gamma * N - m[i] * B;
 
         return;
     }
