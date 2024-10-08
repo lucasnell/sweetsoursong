@@ -35,20 +35,21 @@ using namespace Rcpp;
 double dissimilarity(NumericVector yeast, NumericVector bact) {
     size_t n = yeast.size();
     if (n != bact.size()) stop("lengths do not match");
-    size_t n_combos = static_cast<size_t>(Rf_choose(static_cast<double>(n), 2.0));
-    NumericVector bc_vec(n_combos);
-    size_t k = 0;
+    double n_combos = 0; // only count combos where both patches aren't empty
+    double bc_sum = 0;
     double min_y, min_b, denom;
     for (size_t i = 0; i < (n-1U); i++) {
         for (size_t j = i+1U; j < n; j++) {
-            min_y = (yeast(i) < yeast(j)) ? yeast(i) : yeast(j);
-            min_b = (bact(i) < bact(j)) ? bact(i) : bact(j);
             denom = yeast(i) + yeast(j) + bact(i) + bact(j);
-            bc_vec(k) = 1 - (2 * (min_y + min_b)) / denom;
-            k++;
+            if (denom > 0) {
+                min_y = (yeast(i) < yeast(j)) ? yeast(i) : yeast(j);
+                min_b = (bact(i) < bact(j)) ? bact(i) : bact(j);
+                bc_sum += (1 - (2 * (min_y + min_b)) / denom);
+                n_combos += 1.0;
+            }
         }
     }
-    double bc_mean = mean(bc_vec);
+    double bc_mean = bc_sum / n_combos;
     return bc_mean;
 }
 
@@ -90,28 +91,31 @@ NumericVector dissimilarity_vector(NumericVector yeast,
     } else bc_mean_vec = static_cast<NumericVector>(no_init(total_groups));
 
     const size_t& n(group_size);
-    double n_combos = Rf_choose(static_cast<double>(n), 2.0);
-    double bc_sum, min_y, min_b, denom;
+    double n_combos, bc_sum, min_y, min_b, denom;
     size_t i0;
 
     for (size_t k = 0; k < total_groups; k++) {
+        n_combos = 0; // only count combos where both patches aren't empty
         bc_sum = 0;
         i0 = k * group_size;
         for (size_t i = i0; i < (i0+n-1U); i++) {
             for (size_t j = i+1U; j < (i0+n); j++) {
                 if (j >= yeast.size()) stop("vector lengths aren't divisible by group_size!!");
-                min_y = (yeast(i) < yeast(j)) ? yeast(i) : yeast(j);
-                min_b = (bact(i) < bact(j)) ? bact(i) : bact(j);
                 denom = yeast(i) + yeast(j) + bact(i) + bact(j);
-                bc_sum += 1 - (2 * (min_y + min_b)) / denom;
+                if (denom > 0) {
+                    min_y = (yeast(i) < yeast(j)) ? yeast(i) : yeast(j);
+                    min_b = (bact(i) < bact(j)) ? bact(i) : bact(j);
+                    bc_sum += (1 - (2 * (min_y + min_b)) / denom);
+                    n_combos += 1.0;
+                }
             }
         }
         if (overall_mean) {
-            bc_mean_vec(0) += bc_sum;
+            bc_mean_vec(0) += (bc_sum / n_combos);
         } else bc_mean_vec(k) = bc_sum / n_combos;
     }
 
-    if (overall_mean) bc_mean_vec(0) /= (n_combos * total_groups);
+    if (overall_mean) bc_mean_vec(0) /= total_groups;
 
     return bc_mean_vec;
 }

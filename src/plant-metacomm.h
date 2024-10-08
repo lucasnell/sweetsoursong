@@ -381,15 +381,18 @@ protected:
         const arma::subview_col<arma::mat::elem_type> yeast(x.col(0));
         const arma::subview_col<arma::mat::elem_type> bact(x.col(1));
 
-        double n_combos = Rf_choose(static_cast<double>(n), 2.0);
+        double n_combos = 0; // only count combos where both patches aren't empty
         double bc_sum = 0;
         double min_y, min_b, denom;
         for (size_t i = 0; i < (n-1U); i++) {
             for (size_t j = i+1U; j < n; j++) {
-                min_y = (yeast(i) < yeast(j)) ? yeast(i) : yeast(j);
-                min_b = (bact(i) < bact(j)) ? bact(i) : bact(j);
                 denom = yeast(i) + yeast(j) + bact(i) + bact(j);
-                bc_sum += (1 - (2 * (min_y + min_b)) / denom);
+                if (denom > 0) {
+                    min_y = (yeast(i) < yeast(j)) ? yeast(i) : yeast(j);
+                    min_b = (bact(i) < bact(j)) ? bact(i) : bact(j);
+                    bc_sum += (1 - (2 * (min_y + min_b)) / denom);
+                    n_combos += 1.0;
+                }
             }
         }
         double bc_mean = bc_sum / n_combos;
