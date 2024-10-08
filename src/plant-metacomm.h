@@ -178,7 +178,7 @@ public:
 
 
     void make_weights(std::vector<double>& wts_vec,
-                      const MatType& x) {
+                      const MatType& x) const {
 
         if (wts_vec.size() != n_plants) wts_vec.resize(n_plants);
 
@@ -236,6 +236,198 @@ private:
     }
 
 };
+
+
+
+
+/*
+ ==============================================================================
+ ==============================================================================
+ Observer derived classes
+ ==============================================================================
+ ==============================================================================
+ */
+
+/*
+ These are based on the Observer and ObserverBurnIn classes (in `ode.h`)
+ but include code to fill output
+ */
+
+// For deterministic simulations:
+struct MetaObs : public Observer<MatType> {
+
+    // Fill output:
+    void fill_output(MatType& output,
+                     const LandscapeConstF& system) {
+
+        const size_t& np(system.n_plants);
+        size_t n_steps = this->data.size();
+
+        std::vector<double> wts(np);
+        output.set_size(n_steps * np, 5U);
+
+        size_t i = 0;
+        for (size_t t = 0; t < n_steps; t++) {
+            system.make_weights(wts, this->data[t]);
+            for (size_t k = 0; k < np; k++) {
+                output(i,0) = this->time[t];
+                output(i,1) = k;
+                output(i,2) = this->data[t](k,0);
+                output(i,3) = this->data[t](k,1);
+                output(i,4) = wts[k];
+                i++;
+            }
+
+        }
+
+        return;
+
+    }
+};
+
+
+// For stochastic simulations with potential burnin and reps that need recorded:
+struct MetaObsStoch : public ObserverBurnIn<MatType> {
+
+    MetaObsStoch(const double& burnin_) : ObserverBurnIn<MatType>(burnin_) {};
+
+    // Fill output for one repetition:
+    void fill_output(MatType& output,
+                     const LandscapeConstF& system,
+                     const double& dbl_rep) {
+
+        const size_t& np(system.n_plants);
+        size_t n_steps = this->data.size();
+
+        if (n_steps < 1) return;
+
+        std::vector<double> wts(np);
+        output.set_size(n_steps * np, 6U);
+        // colnames(output) = CharacterVector::create("rep", "t", "p", "Y", "B", "P");
+        size_t i = 0;
+        for (size_t t = 0; t < n_steps; t++) {
+            system.make_weights(wts, this->data[t]);
+            for (size_t k = 0; k < np; k++) {
+                output(i,0) = dbl_rep;
+                output(i,1) = this->time[t];
+                output(i,2) = k;
+                output(i,3) = this->data[t](k,0);
+                output(i,4) = this->data[t](k,1);
+                output(i,5) = wts[k];
+                i++;
+            }
+        }
+
+        return;
+
+    }
+};
+
+
+struct MetaObsStochSummary : public MetaObsStoch {
+
+    void operator()(const MatType& x, const double& t) {
+        if (t > burnin) {
+            time.push_back(t);
+            data.push_back(MatType(1, 4));
+            data.back()(0,0) = dissimilarity(x);       // BC
+            data.back()(0,1) = diversity(x);           // H
+            data.back()(0,2) = arma::accu(x.col(0));   // sum Y
+            data.back()(0,3) = arma::accu(x.col(1));   // sum B
+        }
+        return;
+    }
+
+    // Fill output for one repetition:
+    void fill_output(MatType& output,
+                     const double& dbl_rep) {
+
+        size_t n_steps = this->data.size();
+
+        if (n_steps < 1) return;
+
+        output.set_size(n_steps, 6U);
+        // colnames(output) = CharacterVector::create("rep", "t", "BC", "H", "sumY", "sumB");
+        for (size_t t = 0; t < n_steps; t++) {
+            output(t,0) = dbl_rep;
+            output(t,1) = this->time[t];
+            output(t,2) = this->data[t](0,0);
+            output(t,3) = this->data[t](0,1);
+            output(t,4) = this->data[t](0,2);
+            output(t,5) = this->data[t](0,3);
+        }
+
+        return;
+
+    }
+
+    // Overloaded to override `MetaObsStoch` class version
+    void fill_output(MatType& output,
+                     const LandscapeConstF& system,
+                     const double& dbl_rep) {
+        this->fill_output(output, dbl_rep);
+        return;
+    }
+
+
+
+private:
+
+
+    // mean community dissimilarity at one time point:
+    double dissimilarity(const MatType& x) const {
+
+        size_t n = x.n_rows;
+
+        const arma::subview_col<arma::mat::elem_type> yeast(x.col(0));
+        const arma::subview_col<arma::mat::elem_type> bact(x.col(1));
+
+        double n_combos = Rf_choose(static_cast<double>(n), 2.0);
+        double bc_sum = 0;
+        double min_y, min_b, denom;
+        for (size_t i = 0; i < (n-1U); i++) {
+            for (size_t j = i+1U; j < n; j++) {
+                min_y = (yeast(i) < yeast(j)) ? yeast(i) : yeast(j);
+                min_b = (bact(i) < bact(j)) ? bact(i) : bact(j);
+                denom = yeast(i) + yeast(j) + bact(i) + bact(j);
+                bc_sum += (1 - (2 * (min_y + min_b)) / denom);
+            }
+        }
+        double bc_mean = bc_sum / n_combos;
+        return bc_mean;
+    }
+
+    // mean species diversity at one time point:
+    double diversity(const MatType& x,
+                     double zero_threshold = 2.220446e-16) const {
+
+        size_t n = x.n_rows;
+
+        const arma::subview_col<arma::mat::elem_type> yeast(x.col(0));
+        const arma::subview_col<arma::mat::elem_type> bact(x.col(1));
+
+        // Do calculation while accounting for zeros:
+        double p_yeast, p_bact, total, H_i, H_mean = 0;
+        for (size_t i = 0; i < n; i++) {
+            /*
+             This if statement implicitly makes H = 0 when one or more
+             species is extinct.
+             */
+            if (bact(i) > zero_threshold && yeast(i) > zero_threshold) {
+                total = yeast(i) + bact(i);
+                p_yeast = yeast(i) / total;
+                p_bact = bact(i) / total;
+                H_i = - p_yeast * std::log(p_yeast) - p_bact * std::log(p_bact);
+                H_mean += H_i;
+            }
+        }
+        H_mean /= static_cast<double>(n);
+        return H_mean;
+    }
+
+
+};
+
 
 
 

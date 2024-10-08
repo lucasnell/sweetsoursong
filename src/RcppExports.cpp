@@ -74,7 +74,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // plant_metacomm_cpp
-NumericMatrix plant_metacomm_cpp(const std::vector<double>& m, const std::vector<double>& d_yp, const std::vector<double>& d_b0, const std::vector<double>& d_bp, const std::vector<double>& g_yp, const std::vector<double>& g_b0, const std::vector<double>& g_bp, const std::vector<double>& L_0, const double& u, const double& X, const std::vector<double>& Y0, const std::vector<double>& B0, const bool& open_sys, const double& dt, const double& max_t);
+arma::mat plant_metacomm_cpp(const std::vector<double>& m, const std::vector<double>& d_yp, const std::vector<double>& d_b0, const std::vector<double>& d_bp, const std::vector<double>& g_yp, const std::vector<double>& g_b0, const std::vector<double>& g_bp, const std::vector<double>& L_0, const double& u, const double& X, const std::vector<double>& Y0, const std::vector<double>& B0, const bool& open_sys, const double& dt, const double& max_t);
 RcppExport SEXP _sweetsoursong_plant_metacomm_cpp(SEXP mSEXP, SEXP d_ypSEXP, SEXP d_b0SEXP, SEXP d_bpSEXP, SEXP g_ypSEXP, SEXP g_b0SEXP, SEXP g_bpSEXP, SEXP L_0SEXP, SEXP uSEXP, SEXP XSEXP, SEXP Y0SEXP, SEXP B0SEXP, SEXP open_sysSEXP, SEXP dtSEXP, SEXP max_tSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;

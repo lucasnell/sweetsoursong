@@ -264,7 +264,7 @@ struct StochLandCFWorker : public RcppParallel::Worker {
         pcg32 rng;
         const size_t& np(determ_sys0.n_plants);
         MatType x;
-        ObserverBI<MatType> obs(burnin);
+        MetaObsStoch obs(burnin);
         std::vector<double> wts(np);
 
         for (size_t rep = begin; rep < end; rep++) {
@@ -281,24 +281,8 @@ struct StochLandCFWorker : public RcppParallel::Worker {
                                StochLandscapeStochProcess(rng, n_sigma)),
                                x, 0.0, max_t, dt, std::ref(obs));
 
-            size_t n_steps = obs.data.size();
-            output[rep].set_size(n_steps * np, 6U);
-            // colnames(output[rep]) = CharacterVector::create("rep", "t", "p", "Y", "B", "P");
-            size_t i = 0;
-            double dbl_rep = static_cast<double>(rep) + 1;
-            for (size_t t = 0; t < n_steps; t++) {
-                determ_sys0.make_weights(wts, obs.data[t]);
-                for (size_t k = 0; k < np; k++) {
-                    output[rep](i,0) = dbl_rep;
-                    output[rep](i,1) = obs.time[t];
-                    output[rep](i,2) = k;
-                    output[rep](i,3) = obs.data[t](k,0);
-                    output[rep](i,4) = obs.data[t](k,1);
-                    output[rep](i,5) = wts[k];
-                    i++;
-                }
-
-            }
+            obs.fill_output(output[rep], determ_sys0,
+                            static_cast<double>(rep) + 1.0);
 
         }
         return;

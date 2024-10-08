@@ -143,8 +143,10 @@ plant_metacomm <- function(np,
         }
     }
 
-    plant_metacomm_cpp(m, d_yp, d_b0, d_bp, g_yp, g_b0, g_bp, L_0, u, X,
-                       Y0, B0, open_sys, dt, max_t) |>
+    out_mat <- plant_metacomm_cpp(m, d_yp, d_b0, d_bp, g_yp, g_b0, g_bp, L_0,
+                                  u, X, Y0, B0, open_sys, dt, max_t)
+    colnames(out_mat) <- c("t", "p", "Y", "B", "P")
+    out_mat |>
         tibble::as_tibble() |>
         dplyr::mutate(p = factor(p, levels = 0:(np-1L),
                                  labels = paste("patch", 1:np)))

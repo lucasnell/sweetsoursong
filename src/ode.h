@@ -85,6 +85,19 @@ struct resize_impl<arma::mat, arma::mat>
 } } } // namespace boost::numeric::odeint
 
 
+
+
+
+
+/*
+ ==============================================================================
+ ==============================================================================
+ Observer template classes
+ ==============================================================================
+ ==============================================================================
+ */
+
+
 template< class C >
 struct Observer
 {
@@ -99,14 +112,16 @@ struct Observer
     }
 };
 
-// Same as above but with a burn-in period
+/*
+ Same as above but for simulations with a burn-in period.
+ */
 template< class C >
-struct ObserverBI
+struct ObserverBurnIn
 {
-    double burnin;
     std::vector<C> data;
     std::vector<double> time;
-    ObserverBI(const double& burnin_) : burnin(burnin_), data(), time() {};
+    double burnin;
+    ObserverBurnIn(const double& burnin_) : data(), time(), burnin(burnin_) {};
 
     void operator()(const C& x, const double& t) {
         if (t > burnin) {
