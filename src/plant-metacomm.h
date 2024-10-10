@@ -454,24 +454,40 @@ struct MetaObsStochSummRep : public MetaObsStochSumm {
 
         double dbl_n = static_cast<double>(n_steps); // for mean calcs
 
-        // colnames = "rep", "BC", "H", "minY", "minB"
-        output.set_size(1U, 5U);
+        // colnames = "rep", "BC", "H", "minY", "maxY", "meanY",
+        //            "minB", "maxB", "meanB"
+        output.set_size(1U, 9U);
 
         output(0,0) = dbl_rep;
         output(0,1) = 0.0;  // mean BC
         output(0,2) = 0.0;  // mean H
-        output(0,3) = this->data[0](0,2);  // minimum(sum(Y))
-        output(0,4) = this->data[0](0,3);  // minimum(sum(B))
+        output(0,3) = this->data[0](0,2);   // minimum(sum(Y))
+        output(0,4) = this->data[0](0,2);   // maximum(sum(Y))
+        output(0,5) = 0.0;                  // mean(sum(Y))
+        output(0,6) = this->data[0](0,3);   // minimum(sum(B))
+        output(0,7) = this->data[0](0,3);   // maximum(sum(B))
+        output(0,8) = 0.0;                  // mean(sum(B))
 
         for (const MatType& m : this->data) {
+            // metrics
             output(0,1) += m(0,0);
             output(0,2) += m(0,1);
-            if (output(0,3) > m(0,2)) output(0,3) = m(0,2);
-            if (output(0,4) > m(0,3)) output(0,4) = m(0,3);
+            // yeast
+            const double& Yi(m(0,2));
+            if (Yi < output(0,3)) output(0,3) = Yi;
+            if (Yi > output(0,4)) output(0,4) = Yi;
+            output(0,5) += Yi;
+            // bacteria
+            const double& Bi(m(0,3));
+            if (Bi < output(0,6)) output(0,6) = Bi;
+            if (Bi > output(0,7)) output(0,7) = Bi;
+            output(0,8) += Bi;
         }
 
         output(0,1) /= dbl_n;
         output(0,2) /= dbl_n;
+        output(0,5) /= dbl_n;
+        output(0,8) /= dbl_n;
 
         return;
 

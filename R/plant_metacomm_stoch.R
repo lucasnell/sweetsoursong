@@ -182,7 +182,9 @@ plant_metacomm_stoch <- function(np,
     } else if (summarize == 1L) {  # "time"
         colnames(out_df) <- c("rep", "t", "BC", "H", "sumY", "sumB")
     } else {  # "rep"
-        colnames(out_df) <- c("rep", "BC", "H", "minY", "minB")
+        colnames(out_df) <- c("rep", "BC", "H",
+                              "minY", "maxY", "meanY",
+                              "minB", "maxB", "meanB")
     }
     return(out_df)
 
