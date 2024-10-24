@@ -61,6 +61,8 @@ u_plots <- u_sims |>
     map(one_u_plot, no_labs = TRUE,
         .theme = list(panel.spacing.y = unit(2, "lines")))
 
+# do.call(patchwork::wrap_plots, u_plots)
+
 
 for (n in names(u_plots)) {
     .u <- strsplit(n, "_")[[1]][[1]]

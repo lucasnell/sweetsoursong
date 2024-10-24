@@ -15,17 +15,19 @@ if (file.exists(".Rprofile")) source(".Rprofile")
 
 
 big_stoch_sims_file <- "_data/big-stoch-sims.rds"
-big_open_stoch_sims_file <- "_data/big-stoch-open-sims.rds"
+# where immigration comes from other plants on the landscape so including
+# it still maintains a closed system:
+big_closed_stoch_sims_file <- "_data/big-stoch-closed-sims.rds"
 
 
 outcome_pal <- c("coexistence" = "#008B00",
                  "yeast only" = "#FFCC33",
                  "bacteria only" = "#333399",
-                 "extinct" = "gray60")
+                 "extinction" = "gray60")
 outcome_shapes <- c("coexistence" = 19,
                     "yeast only" = 19,
                     "bacteria only" = 19,
-                    "extinct" = 4)
+                    "extinction" = 4)
 
 spp_pal <- c(yeast = outcome_pal[["yeast only"]],
              bacteria = outcome_pal[["bacteria only"]],
@@ -43,52 +45,10 @@ spp_pal <- c(yeast = outcome_pal[["yeast only"]],
 #' in Mathematica), plus the middle of these bounds (when d_b0 = 0.3 and u = 1).
 #' We then moved the values that result in exclusion a bit further from the
 #' border so that the outcomes don't happen extremely slowly.
-d_yp__ = c("bacteria only" = 0.886308,
+d_yp__ = c("bacteria only" = 0.886308 - 0.1,
            "coexistence" = 1.17755,
-           "yeast only" = 1.46879) +
-    c(-1, 0, 1) * 0.1
+           "yeast only" = 1.46879 + 0.1)
 
-
-
-
-# Summarize by different outcomes
-summ_outcomes <- function(sim_df, .threshold = 1e-6) {
-
-    season_len <- formals(plant_metacomm_stoch)[["season_len"]]
-    n_reps <- formals(plant_metacomm_stoch)[["n_reps"]]
-
-    sim_df |>
-        # Take median through time (for each rep and plant) for last season:
-        filter(t > max(t) - season_len) |>
-        group_by(rep, p) |>
-        summarize(Y = median(Y),
-                  B = median(B),
-                  P = median(P),
-                  .groups = "drop") |>
-        # Take summed Y and B (across entire landscape) for each rep:
-        group_by(rep) |>
-        summarize(Y = sum(Y), B = sum(B)) |>
-        mutate(outcome = case_when(Y > .threshold & B > .threshold ~ "coexistence",
-                                   Y > .threshold & B < .threshold ~ "yeast only",
-                                   Y < .threshold & B > .threshold ~ "bacteria only",
-                                   TRUE ~ "extinction") |>
-                   factor(levels = names(outcome_pal))) |>
-        split(~ outcome, drop = FALSE) |>
-        imap_dfr(\(x, n) tibble(outcome = n, prob = nrow(x) / n_reps)) |>
-        mutate(outcome = factor(outcome, levels = names(outcome_pal)))
-}
-
-
-# Summarize by diversity and dissimilarity metrics
-summ_metrics <- function(sim_df) {
-
-    .np <- length(levels(sim_df$p))
-
-    sim_df |>
-        group_by(rep) |>
-        summarize(dive = diversity_vector(Y, B, group_size = .np),
-                  diss = dissimilarity_vector(Y, B, group_size = .np, TRUE))
-}
 
 
 
@@ -103,24 +63,27 @@ summ_metrics <- function(sim_df) {
 
 if (! file.exists(big_stoch_sims_file)) {
 
-    # Takes ~15 min
+    # Takes ~14 min with 6 threads
     set.seed(1472844374)
     stoch_sim_df <- crossing(.u = 0:10,
                              .d_yp = d_yp__,
-                             .rand_season = c(TRUE, FALSE),
-                             .np = c(2L, 10L),
-                             .closed = c(TRUE, FALSE)) |>
+                             .season_surv = c(0.015, 0.03, 0.06),
+                             .rand_season = c("closed", "none")) |>
         # Don't do this in parallel bc plant_metacomm_stoch is already
         # doing that
-        pmap_dfr(\(.u, .d_yp, .rand_season, .np, .closed) {
-            z <- plant_metacomm_stoch(np = .np, u = .u, d_yp = .d_yp,
-                                      rand_season = .rand_season,
-                                      closed = .closed) |>
-                filter(t > max(t) / 2)
-            tibble(u = .u, d_yp = .d_yp, rand_season = .rand_season,
-                   n_plants = .np, closed = .closed,
-                   outs = list(summ_outcomes(z)),
-                   mets = list(summ_metrics(z)))
+        pmap_dfr(\(.u, .d_yp, .season_surv, .rand_season) {
+            plant_metacomm_stoch(np = 100L, u = .u, d_yp = .d_yp,
+                                 rand_season = .rand_season,
+                                 no_immig = TRUE,
+                                 n_sigma = 100,
+                                 season_surv = .season_surv,
+                                 # only sample last 5 seasons:
+                                 burnin = 3000 * 15 / 20,
+                                 # summarize by rep:
+                                 summarize = "rep") |>
+                mutate(u = .u, d_yp = .d_yp, season_surv = .season_surv,
+                       rand_season = .rand_season) |>
+                select(u, d_yp, season_surv, rand_season, everything())
         }, .progress = TRUE)
 
     write_rds(stoch_sim_df, big_stoch_sims_file)
@@ -143,166 +106,218 @@ if (! file.exists(big_stoch_sims_file)) {
 # ===========================================================================*
 # ===========================================================================*
 
+add_factors <- function(d) {
+    if ("d_yp" %in% colnames(d) && !is.factor(d[["d_yp"]])) {
+        d <- mutate(d, d_yp = factor(d_yp, levels = unname(d_yp__),
+                                     labels = names(d_yp__)))
+    }
+    if ("rand_season" %in% colnames(d) && !is.factor(d[["rand_season"]])) {
+        d <- mutate(d, rand_season = factor(rand_season,
+                                            levels = c("none", "closed"),
+                                            labels = c("non-random",
+                                                       "random")))
+    }
+    if ("species" %in% colnames(d) && !is.factor(d[["species"]])) {
+        if (all(d$species == "Y" | d$species == "B")) {
+            d <- mutate(d, species = factor(species, levels = c("Y", "B"),
+                                            labels = c("yeast", "bacteria")))
+        } else if (all(d$species == "yeast" | d$species == "bacteria")) {
+            d <- mutate(d, species = factor(species,
+                                            levels = c("yeast", "bacteria")))
+        } else {
+            stop("strange values in d$species")
+        }
+    }
+    return(d)
+}
+
+add_outcome_props <- function(d, .threshold = 1e-6){
+
+    sc <- c(colnames(d)[!grepl("Y|B", colnames(d))], "outcome")
+    sf <- paste("~", paste(sc, collapse = " + ")) |> as.formula()
+
+    d |>
+        mutate(outcome = case_when(meanY > .threshold & meanB > .threshold ~
+                                       "coexistence",
+                                   meanY > .threshold & meanB < .threshold ~
+                                       "yeast only",
+                                   meanY < .threshold & meanB > .threshold ~
+                                       "bacteria only",
+                                   TRUE ~ "extinction")) |>
+        split(sf, drop = FALSE, sep = "__") |>
+        imap_dfr(\(x, n) {
+            if (nrow(x) > 0) {
+                out <- slice(x, 1) |>
+                    select(all_of(sc))
+            } else {
+                out <- tibble(.rows = 1)
+                for (i in 1:length(sc)) out[[sc[i]]] <- str_split(n, "__")[[1]][[i]]
+                for (.c in sc) out[[.c]] <- eval(call(paste0("as.", class(x[[.c]])),
+                                                      out[[.c]]))
+            }
+            out[["prop"]] <- nrow(x) / 100
+            return(out)
+        }) |>
+        mutate(outcome = factor(outcome, levels = names(outcome_pal)))
+
+
+}
 
 
 
-one_stoch_plot <- function(n_plants__,
-                           closed__,
-                           no_labs = FALSE,
-                           add_title = FALSE,
-                           ribbon = TRUE,
-                           ...) {
-    dd <- stoch_sim_df |>
-        filter(n_plants == n_plants__,
-               closed == closed__) |>
-        select(rand_season, u, d_yp, mets) |>
-        unnest(mets) |>
-        mutate(d_yp = factor(d_yp, levels = unname(d_yp__),
-                             labels = names(d_yp__)))|>
-        pivot_longer(dive:diss) |>
-        mutate(name = factor(name, levels = c("dive", "diss"),
-                             labels = c("diversity", "dissimilarity")),
-               rand_season = factor(rand_season, levels = c(FALSE, TRUE),
-                                    labels = c("non-random<br>starts",
-                                               "random<br>starts")))
-    dds <- dd |>
-        group_by(rand_season, u, d_yp, name) |>
-        summarize(lo = min(value),  # quantile(value, 0.05),
-                  hi = max(value),  # quantile(value, 0.95),
-                  value = mean(value), .groups = "drop")
-    if (ribbon) {
-        p <- dds |>
-            ggplot(aes(u, value, color = name)) +
-            geom_hline(yintercept = 0, linetype = 1, color = "gray80") +
-            geom_ribbon(aes(ymin = lo, ymax = hi, fill = name),
-                        color = NA, alpha = 0.25) +
-            geom_line(linewidth = 1)
+
+# =====================================================*
+#           outcomes ----
+# =====================================================*
+
+
+outcome_plotter <- function(season_surv__, rand_season__ = NULL) {
+
+    if (is.null(rand_season__)) {
+        p <- stoch_sim_df |>
+            filter(season_surv == season_surv__) |>
+            select(rand_season, u, d_yp, minY, minB, maxY, maxB, meanY, meanB) |>
+            add_outcome_props() |>
+            add_factors() |>
+            ggplot(aes(u, prop, color = outcome)) +
+            ggtitle(sprintf("s = %s", season_surv__)) +
+            facet_grid(rand_season ~ d_yp)
     } else {
-        p <- dd |>
-            ggplot(aes(u, value, color = name)) +
-            geom_hline(yintercept = 0, linetype = 1, color = "gray80") +
-            geom_point(shape = 1, alpha = 0.1) +
-            geom_line(data = dds, linewidth = 1)
+        p <- stoch_sim_df |>
+            add_factors() |>
+            filter(season_surv == season_surv__,
+                   rand_season == rand_season__) |>
+            select(u, d_yp, minY, minB, maxY, maxB, meanY, meanB) |>
+            add_outcome_props() |>
+            ggplot(aes(u, prop, color = outcome)) +
+            ggtitle(sprintf("s = %s, %s season", season_surv__, rand_season__)) +
+            facet_wrap( ~ d_yp, nrow = 1)
     }
     p <- p +
-        facet_grid(rand_season ~ d_yp) +
-        scale_y_continuous("Community metric value (*H* or *BC*)",
+        geom_hline(yintercept = 0, linetype = 1, color = "gray80") +
+        geom_point(aes(shape = outcome)) +
+        geom_line() +
+        scale_y_continuous("Percent of simulations",
                            limits = c(0, 1),
-                           breaks = (0:4 * 0.25),
-                           labels = paste(c("0.0", "", "0.5", "", "1.0"))) +
+                           breaks = (0:4 * 25) / 100,
+                           labels = c("0%", "", "50%", "", "100%")) +
         scale_x_continuous(breaks = seq(0, 10, 2.5),
                            labels = c("0", "", "5", "", "10")) +
-        scale_color_viridis_d(NULL, option = "plasma", begin = 0.1, end = 0.5,
-                              aesthetics = c("color", "fill")) +
-        theme(strip.text = element_markdown(),
-              axis.title = element_markdown(),
-              plot.title = element_text(size = 14,
-                                        margin = margin(0,0,0,b=9)),
-              ...)
-    if (no_labs) p <- p + theme(axis.title = element_blank(),
-                                strip.text = element_blank(),
-                                legend.position = "none")
-    if (add_title) p <- p + ggtitle(sprintf("%i plants", n_plants__))
+        scale_shape_manual(NULL, values = outcome_shapes, drop = FALSE) +
+        scale_color_manual(NULL, values = outcome_pal, drop = FALSE)
     return(p)
 }
 
 
 
 
-#' Closed simulations will be shown in main text and final figure will be
-#' edited in Illustrator, so these need to be simpler:
-for (np in unique(stoch_sim_df$n_plants)) {
-    for (cl in c(TRUE, FALSE)) {
-        fn <- sprintf("_figures/stoch-%s-np=%02i.pdf",
-                      ifelse(cl, "closed", "open"), np)
-        fxn <- \() plot(one_stoch_plot(np, closed__ = cl, no_labs = TRUE))
-        save_plot(fn, fxn, 4, 2)
+
+
+
+abundance_plotter <- function(season_surv__,
+                              rand_season__ = NULL,
+                              free_y = FALSE) {
+
+    .scales <- "fixed"
+    .ylimits <- c(0, 100)
+    .ybreaks <- (0:4 * 25)
+    .ylabels <- c("0", "", "50", "", "100")
+
+    if (free_y) {
+        .scales <- "free_y"
+        .ylimits <- NULL
+        .ybreaks <- waiver()
+        .ylabels <- waiver()
     }
-}; rm(np, cl, fn, fxn)
+
+    if (is.null(rand_season__)) {
+        dd <- stoch_sim_df |>
+            filter(season_surv == season_surv__) |>
+            select(rand_season, u, d_yp, meanY, meanB) |>
+            pivot_longer(meanY:meanB, names_to = "species") |>
+            mutate(species = str_sub(species, 5L, 5L)) |>
+            add_factors()
+        dds <- dd |>
+            group_by(rand_season, u, d_yp, species) |>
+            summarize(value = mean(value), .groups = "drop")
+        p <- dd |>
+            ggplot(aes(u, value, color = species)) +
+            ggtitle(sprintf("s = %s", season_surv__)) +
+            facet_grid(rand_season ~ d_yp, scales = .scales)
+    } else {
+        dd <- stoch_sim_df |>
+            add_factors() |>
+            filter(season_surv == season_surv__,
+                   rand_season == rand_season__) |>
+            select(u, d_yp, meanY, meanB) |>
+            pivot_longer(meanY:meanB, names_to = "species") |>
+            mutate(species = str_sub(species, 5L, 5L)) |>
+            add_factors()
+        dds <- dd |>
+            group_by(u, d_yp, species) |>
+            summarize(value = mean(value), .groups = "drop")
+        p <- dd |>
+            ggplot(aes(u, value, color = species)) +
+            ggtitle(sprintf("s = %s, %s season", season_surv__, rand_season__)) +
+            facet_grid( ~ d_yp, scales = .scales)
+    }
+
+    p <- p +
+        geom_hline(yintercept = 0, linetype = 1, color = "gray80") +
+        geom_point(aes(color = species), alpha = 0.1, shape = 1) +
+        geom_line(data = dds, linewidth = 1) +
+        scale_y_continuous("Microbial abundance", limits = .ylimits,
+                           breaks = .ybreaks, labels = .ylabels) +
+        scale_x_continuous(breaks = seq(0, 10, 2.5),
+                           labels = c("0", "", "5", "", "10")) +
+        scale_shape_manual(NULL, values = c(0, 2), drop = FALSE) +
+        scale_linetype_manual(NULL, values = c(1, 1), drop = FALSE) +
+        scale_color_manual(NULL, values = spp_pal, drop = FALSE,
+                           aesthetics = c("color", "fill"))
+
+    return(p)
+}
 
 
 
+outcome_plots <- map(sort(unique(stoch_sim_df$season_surv)), outcome_plotter)
+abundance_plots <- map(sort(unique(stoch_sim_df$season_surv)),
+                       \(s) abundance_plotter(s) +
+                           theme(plot.title = element_blank()))
+
+
+do.call(wrap_plots, c(outcome_plots, abundance_plots)) +
+    plot_layout(byrow = TRUE,
+                guides = "collect",
+                ncol = length(unique(stoch_sim_df$season_surv))) # &
+#     theme(legend.position = "none",
+#           axis.title = element_blank(),
+#           strip.text = element_blank())
+
+
+# LEFT OFF ----
+#' What to include in figure (all are only for s = 0.03):
+#'   1. u vs outcomes (just for randomized between seasons)
+#'   2. u vs microbial abundance (just for randomized between seasons)
+#'   3. Something showing how non-random between seasons makes coexistence
+#'      less likely at low s and more likely at high s?
+#'
+
+outcome_plotter(median(unique(stoch_sim_df$season_surv)), "random") /
+    abundance_plotter(median(unique(stoch_sim_df$season_surv)), "random")
+
+logit <- gameofclones::logit
+inv_logit <- gameofclones::inv_logit
+
+par(mfrow = c(1, 3))
+
+Y0 <- inv_logit(rnorm(1000))
+Yt <- (logit(Y0) + rnorm(length(Y0), 0, 10)) |>
+    (\(x) x / sd(x) * sd(logit(Y0)))() |>
+    inv_logit() |>
+    (\(x) x * sum(Y0) / sum(x))()
+plot(Y0, Yt); hist(Yt); hist(Y0)
+sum(Yt); sum(Y0)
 
 
 
-set.seed(1701361777)
-ex_nonrand_sims <- plant_metacomm_stoch(np = 2, u = 0, d_yp = d_yp__[[3]],
-                                  rand_season = FALSE, closed = TRUE,
-                                  max_t = 300)
-set.seed(381552468)
-ex_rand_sims <- plant_metacomm_stoch(np = 2, u = 0, d_yp = d_yp__[[3]],
-                     rand_season = TRUE, closed = TRUE,
-                     max_t = 300)
-
-ex_nonrand_sims |>
-    filter(t == 150 | t == 150.1) |>
-    select(rep, p, t, Y, B) |>
-    pivot_longer(Y:B, names_to = "type", values_to = "density") |>
-    mutate(type = factor(type, levels = c("Y", "B"),
-                         labels = c("yeast", "bacteria"))) |>
-    pivot_wider(names_from = t, values_from = density, names_prefix = "t") |>
-    ggplot(aes(t150, t150.1)) +
-    geom_hline(yintercept = 0, linetype = 1, color = "gray80") +
-    geom_vline(xintercept = 0, linetype = 1, color = "gray80") +
-    geom_abline(intercept = 0, slope = 1/10, linetype = 2, color = "gray80") +
-    geom_point(aes(color = type), size = 2) +
-    scale_color_manual(values = spp_pal, guide = "none") +
-    theme(axis.title = element_blank(),
-          axis.text = element_blank(),
-          axis.ticks = element_blank())
-ex_rand_sims |>
-    filter(t == 150 | t == 150.1) |>
-    select(rep, p, t, Y, B) |>
-    pivot_longer(Y:B, names_to = "type", values_to = "density") |>
-    mutate(type = factor(type, levels = c("Y", "B"),
-                         labels = c("yeast", "bacteria"))) |>
-    pivot_wider(names_from = t, values_from = density, names_prefix = "t") |>
-    ggplot(aes(t150, t150.1)) +
-    geom_hline(yintercept = 0, linetype = 1, color = "gray80") +
-    geom_vline(xintercept = 0, linetype = 1, color = "gray80") +
-    geom_abline(intercept = 0, slope = 1/10, linetype = 2, color = "gray80") +
-    geom_point(aes(color = type), size = 2) +
-    scale_color_manual(values = spp_pal, guide = "none") +
-    theme(axis.title = element_blank(),
-          axis.text = element_blank(),
-          axis.ticks = element_blank())
-
-dt <- 2
-
-ex_nonrand_p <- ex_nonrand_sims |>
-    filter(p == "patch 2") |>
-    filter(t >= (150 - dt), t <= (150 + dt)) |>
-    select(-P) |>
-    pivot_longer(Y:B, names_to = "type", values_to = "density") |>
-    mutate(type = factor(type, levels = c("Y", "B"),
-                         labels = c("yeast", "bacteria")),
-           id = interaction(type, p, rep, drop = TRUE)) |>
-    ggplot(aes(t, density, group = id)) +
-    geom_hline(yintercept = 0, linewidth = 1, color = "gray80") +
-    geom_line(aes(color = type), linewidth = 1, alpha = 0.1) +
-    xlab("Time (days)") +
-    scale_color_manual(NULL, values = spp_pal, guide = "none") +
-    theme(axis.title = element_blank(),
-          axis.text = element_blank(),
-          axis.ticks = element_blank())
-ex_rand_p <- ex_rand_sims |>
-    filter(p == "patch 2") |>
-    filter(t >= (150 - dt), t <= (150 + dt)) |>
-    select(-P) |>
-    pivot_longer(Y:B, names_to = "type", values_to = "density") |>
-    mutate(type = factor(type, levels = c("Y", "B"),
-                         labels = c("yeast", "bacteria")),
-           id = interaction(type, p, rep, drop = TRUE)) |>
-    ggplot(aes(t, density, group = id)) +
-    geom_hline(yintercept = 0, linewidth = 1, color = "gray80") +
-    geom_line(aes(color = type), linewidth = 1, alpha = 0.1) +
-    xlab("Time (days)") +
-    scale_color_manual(NULL, values = spp_pal, guide = "none") +
-    theme(axis.title = element_blank(),
-          axis.text = element_blank(),
-          axis.ticks = element_blank())
-
-
-
-# save_plot("_figures/stoch-season-nonrand.pdf", ex_nonrand_p, w = 2.5, h = 2)
-# save_plot("_figures/stoch-season-rand.pdf", ex_rand_p, w = 2.5, h = 2)
