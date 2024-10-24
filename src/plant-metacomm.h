@@ -93,6 +93,9 @@ public:
     double X;
     size_t n_plants;
     bool open_sys;
+    // These are only used for MetaObsStochSummRep::fill_output()
+    double max_t;
+    double season_len;
 
 
     LandscapeConstF(const std::vector<double>& m_,
@@ -105,7 +108,9 @@ public:
                     const std::vector<double>& L_0_,
                     const double& u_,
                     const double& X_,
-                    const bool& open_sys_)
+                    const bool& open_sys_,
+                    const double& max_t_,
+                    const double& season_len_)
         : m(m_),
           d_yp(d_yp_),
           d_b0(d_b0_),
@@ -118,6 +123,8 @@ public:
           X(X_),
           n_plants(m_.size()),
           open_sys(open_sys_),
+          max_t(max_t_),
+          season_len(season_len_),
           weights(m_.size()) {};
 
 
@@ -134,6 +141,8 @@ public:
           X(other.X),
           n_plants(other.n_plants),
           open_sys(other.open_sys),
+          max_t(other.max_t),
+          season_len(other.season_len),
           weights(other.weights) {};
 
     LandscapeConstF& operator=(const LandscapeConstF& other) {
@@ -149,6 +158,8 @@ public:
         X = other.X;
         n_plants = other.n_plants;
         open_sys = other.open_sys;
+        max_t = other.max_t;
+        season_len = other.season_len;
         weights = other.weights;
         return *this;
     }
@@ -258,7 +269,7 @@ struct MetaObs : public Observer<MatType> {
 
     // Fill output:
     void fill_output(MatType& output,
-                     const LandscapeConstF& system) {
+                     const LandscapeConstF& system) const {
 
         const size_t& np(system.n_plants);
         size_t n_steps = this->data.size();
@@ -294,7 +305,7 @@ struct MetaObsStoch : public ObserverBurnIn<MatType> {
     // Fill output for one repetition:
     void fill_output(MatType& output,
                      const LandscapeConstF& system,
-                     const double& dbl_rep) {
+                     const double& dbl_rep) const {
 
         const size_t& np(system.n_plants);
         size_t n_steps = this->data.size();
@@ -446,7 +457,7 @@ struct MetaObsStochSummRep : public MetaObsStochSumm {
      */
     void fill_output(MatType& output,
                      const LandscapeConstF& system,
-                     const double& dbl_rep) {
+                     const double& dbl_rep) const {
 
         size_t n_steps = this->data.size();
 
@@ -461,6 +472,7 @@ struct MetaObsStochSummRep : public MetaObsStochSumm {
         output(0,0) = dbl_rep;
         output(0,1) = 0.0;  // mean BC
         output(0,2) = 0.0;  // mean H
+        // these are summarized for only the last season (if seasons included):
         output(0,3) = this->data[0](0,2);   // minimum(sum(Y))
         output(0,4) = this->data[0](0,2);   // maximum(sum(Y))
         output(0,5) = 0.0;                  // mean(sum(Y))
@@ -468,29 +480,43 @@ struct MetaObsStochSummRep : public MetaObsStochSumm {
         output(0,7) = this->data[0](0,3);   // maximum(sum(B))
         output(0,8) = 0.0;                  // mean(sum(B))
 
-        for (const MatType& m : this->data) {
+        double dbl_ls = 0; // # of last season's time points
+        // time point directly before the last season:
+        double last_season_t0 = system.max_t - system.season_len;
+        for (size_t i = 0; i < this->data.size(); i++) {
+            const MatType& m(this->data[i]);
             // metrics
             output(0,1) += m(0,0);
             output(0,2) += m(0,1);
-            // yeast
-            const double& Yi(m(0,2));
-            if (Yi < output(0,3)) output(0,3) = Yi;
-            if (Yi > output(0,4)) output(0,4) = Yi;
-            output(0,5) += Yi;
-            // bacteria
-            const double& Bi(m(0,3));
-            if (Bi < output(0,6)) output(0,6) = Bi;
-            if (Bi > output(0,7)) output(0,7) = Bi;
-            output(0,8) += Bi;
+            // yeast and bacteria
+            if (this->time[i] > last_season_t0) {
+                add_YB__(output, m);
+                dbl_ls += 1.0;
+            }
         }
 
         output(0,1) /= dbl_n;
         output(0,2) /= dbl_n;
-        output(0,5) /= dbl_n;
-        output(0,8) /= dbl_n;
+        output(0,5) /= dbl_ls;
+        output(0,8) /= dbl_ls;
 
         return;
 
+    }
+
+    // Add summary info for yeast and bacteria
+    inline void add_YB__(MatType& output, const MatType& m) const {
+        // yeast
+        const double& Yi(m(0,2));
+        if (Yi < output(0,3)) output(0,3) = Yi;
+        if (Yi > output(0,4)) output(0,4) = Yi;
+        output(0,5) += Yi;
+        // bacteria
+        const double& Bi(m(0,3));
+        if (Bi < output(0,6)) output(0,6) = Bi;
+        if (Bi > output(0,7)) output(0,7) = Bi;
+        output(0,8) += Bi;
+        return;
     }
 
 };
