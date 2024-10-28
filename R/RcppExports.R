@@ -6,8 +6,8 @@ one_flower_ode <- function(dt = 0.01, max_t = 36.0, Y_delay = 0, B_delay = 0, Y0
     .Call(`_sweetsoursong_one_flower_ode`, dt, max_t, Y_delay, B_delay, Y0, B0, A0, H0, D, A_0, r_Y, r_B, m_Y, m_B, e_B, q_Y, q_B, c_Y, c_B, h_B, h_Y)
 }
 
-plant_metacomm_stoch_cpp <- function(n_reps, m, d_yp, d_b0, d_bp, g_yp, g_b0, g_bp, L_0, u, X, Y0, B0, n_sigma, season_len, season_surv, rand_season, open_sys, dt, max_t, burnin, summarize) {
-    .Call(`_sweetsoursong_plant_metacomm_stoch_cpp`, n_reps, m, d_yp, d_b0, d_bp, g_yp, g_b0, g_bp, L_0, u, X, Y0, B0, n_sigma, season_len, season_surv, rand_season, open_sys, dt, max_t, burnin, summarize)
+plant_metacomm_stoch_cpp <- function(n_reps, m, d_yp, d_b0, d_bp, g_yp, g_b0, g_bp, L_0, u, X, Y0, B0, n_sigma, season_len, season_surv, sigma_s, open_sys, dt, max_t, burnin, summarize) {
+    .Call(`_sweetsoursong_plant_metacomm_stoch_cpp`, n_reps, m, d_yp, d_b0, d_bp, g_yp, g_b0, g_bp, L_0, u, X, Y0, B0, n_sigma, season_len, season_surv, sigma_s, open_sys, dt, max_t, burnin, summarize)
 }
 
 plant_metacomm_cpp <- function(m, d_yp, d_b0, d_bp, g_yp, g_b0, g_bp, L_0, u, X, Y0, B0, open_sys, dt, max_t) {

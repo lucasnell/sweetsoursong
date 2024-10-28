@@ -31,23 +31,38 @@ inline bool zero_remainder(const double& numer, const double& denom) {
 }
 
 // logit and inverse logit functions
-inline void logit(const double& p, double& x) {
-    x = std::log(p / (1 - p));
+inline double logit(const double& p) {
+    double x = std::log(p / (1 - p));
+    return x;
+}
+inline double inv_logit(const double& x) {
+    double p = 1 / (1 + std::exp(- x));
+    return p;
+}
+// overloaded for creating new vectors:
+inline arma::vec logit(const arma::vec& p) {
+    arma::vec x(arma::size(p));
+    for (size_t i = 0; i < p.n_elem; i++) x(i) = std::log(p(i) / (1 - p(i)));
+    return x;
+}
+inline arma::vec inv_logit(const arma::vec& x) {
+    arma::vec p(arma::size(x));
+    for (size_t i = 0; i < x.n_elem; i++) p(i) = 1 / (1 + std::exp(- x(i)));
+    return p;
+}
+// overloaded for filling vectors:
+inline void logit(const arma::vec& p, arma::vec& x) {
+    if (arma::size(x) != arma::size(p)) x.set_size(p.n_elem);
+    for (size_t i = 0; i < p.n_elem; i++) x(i) = std::log(p(i) / (1 - p(i)));
     return;
 }
-inline void inv_logit(const double& x, double& p) {
-    p = 1 / (1 + std::exp(- x));
+inline void inv_logit(const arma::vec& x, arma::vec& p) {
+    if (arma::size(p) != arma::size(x)) p.set_size(x.n_elem);
+    for (size_t i = 0; i < x.n_elem; i++) p(i) = 1 / (1 + std::exp(- x(i)));
     return;
 }
-// overloaded for changing doubles in place
-inline void logit(double& x) {
-    x = std::log(x / (1 - x));
-    return;
-}
-inline void inv_logit(double& p) {
-    p = 1 / (1 + std::exp(- p));
-    return;
-}
+
+
 
 // Generate from ~U(0,1) using a pcg32 object:
 namespace pcg {
@@ -71,70 +86,78 @@ public:
                           const size_t& n_states,
                           const double& season_len_,
                           const double& season_surv_,
-                          const int& rand_season_)
+                          const double& sigma_s_)
         : det(n_plants, n_states),
           stoch(n_plants, n_states),
-          season_rands(n_plants, n_states),
+          chi(n_plants),
+          eta(n_plants),
+          zeta(n_plants),
           season_len(season_len_),
           season_surv(season_surv_),
-          rand_season(rand_season_) {}
+          sigma_s(sigma_s_) {}
 
     template< class System >
     void do_step(System system, MatType& x, double t, double dt) {
+
+        // No use continuing if x has NaNs or infinity
+        if (x.has_nan() || x.has_inf()) return;
+
         // New season:
         if (t > 0 && zero_remainder(t, season_len)) {
 
-            if (rand_season == 0) {
+            if (sigma_s <= 0) {
 
-                // If starting abundances for each flower are based on
-                // that flower's abundances from the previous season:
+                // If there is no between-season noise, don't bother generating
+                // random numbers:
 
                 x *= season_surv;
 
-            } else if (rand_season == 1) {
-
-                // If each flower's starting abundances are NOT based on
-                // previous season, but still result in a CLOSED system
-                // (i.e., the landscape-level abundances do NOT change):
-
-                double n_plants = static_cast<double>(x.n_rows);
-
-                pcg32& rng(system.second.m_rng);
-                // Fill `season_rands` with ~ U(0,1), then make each column
-                // sum to `n`:
-                for (size_t j = 0 ; j < season_rands.n_cols; j++) {
-                    double rand_sum = 0;
-                    for (double& rnd : season_rands.col(j)) {
-                        rnd = runif_01(rng);
-                        rand_sum += rnd;
-                    }
-                    season_rands.col(j) *= (n_plants / rand_sum);
-                }
-                // Average abundance of each microbe type:
-                double Ybar = arma::mean(x.col(0));
-                double Bbar = arma::mean(x.col(1));
-                // Now fill in new season's starting abundances:
-                for (size_t i = 0 ; i < x.n_rows ; i++) {
-                    x(i,0) = season_surv * Ybar * season_rands(i,0);
-                    x(i,1) = season_surv * Bbar * season_rands(i,1);
-                }
-
             } else {
 
-                // If starting abundances are NOT based on previous season,
-                // but result in an OPEN system
-                // (i.e., the landscape-level abundances do change):
-
                 pcg32& rng(system.second.m_rng);
-                double YB, rnd_u;
-                for (size_t i = 0 ; i < x.n_rows ; i++) {
-                    YB = arma::accu(x.row(i)); // Y+B for this plant
-                    rnd_u = runif_01(rng);
-                    x(i,0) = season_surv * rnd_u * YB;
-                    x(i,1) = season_surv * (1 - rnd_u) * YB;
+                std::normal_distribution<double>& dist(system.second.m_dist);
+
+                // To avoid NaN values with zero abundances:
+                double c = 0.01;
+                if (arma::any(arma::vectorise(x) > (1 - c))) {
+                    // Make `c` low enough that this never happens!
+                    x.fill(arma::datum::inf);
+                    return;
                 }
 
+                /*
+                 This is to avoid processing columns with all zeros bc they
+                   (1) don't need it
+                   (2) will produce NaNs in output through the call to
+                       arma::stddev(chi) below
+                 */
+                arma::rowvec x_sum = arma::sum(x);
+                arma::urowvec nonzero_cols = x_sum > 0;
+
+                for (const arma::uword& j : nonzero_cols) {
+
+                    logit(x.col(j) + c, chi);
+
+                    for (size_t i = 0 ; i < eta.n_elem; i++) {
+                        eta(i) = chi(i) + sigma_s * dist(rng);
+                    }
+
+                    double zeta_mult = arma::stddev(chi) / arma::stddev(eta);
+                    for (size_t i = 0 ; i < eta.n_rows; i++) {
+                            zeta(i) = inv_logit(eta(i) * zeta_mult) - c;
+                        if (zeta(i) < 0) zeta(i) = 0;
+                    }
+
+                    double x_mult = x_sum(j) / arma::sum(zeta);
+                    for (size_t i = 0 ; i < zeta.n_rows; i++) {
+                            x(i,j) = season_surv * zeta(i) * x_mult;
+                    }
+
+                }
+
+
             }
+
             return;
         }
         // Standard iteration:
@@ -154,10 +177,12 @@ public:
 private:
     MatType det;
     MatType stoch;
-    MatType season_rands;
+    arma::vec chi;
+    arma::vec eta;
+    arma::vec zeta;
     double season_len;
     double season_surv;
-    int rand_season;
+    double sigma_s;
 };
 
 
@@ -209,7 +234,8 @@ struct StochLandCFWorker : public RcppParallel::Worker {
     int summarize;
     double season_len;
     double season_surv;
-    int rand_season;
+    double sigma_s;
+    int status = 0;
 
     StochLandCFWorker(const uint32_t& n_reps,
                       const std::vector<double>& m,
@@ -227,7 +253,7 @@ struct StochLandCFWorker : public RcppParallel::Worker {
                       const double& n_sigma_,
                       const double& season_len_,
                       const double& season_surv_,
-                      const int& rand_season_,
+                      const double& sigma_s_,
                       const bool& open_sys,
                       const double& dt_,
                       const double& max_t_,
@@ -245,7 +271,7 @@ struct StochLandCFWorker : public RcppParallel::Worker {
           summarize(summarize_),
           season_len(season_len_),
           season_surv(season_surv_),
-          rand_season(rand_season_) {
+          sigma_s(sigma_s_) {
 
         std::vector<uint64_t> tmp_seeds(4);
         for (uint32_t i = 0; i < n_reps; i++) {
@@ -266,11 +292,11 @@ struct StochLandCFWorker : public RcppParallel::Worker {
     void operator()(size_t begin, size_t end) {
 
         if (summarize == 0) {
-            do_work<MetaObsStoch>(begin, end);
+            status = do_work<MetaObsStoch>(begin, end);
         } else if (summarize == 1) {
-            do_work<MetaObsStochSumm>(begin, end);
+            status = do_work<MetaObsStochSumm>(begin, end);
         } else {
-            do_work<MetaObsStochSummRep>(begin, end);
+            status = do_work<MetaObsStochSummRep>(begin, end);
         }
 
         return;
@@ -311,11 +337,14 @@ private:
      defined in `plant-metacomm.h`
      */
     template <class C>
-    void do_work(const size_t& begin, const size_t& end) {
+    int do_work(const size_t& begin, const size_t& end) {
         pcg32 rng;
         const size_t& np(determ_sys0.n_plants);
         MatType x;
         C obs(burnin);
+
+        int status = 0;
+
 
         for (size_t rep = begin; rep < end; rep++) {
 
@@ -325,7 +354,7 @@ private:
             obs.clear();
 
             boost::numeric::odeint::integrate_const(
-                StochLandscapeStepper(np, 2U, season_len, season_surv, rand_season),
+                StochLandscapeStepper(np, 2U, season_len, season_surv, sigma_s),
                 std::make_pair(determ_sys0,
                                StochLandscapeStochProcess(rng, n_sigma)),
                                x, 0.0, max_t, dt, std::ref(obs));
@@ -333,8 +362,13 @@ private:
             obs.fill_output(output[rep], determ_sys0,
                             static_cast<double>(rep) + 1.0);
 
+            if (x.has_inf()) {
+                status = 1;
+                break;
+            }
         }
-        return;
+
+        return status;
     }
 };
 
@@ -358,7 +392,7 @@ arma::mat plant_metacomm_stoch_cpp(const uint32_t& n_reps,
                                    const double& n_sigma,
                                    const double& season_len,
                                    const double& season_surv,
-                                   const int& rand_season,
+                                   const double& sigma_s,
                                    const bool& open_sys,
                                    const double& dt,
                                    const double& max_t,
@@ -375,6 +409,7 @@ arma::mat plant_metacomm_stoch_cpp(const uint32_t& n_reps,
     min_val_check(err, season_len, "season_len", 0, false);
     min_val_check(err, season_surv, "season_surv", 0);
     max_val_check(err, season_surv, "season_surv", 1);
+    min_val_check(err, sigma_s, "sigma_s", 0);
     if (season_len < max_t && ! zero_remainder(season_len, dt)) {
         Rcout << "season_len is " << std::to_string(season_len);
         Rcout << " but should be divisible by dt (";
@@ -386,10 +421,14 @@ arma::mat plant_metacomm_stoch_cpp(const uint32_t& n_reps,
 
     StochLandCFWorker worker(n_reps, m, d_yp, d_b0, d_bp, g_yp, g_b0, g_bp,
                              L_0, u, X, Y0, B0, n_sigma,
-                             season_len, season_surv, rand_season, open_sys,
+                             season_len, season_surv, sigma_s, open_sys,
                              dt, max_t, burnin, summarize);
 
     RcppParallel::parallelFor(0, n_reps, worker);
+
+    if (worker.status == 1) {
+        stop("Value of c too high in StochLandscapeStepper::do_step function");
+    }
 
     arma::mat output = worker.make_output();
 

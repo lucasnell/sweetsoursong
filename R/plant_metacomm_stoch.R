@@ -36,17 +36,9 @@ dbl_check <- function(x, l, n, .min = NULL, .max = NULL) {
 #' @param season_len Length of seasons. Set to `NULL` to not have seasons.
 #' @param season_surv Survival of microbes from the end of one season to
 #'     the start of the next.
-#' @param rand_season Character for whether (and how) to have abundances
-#'     to start a season generated randomly. If `rand_season = "none"`,
-#'     then starting abundances are `season_surv` multiplied by the
-#'     ending abundance from the previous season.
-#'     If `rand_season = "closed"`, then starting abundances are randomly
-#'     generated but without any microbes added to the system (i.e., each
-#'     species total abundance across the landscape never changes).
-#'     If `rand_season = "closed"`, then starting abundances are
-#'     truly random except that the overall abundance of microbes at each
-#'     plant doesn't change, except being multiplied by `season_surv`.
-#'     Defaults to `"none"`.
+#' @param sigma_s Single numeric for the standard deviation of the logit-normal
+#'     distribution used to generate noise between seasons.
+#'     Defaults to `0`.
 #' @param n_reps Number of reps to simulate.
 #' @param burnin Number of time steps to count as "burn-in" and not record
 #'     in output. This can help to avoid vector memory limit error in
@@ -89,7 +81,7 @@ plant_metacomm_stoch <- function(np,
                                  n_sigma = 200,
                                  season_len = 150,
                                  season_surv = 0.1,
-                                 rand_season = "none",
+                                 sigma_s = 0,
                                  n_reps = 100,
                                  dt = 0.1,
                                  max_t = 3000,
@@ -127,9 +119,7 @@ plant_metacomm_stoch <- function(np,
     dbl_check(n_sigma, 1, "n_sigma", .min = 1)
     if (!is.null(season_len)) dbl_check(season_len, 1, "season_len", .min = 1)
     dbl_check(season_surv, 1, "season_surv", .min = NotQuiteZero)
-    stopifnot(length(rand_season) == 1 && is.character(rand_season))
-    rand_season <- match.arg(rand_season, c("none", "closed", "open"))
-    rand_season <- which(c("none", "closed", "open") == rand_season) - 1L
+    dbl_check(sigma_s, 1, "sigma_s")
     int_check(n_reps, 1, "n_reps", .min = 1)
 
     dbl_check(dt, 1, "dt", .min = NotQuiteZero)
@@ -170,7 +160,7 @@ plant_metacomm_stoch <- function(np,
     out_df <- plant_metacomm_stoch_cpp(n_reps, m, d_yp, d_b0, d_bp,
                                         g_yp, g_b0, g_bp,
                                         L_0, u, X, Y0, B0, n_sigma,
-                                        season_len, season_surv, rand_season,
+                                        season_len, season_surv, sigma_s,
                                         open_sys, dt, max_t, burnin, summarize) |>
         tibble::as_tibble(.name_repair = \(x) make.names(x, TRUE)) |>
         # this col will eventually be "rep"
