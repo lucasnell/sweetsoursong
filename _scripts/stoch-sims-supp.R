@@ -63,17 +63,18 @@ d_yp__ = c("bacteria only" = 0.886308 - 0.1,
 
 if (! file.exists(big_stoch_sims_file)) {
 
-    # Takes ~14 min with 6 threads
+    # Takes ~26 min with 6 threads
+    t0 <- Sys.time()
     set.seed(1472844374)
     stoch_sim_df <- crossing(.u = 0:10,
                              .d_yp = d_yp__,
                              .season_surv = c(0.015, 0.03, 0.06),
-                             .rand_season = c("closed", "none")) |>
+                             .sigma_s = c(0, 0.5, 1, 10)) |>
         # Don't do this in parallel bc plant_metacomm_stoch is already
         # doing that
-        pmap_dfr(\(.u, .d_yp, .season_surv, .rand_season) {
+        pmap_dfr(\(.u, .d_yp, .season_surv, .sigma_s) {
             plant_metacomm_stoch(np = 100L, u = .u, d_yp = .d_yp,
-                                 rand_season = .rand_season,
+                                 sigma_s = .sigma_s,
                                  no_immig = TRUE,
                                  n_sigma = 100,
                                  season_surv = .season_surv,
@@ -82,9 +83,11 @@ if (! file.exists(big_stoch_sims_file)) {
                                  # summarize by rep:
                                  summarize = "rep") |>
                 mutate(u = .u, d_yp = .d_yp, season_surv = .season_surv,
-                       rand_season = .rand_season) |>
-                select(u, d_yp, season_surv, rand_season, everything())
+                       sigma_s = .sigma_s) |>
+                select(u, d_yp, season_surv, sigma_s, everything())
         }, .progress = TRUE)
+    t1 <- Sys.time()
+    t1 - t0; rm(t0, t1)
 
     write_rds(stoch_sim_df, big_stoch_sims_file)
 
@@ -93,6 +96,9 @@ if (! file.exists(big_stoch_sims_file)) {
     stoch_sim_df <- read_rds(big_stoch_sims_file)
 
 }
+
+
+
 
 
 
@@ -111,11 +117,8 @@ add_factors <- function(d) {
         d <- mutate(d, d_yp = factor(d_yp, levels = unname(d_yp__),
                                      labels = names(d_yp__)))
     }
-    if ("rand_season" %in% colnames(d) && !is.factor(d[["rand_season"]])) {
-        d <- mutate(d, rand_season = factor(rand_season,
-                                            levels = c("none", "closed"),
-                                            labels = c("non-random",
-                                                       "random")))
+    if ("sigma_s" %in% colnames(d) && !is.factor(d[["sigma_s"]])) {
+        d <- mutate(d, sigma_s = factor(sigma_s))
     }
     if ("species" %in% colnames(d) && !is.factor(d[["species"]])) {
         if (all(d$species == "Y" | d$species == "B")) {
@@ -171,26 +174,26 @@ add_outcome_props <- function(d, .threshold = 1e-6){
 # =====================================================*
 
 
-outcome_plotter <- function(season_surv__, rand_season__ = NULL) {
+outcome_plotter <- function(season_surv__, sigma_s__ = NULL) {
 
-    if (is.null(rand_season__)) {
+    if (is.null(sigma_s__)) {
         p <- stoch_sim_df |>
             filter(season_surv == season_surv__) |>
-            select(rand_season, u, d_yp, minY, minB, maxY, maxB, meanY, meanB) |>
+            select(sigma_s, u, d_yp, minY, minB, maxY, maxB, meanY, meanB) |>
             add_outcome_props() |>
             add_factors() |>
             ggplot(aes(u, prop, color = outcome)) +
             ggtitle(sprintf("s = %s", season_surv__)) +
-            facet_grid(rand_season ~ d_yp)
+            facet_grid(sigma_s ~ d_yp)
     } else {
         p <- stoch_sim_df |>
             add_factors() |>
             filter(season_surv == season_surv__,
-                   rand_season == rand_season__) |>
+                   sigma_s == sigma_s__) |>
             select(u, d_yp, minY, minB, maxY, maxB, meanY, meanB) |>
             add_outcome_props() |>
             ggplot(aes(u, prop, color = outcome)) +
-            ggtitle(sprintf("s = %s, %s season", season_surv__, rand_season__)) +
+            ggtitle(sprintf("s = %s, sigma_s = %s", season_surv__, sigma_s__)) +
             facet_wrap( ~ d_yp, nrow = 1)
     }
     p <- p +
@@ -215,7 +218,7 @@ outcome_plotter <- function(season_surv__, rand_season__ = NULL) {
 
 
 abundance_plotter <- function(season_surv__,
-                              rand_season__ = NULL,
+                              sigma_s__ = NULL,
                               free_y = FALSE) {
 
     .scales <- "fixed"
@@ -230,25 +233,25 @@ abundance_plotter <- function(season_surv__,
         .ylabels <- waiver()
     }
 
-    if (is.null(rand_season__)) {
+    if (is.null(sigma_s__)) {
         dd <- stoch_sim_df |>
             filter(season_surv == season_surv__) |>
-            select(rand_season, u, d_yp, meanY, meanB) |>
+            select(sigma_s, u, d_yp, meanY, meanB) |>
             pivot_longer(meanY:meanB, names_to = "species") |>
             mutate(species = str_sub(species, 5L, 5L)) |>
             add_factors()
         dds <- dd |>
-            group_by(rand_season, u, d_yp, species) |>
+            group_by(sigma_s, u, d_yp, species) |>
             summarize(value = mean(value), .groups = "drop")
         p <- dd |>
             ggplot(aes(u, value, color = species)) +
             ggtitle(sprintf("s = %s", season_surv__)) +
-            facet_grid(rand_season ~ d_yp, scales = .scales)
+            facet_grid(sigma_s ~ d_yp, scales = .scales)
     } else {
         dd <- stoch_sim_df |>
             add_factors() |>
             filter(season_surv == season_surv__,
-                   rand_season == rand_season__) |>
+                   sigma_s == sigma_s__) |>
             select(u, d_yp, meanY, meanB) |>
             pivot_longer(meanY:meanB, names_to = "species") |>
             mutate(species = str_sub(species, 5L, 5L)) |>
@@ -258,7 +261,7 @@ abundance_plotter <- function(season_surv__,
             summarize(value = mean(value), .groups = "drop")
         p <- dd |>
             ggplot(aes(u, value, color = species)) +
-            ggtitle(sprintf("s = %s, %s season", season_surv__, rand_season__)) +
+            ggtitle(sprintf("s = %s, sigma_s = %s", season_surv__, sigma_s__)) +
             facet_grid( ~ d_yp, scales = .scales)
     }
 
@@ -303,21 +306,182 @@ do.call(wrap_plots, c(outcome_plots, abundance_plots)) +
 #'      less likely at low s and more likely at high s?
 #'
 
-outcome_plotter(median(unique(stoch_sim_df$season_surv)), "random") /
+outcome_plotter(median(unique(stoch_sim_df$season_surv)), 0.0) /
     abundance_plotter(median(unique(stoch_sim_df$season_surv)), "random")
+
+
+
+
+
+
 
 logit <- gameofclones::logit
 inv_logit <- gameofclones::inv_logit
 
-par(mfrow = c(1, 3))
+par(mfrow = c(1, 4))
 
-Y0 <- inv_logit(rnorm(1000))
-Yt <- (logit(Y0) + rnorm(length(Y0), 0, 10)) |>
-    (\(x) x / sd(x) * sd(logit(Y0)))() |>
-    inv_logit() |>
-    (\(x) x * sum(Y0) / sum(x))()
-plot(Y0, Yt); hist(Yt); hist(Y0)
+# cc <- 0.01
+# sigma_s <- 1
+q <- 0.5
+Y0 <- runif(1000)
+Y0[sample.int(length(Y0), length(Y0) %/% 4)] <- 0
+# chi <- logit(Y0 + cc)
+# eta <- chi + rnorm(length(Y0), 0, sigma_s)
+# zeta <- inv_logit(eta * sd(chi) / sd(eta)) - cc
+# Yt <- zeta * sum(Y0) / sum(zeta)
+eps <- runif(length(Y0))
+Yt <- q * Y0 + (1 - q) * eps * sum(Y0) / sum(eps)
 sum(Yt); sum(Y0)
 
 
+plot(Y0, Yt); hist(Yt); hist(Y0); plot(Y0[Y0 == 0], Yt[Y0 == 0])
+sum(Yt); sum(Y0)
+sd(Yt); sd(Y0)
 
+
+
+
+sim_rand <- function(sigma_s, cc = 0.01, .fun = sd) {
+    Y0 <- runif(1000, 0, 0.9)
+    Y0[sample.int(length(Y0), length(Y0) %/% 4)] <- 0
+    chi <- logit(Y0 + cc)
+    eta <- chi + rnorm(length(Y0), 0, sigma_s)
+    # zeta <- inv_logit(eta * sd(chi) / sd(eta)) - cc
+    zeta <- inv_logit(eta) - cc
+    zeta[zeta < 0] <- 0
+    Yt <- zeta * sum(Y0) / sum(zeta)
+    return(c(.fun(Y0), .fun(Yt)))
+}
+sim_rand2 <- function(q, .fun = sd) {
+    Y0 <- runif(1000, 0, 0.9)
+    Y0[sample.int(length(Y0), length(Y0) %/% 4)] <- 0
+    eps <- runif(length(Y0))
+    Yt <- q * Y0 + (1 - q) * mean(Y0) * (eps / sum(eps) * length(eps))
+    return(c(.fun(Y0), .fun(Yt)))
+}
+
+sim_many <- function(n, .fun1, .fun2 = sd, ...) {
+    sim_m <- t(replicate(n, .fun1(..., .fun = .fun2)))
+    colnames(sim_m) <- c("y0", "yt")
+    as_tibble(sim_m) |>
+        mutate(rep = 1:n) |>
+        select(rep, everything())
+}
+
+z <- crossing(sigma_s = c(0, 0.1, 0.5, 1, 5, 10),
+              cc = c(0.01, 1e-3, 1e-4)) |>
+    mutate(sim = map2(sigma_s, cc, \(s, .c) sim_many(1000, sim_rand, sigma_s = s, cc = .c))) |>
+    unnest(sim)
+
+z |>
+    mutate(across(c(cc, sigma_s), factor)) |>
+    ggplot(aes(y0, yt)) +
+    geom_hline(yintercept = min(c(z$yt, z$y0)) - 0.005, color = "gray70") +
+    geom_vline(xintercept = min(c(z$yt, z$y0)) - 0.005, color = "gray70") +
+    geom_abline(slope = 1, intercept = 0, color = "gray70") +
+    geom_point() +
+    facet_grid(cc ~ sigma_s, labeller = label_both) +
+    coord_equal()
+
+z2 <- crossing(q = 0:9 / 10) |>
+    mutate(sim = map(q, \(.q) sim_many(1000, sim_rand2, q = .q))) |>
+    unnest(sim)
+
+z2 |>
+    mutate(across(c(q), factor)) |>
+    ggplot(aes(y0, yt)) +
+    geom_hline(yintercept = min(c(z2$yt, z2$y0)) - 0.005, color = "gray70") +
+    geom_vline(xintercept = min(c(z2$yt, z2$y0)) - 0.005, color = "gray70") +
+    geom_abline(slope = 1, intercept = 0, color = "gray70") +
+    geom_point() +
+    facet_wrap( ~ q) +
+    coord_equal()
+
+
+
+
+
+
+n <- length(Y0)
+x <- cbind(Y0[1:n], runif(n)) |> unname()
+y <- foo(x, sigma_s = 0.5, season_surv = 1)
+
+plot(x[,1], y[,1]); hist(y[,1]); hist(x[,1])
+colSums(x); colSums(y)
+
+par(mfrow = c(1,1))
+plot(Y0[Y0 == 0], y[Y0 == 0,1])
+
+
+
+Rcpp::sourceCpp(code =
+"
+//[[Rcpp::depends(RcppArmadillo, dqrng)]]
+
+#include <RcppArmadillo.h>
+#include <pcg_random.hpp>
+#include <vector>
+#include <cmath>
+#include <random>
+
+// logit and inverse logit functions
+inline double logit(const double& p) {
+    double x = std::log(p / (1 - p));
+    return x;
+}
+inline double inv_logit(const double& x) {
+    double p = 1 / (1 + std::exp(- x));
+    return p;
+}
+inline arma::mat logit(const arma::mat& p) {
+    arma::mat x(p.n_rows, p.n_cols);
+    for (size_t i = 0; i < p.n_elem; i++) x(i) = std::log(p(i) / (1 - p(i)));
+    return x;
+}
+inline arma::mat inv_logit(const arma::mat& x) {
+    arma::mat p(x.n_rows, x.n_cols);
+    for (size_t i = 0; i < x.n_elem; i++) p(i) = 1 / (1 + std::exp(- x(i)));
+    return p;
+}
+
+//[[Rcpp::export]]
+arma::mat foo(arma::mat x, const double& sigma_s, const double& season_surv) {
+
+    // These are 32-bit integers cast as 64-bit for downstream compatibility
+    std::vector<uint64_t> tmp_seeds = as<std::vector<uint64_t>>(Rcpp::runif(4,0,4294967296));
+    // Converting to two 64-bit seeds for pcg32
+    std::vector<uint64_t> seeds(2);
+    seeds[0] = (tmp_seeds[0]<<32) + tmp_seeds[1];
+    seeds[1] = (tmp_seeds[2]<<32) + tmp_seeds[3];
+
+    pcg32 rng;
+    rng.seed(seeds[0], seeds[1]);
+    std::normal_distribution<double> dist;
+
+    double c = 0.1;
+
+    arma::mat chi = logit(x + c);
+    arma::mat eta(arma::size(x));
+    arma::mat zeta(arma::size(x));
+    arma::mat y(arma::size(x));
+
+    for (size_t i = 0 ; i < eta.n_elem; i++) {
+        eta(i) = chi(i) + sigma_s * dist(rng);
+    }
+
+    arma::vec zeta_mult = arma::stddev(chi).t() /
+        arma::stddev(eta).t();
+    for (size_t i = 0 ; i < eta.n_rows; i++) {
+        for (size_t j = 0 ; j < eta.n_cols; j++) {
+            zeta(i,j) = inv_logit(eta(i,j) * zeta_mult(j) - c);
+        }
+    }
+
+    arma::vec x_mult = arma::sum(x).t() / arma::sum(zeta).t();
+    for (size_t i = 0 ; i < zeta.n_rows; i++) {
+        for (size_t j = 0 ; j < zeta.n_cols; j++) {
+            y(i,j) = season_surv * zeta(i,j) * x_mult(j);
+        }
+    }
+    return y;
+}")
