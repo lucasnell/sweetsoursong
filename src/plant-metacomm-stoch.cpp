@@ -86,15 +86,13 @@ public:
                           const size_t& n_states,
                           const double& season_len_,
                           const double& season_surv_,
-                          const double& sigma_s_)
+                          const double& q_)
         : det(n_plants, n_states),
           stoch(n_plants, n_states),
-          chi(n_plants),
-          eta(n_plants),
           zeta(n_plants),
           season_len(season_len_),
           season_surv(season_surv_),
-          sigma_s(sigma_s_) {}
+          q(q_) {}
 
     template< class System >
     void do_step(System system, MatType& x, double t, double dt) {
@@ -105,7 +103,7 @@ public:
         // New season:
         if (t > 0 && zero_remainder(t, season_len)) {
 
-            if (sigma_s <= 0) {
+            if (q >= 1) {
 
                 // If there is no between-season noise, don't bother generating
                 // random numbers:
@@ -115,42 +113,30 @@ public:
             } else {
 
                 pcg32& rng(system.second.m_rng);
-                std::normal_distribution<double>& dist(system.second.m_dist);
 
-                // To avoid NaN values with zero abundances:
-                double c = 0.01;
-                if (arma::any(arma::vectorise(x) > (1 - c))) {
-                    // Make `c` low enough that this never happens!
-                    x.fill(arma::datum::inf);
-                    return;
-                }
-
-                /*
-                 This is to avoid processing columns with all zeros bc they
-                   (1) don't need it
-                   (2) will produce NaNs in output through the call to
-                       arma::stddev(chi) below
-                 */
+                // This is to avoid doing this multiple times
                 arma::rowvec x_sum = arma::sum(x);
-                arma::urowvec nonzero_cols = x_sum > 0;
 
-                for (const arma::uword& j : nonzero_cols) {
+                for (size_t j = 0; j < x.n_cols; j++) {
 
-                    logit(x.col(j) + c, chi);
+                    // to avoid processing columns with all zeros bc they
+                    // don't need it:
+                    if (x_sum(j) <= 0) continue;
 
-                    for (size_t i = 0 ; i < eta.n_elem; i++) {
-                        eta(i) = chi(i) + sigma_s * dist(rng);
+                    // Vector of ~U(0,1) normalized to have the same sum
+                    // as x.col(j)
+                    double z_sum = 0;
+                    for (double& z : zeta) {
+                        z = runif_01(rng);
+                        z_sum += z;
                     }
+                    double z_mult = x_sum(j) / z_sum;
+                    for (double& z : zeta) z *= z_mult;
 
-                    double zeta_mult = arma::stddev(chi) / arma::stddev(eta);
-                    for (size_t i = 0 ; i < eta.n_rows; i++) {
-                            zeta(i) = inv_logit(eta(i) * zeta_mult) - c;
-                        if (zeta(i) < 0) zeta(i) = 0;
-                    }
-
-                    double x_mult = x_sum(j) / arma::sum(zeta);
-                    for (size_t i = 0 ; i < zeta.n_rows; i++) {
-                            x(i,j) = season_surv * zeta(i) * x_mult;
+                    double qxz;
+                    for (size_t i = 0; i < zeta.n_rows; i++) {
+                        qxz = q * x(i,j) + (1 - q) * zeta(i);
+                        x(i,j) = season_surv * qxz;
                     }
 
                 }
@@ -177,12 +163,10 @@ public:
 private:
     MatType det;
     MatType stoch;
-    arma::vec chi;
-    arma::vec eta;
     arma::vec zeta;
     double season_len;
     double season_surv;
-    double sigma_s;
+    double q;
 };
 
 
@@ -234,7 +218,7 @@ struct StochLandCFWorker : public RcppParallel::Worker {
     int summarize;
     double season_len;
     double season_surv;
-    double sigma_s;
+    double q;
     int status = 0;
 
     StochLandCFWorker(const uint32_t& n_reps,
@@ -253,7 +237,7 @@ struct StochLandCFWorker : public RcppParallel::Worker {
                       const double& n_sigma_,
                       const double& season_len_,
                       const double& season_surv_,
-                      const double& sigma_s_,
+                      const double& q_,
                       const bool& open_sys,
                       const double& dt_,
                       const double& max_t_,
@@ -271,7 +255,7 @@ struct StochLandCFWorker : public RcppParallel::Worker {
           summarize(summarize_),
           season_len(season_len_),
           season_surv(season_surv_),
-          sigma_s(sigma_s_) {
+          q(q_) {
 
         std::vector<uint64_t> tmp_seeds(4);
         for (uint32_t i = 0; i < n_reps; i++) {
@@ -354,7 +338,7 @@ private:
             obs.clear();
 
             boost::numeric::odeint::integrate_const(
-                StochLandscapeStepper(np, 2U, season_len, season_surv, sigma_s),
+                StochLandscapeStepper(np, 2U, season_len, season_surv, q),
                 std::make_pair(determ_sys0,
                                StochLandscapeStochProcess(rng, n_sigma)),
                                x, 0.0, max_t, dt, std::ref(obs));
@@ -392,7 +376,7 @@ arma::mat plant_metacomm_stoch_cpp(const uint32_t& n_reps,
                                    const double& n_sigma,
                                    const double& season_len,
                                    const double& season_surv,
-                                   const double& sigma_s,
+                                   const double& q,
                                    const bool& open_sys,
                                    const double& dt,
                                    const double& max_t,
@@ -409,7 +393,7 @@ arma::mat plant_metacomm_stoch_cpp(const uint32_t& n_reps,
     min_val_check(err, season_len, "season_len", 0, false);
     min_val_check(err, season_surv, "season_surv", 0);
     max_val_check(err, season_surv, "season_surv", 1);
-    min_val_check(err, sigma_s, "sigma_s", 0);
+    min_val_check(err, q, "q", 0);
     if (season_len < max_t && ! zero_remainder(season_len, dt)) {
         Rcout << "season_len is " << std::to_string(season_len);
         Rcout << " but should be divisible by dt (";
@@ -421,7 +405,7 @@ arma::mat plant_metacomm_stoch_cpp(const uint32_t& n_reps,
 
     StochLandCFWorker worker(n_reps, m, d_yp, d_b0, d_bp, g_yp, g_b0, g_bp,
                              L_0, u, X, Y0, B0, n_sigma,
-                             season_len, season_surv, sigma_s, open_sys,
+                             season_len, season_surv, q, open_sys,
                              dt, max_t, burnin, summarize);
 
     RcppParallel::parallelFor(0, n_reps, worker);

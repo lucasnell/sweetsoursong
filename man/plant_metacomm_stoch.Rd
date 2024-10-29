@@ -21,7 +21,7 @@ plant_metacomm_stoch(
   n_sigma = 200,
   season_len = 150,
   season_surv = 0.1,
-  sigma_s = 0,
+  q = 1,
   n_reps = 100,
   dt = 0.1,
   max_t = 3000,
@@ -79,9 +79,10 @@ generates stochasticity at each time step.}
 \item{season_surv}{Survival of microbes from the end of one season to
 the start of the next.}
 
-\item{sigma_s}{Single numeric for the standard deviation of the logit-normal
-distribution used to generate noise between seasons.
-Defaults to \code{0}.}
+\item{q}{Single numeric dictating to what extent new-season
+abundances are affected by the previous season's abundances versus
+random noise.
+Defaults to \code{1}.}
 
 \item{n_reps}{Number of reps to simulate.}
 
