@@ -260,7 +260,7 @@ private:
  */
 
 /*
- These are based on the Observer and ObserverBurnIn classes (in `ode.h`)
+ These are based on the Observer and ObserverBurnEvery classes (in `ode.h`)
  but include code to fill output
  */
 
@@ -297,10 +297,12 @@ struct MetaObs : public Observer<MatType> {
 };
 
 
-// For stochastic simulations with potential burnin and reps that need recorded:
-struct MetaObsStoch : public ObserverBurnIn<MatType> {
+// For stochastic simulations with potential burnin, not saving every time step,
+// and reps that need recorded:
+struct MetaObsStoch : public ObserverBurnEvery<MatType> {
 
-    MetaObsStoch(const double& burnin_) : ObserverBurnIn<MatType>(burnin_) {};
+    MetaObsStoch(const double& burnin_, const double& save_every_)
+        : ObserverBurnEvery<MatType>(burnin_, save_every_) {};
 
     // Fill output for one repetition:
     void fill_output(MatType& output,
@@ -334,11 +336,12 @@ struct MetaObsStoch : public ObserverBurnIn<MatType> {
     }
 };
 
-// For stochastic simulations with potential burnin, reps that need recorded,
-// and summarizing by both rep and time point
-struct MetaObsStochSumm : public ObserverBurnIn<MatType> {
+// For stochastic simulations with potential burnin, not saving every time step,
+// reps that need recorded, and summarizing by both rep and time point
+struct MetaObsStochSumm : public ObserverBurnEvery<MatType> {
 
-    MetaObsStochSumm(const double& burnin_) : ObserverBurnIn<MatType>(burnin_) {};
+    MetaObsStochSumm(const double& burnin_, const double& save_every_)
+        : ObserverBurnEvery<MatType>(burnin_, save_every_) {};
 
     void operator()(const MatType& x, const double& t) {
         if (t > burnin) {
@@ -448,7 +451,9 @@ protected:
 // Mostly the same as MetaObsStochSumm, except for the `fill_output` method
 struct MetaObsStochSummRep : public MetaObsStochSumm {
 
-    MetaObsStochSummRep(const double& burnin_) : MetaObsStochSumm(burnin_) {};
+    MetaObsStochSummRep(const double& burnin_,
+                        const double& save_every_)
+        : MetaObsStochSumm(burnin_, save_every_) {};
 
     /*
      Fill output for one repetition.

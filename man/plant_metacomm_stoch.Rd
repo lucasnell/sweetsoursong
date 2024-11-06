@@ -26,6 +26,7 @@ plant_metacomm_stoch(
   dt = 0.1,
   max_t = 3000,
   burnin = 0,
+  save_every = NULL,
   no_immig = TRUE,
   open_sys = TRUE,
   summarize = "none"
@@ -90,9 +91,14 @@ Defaults to \code{1}.}
 
 \item{max_t}{Number of days to simulate.}
 
-\item{burnin}{Number of time steps to count as "burn-in" and not record
+\item{burnin}{Number of days to count as "burn-in" and not record
 in output. This can help to avoid vector memory limit error in
 simulations that use many plants.}
+
+\item{save_every}{Output will be stored every \code{save_every} days.
+This argument is ignored if \code{summarize = "rep"}.
+Must be a multiple of \code{dt}.
+Defaults to \code{NULL}, which results in all time points being saved.}
 
 \item{no_immig}{Single logical for whether to disallow immigration, which
 will (if set to \code{TRUE}), override all the \verb{g_*} parameters and set them

@@ -29,6 +29,13 @@ typedef arma::mat MatType;
 typedef boost::numeric::odeint::runge_kutta_dopri5<MatType> MatStepperType;
 
 
+// this deals with std::remainder's rounding issues
+inline bool zero_remainder(const double& numer, const double& denom) {
+    return std::abs(std::remainder(numer, denom)) < 1e-10;
+}
+
+
+
 // From https://stackoverflow.com/a/41820991
 namespace boost { namespace numeric { namespace odeint {
 
@@ -118,18 +125,21 @@ struct Observer
 };
 
 /*
- Same as above but for simulations with a burn-in period.
+ Same as above but for simulations with a burn-in period and not saving every
+ time step
  */
 template< class C >
-struct ObserverBurnIn
+struct ObserverBurnEvery
 {
     std::vector<C> data;
     std::vector<double> time;
     double burnin;
-    ObserverBurnIn(const double& burnin_) : data(), time(), burnin(burnin_) {};
+    double save_every;
+    ObserverBurnEvery(const double& burnin_, const double& save_every_)
+        : data(), time(), burnin(burnin_), save_every(save_every_) {};
 
     void operator()(const C& x, const double& t) {
-        if (t > burnin) {
+        if (t > burnin && zero_remainder(t, save_every)) {
             data.push_back(x);
             time.push_back(t);
         }

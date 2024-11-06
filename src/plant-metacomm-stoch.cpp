@@ -25,10 +25,6 @@
 using namespace Rcpp;
 
 
-// this deals with std::remainder's rounding issues
-inline bool zero_remainder(const double& numer, const double& denom) {
-    return std::abs(std::remainder(numer, denom)) < 1e-10;
-}
 
 // logit and inverse logit functions
 inline double logit(const double& p) {
@@ -215,11 +211,11 @@ struct StochLandCFWorker : public RcppParallel::Worker {
     double dt;
     double max_t;
     double burnin;
+    double save_every;
     int summarize;
     double season_len;
     double season_surv;
     double q;
-    int status = 0;
 
     StochLandCFWorker(const uint32_t& n_reps,
                       const std::vector<double>& m,
@@ -242,6 +238,7 @@ struct StochLandCFWorker : public RcppParallel::Worker {
                       const double& dt_,
                       const double& max_t_,
                       const double& burnin_,
+                      const double& save_every_,
                       const int& summarize_)
         : output(n_reps, MatType(0,0)),
           seeds(n_reps, std::vector<uint64_t>(2)),
@@ -252,6 +249,7 @@ struct StochLandCFWorker : public RcppParallel::Worker {
           dt(dt_),
           max_t(max_t_),
           burnin(burnin_),
+          save_every(save_every_),
           summarize(summarize_),
           season_len(season_len_),
           season_surv(season_surv_),
@@ -276,11 +274,11 @@ struct StochLandCFWorker : public RcppParallel::Worker {
     void operator()(size_t begin, size_t end) {
 
         if (summarize == 0) {
-            status = do_work<MetaObsStoch>(begin, end);
+            do_work<MetaObsStoch>(begin, end);
         } else if (summarize == 1) {
-            status = do_work<MetaObsStochSumm>(begin, end);
+            do_work<MetaObsStochSumm>(begin, end);
         } else {
-            status = do_work<MetaObsStochSummRep>(begin, end);
+            do_work<MetaObsStochSummRep>(begin, end);
         }
 
         return;
@@ -321,13 +319,11 @@ private:
      defined in `plant-metacomm.h`
      */
     template <class C>
-    int do_work(const size_t& begin, const size_t& end) {
+    void do_work(const size_t& begin, const size_t& end) {
         pcg32 rng;
         const size_t& np(determ_sys0.n_plants);
         MatType x;
-        C obs(burnin);
-
-        int status = 0;
+        C obs(burnin, save_every);
 
 
         for (size_t rep = begin; rep < end; rep++) {
@@ -346,13 +342,9 @@ private:
             obs.fill_output(output[rep], determ_sys0,
                             static_cast<double>(rep) + 1.0);
 
-            if (x.has_inf()) {
-                status = 1;
-                break;
-            }
         }
 
-        return status;
+        return;
     }
 };
 
@@ -381,6 +373,7 @@ arma::mat plant_metacomm_stoch_cpp(const uint32_t& n_reps,
                                    const double& dt,
                                    const double& max_t,
                                    const double& burnin,
+                                   const double& save_every,
                                    const int& summarize) {
 
     /*
@@ -406,13 +399,9 @@ arma::mat plant_metacomm_stoch_cpp(const uint32_t& n_reps,
     StochLandCFWorker worker(n_reps, m, d_yp, d_b0, d_bp, g_yp, g_b0, g_bp,
                              L_0, u, X, Y0, B0, n_sigma,
                              season_len, season_surv, q, open_sys,
-                             dt, max_t, burnin, summarize);
+                             dt, max_t, burnin, save_every, summarize);
 
     RcppParallel::parallelFor(0, n_reps, worker);
-
-    if (worker.status == 1) {
-        stop("Value of c too high in StochLandscapeStepper::do_step function");
-    }
 
     arma::mat output = worker.make_output();
 

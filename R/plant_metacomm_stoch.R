@@ -41,9 +41,13 @@ dbl_check <- function(x, l, n, .min = NULL, .max = NULL) {
 #'     random noise.
 #'     Defaults to `1`.
 #' @param n_reps Number of reps to simulate.
-#' @param burnin Number of time steps to count as "burn-in" and not record
+#' @param burnin Number of days to count as "burn-in" and not record
 #'     in output. This can help to avoid vector memory limit error in
 #'     simulations that use many plants.
+#' @param save_every Output will be stored every `save_every` days.
+#'     This argument is ignored if `summarize = "rep"`.
+#'     Must be a multiple of `dt`.
+#'     Defaults to `NULL`, which results in all time points being saved.
 #' @param summarize Single string for how and whether to summarize output.
 #'     If `"none"`, no summarizing happens, and the output is a time series of
 #'     microbial abundances and pollinator visits by plant.
@@ -87,6 +91,7 @@ plant_metacomm_stoch <- function(np,
                                  dt = 0.1,
                                  max_t = 3000,
                                  burnin = 0,
+                                 save_every = NULL,
                                  no_immig = TRUE,
                                  open_sys = TRUE,
                                  summarize = "none") {
@@ -126,10 +131,15 @@ plant_metacomm_stoch <- function(np,
     dbl_check(dt, 1, "dt", .min = NotQuiteZero)
     dbl_check(max_t, 1, "max_t", .min = 1)
     dbl_check(burnin, 1, "burnin")
+    if (is.null(save_every)) save_every <- dt
+    dbl_check(save_every, 1, "save_every")
+    if (save_every %% dt != 0) stop("`save_every` must be a multiple of `dt`")
     stopifnot(length(no_immig) == 1 && is.logical(no_immig))
     stopifnot(length(summarize) == 1 && is.character(summarize))
     summarize <- match.arg(summarize, c("none", "time", "rep"))
     summarize <- which(c("none", "time", "rep") == summarize) - 1L
+
+    if (summarize == 2L) save_every <- dt
 
     if (is.null(season_len)) season_len <- max_t + 1.0
 
@@ -159,10 +169,11 @@ plant_metacomm_stoch <- function(np,
     }
 
     out_df <- plant_metacomm_stoch_cpp(n_reps, m, d_yp, d_b0, d_bp,
-                                        g_yp, g_b0, g_bp,
-                                        L_0, u, X, Y0, B0, n_sigma,
-                                        season_len, season_surv, q,
-                                        open_sys, dt, max_t, burnin, summarize) |>
+                                       g_yp, g_b0, g_bp,
+                                       L_0, u, X, Y0, B0, n_sigma,
+                                       season_len, season_surv, q,
+                                       open_sys, dt, max_t, burnin, save_every,
+                                       summarize) |>
         tibble::as_tibble(.name_repair = \(x) make.names(x, TRUE)) |>
         # this col will eventually be "rep"
         dplyr::mutate(X = factor(as.integer(X), levels = 1:n_reps))
