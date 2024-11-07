@@ -185,8 +185,8 @@ plant_metacomm_stoch <- function(np,
         colnames(out_df) <- c("rep", "t", "BC", "H", "sumY", "sumB")
     } else {  # "rep"
         colnames(out_df) <- c("rep", "BC", "H",
-                              "minY", "maxY", "meanY",
-                              "minB", "maxB", "meanB")
+                              "minY", "maxY", "meanY", "meanlogY",
+                              "minB", "maxB", "meanB", "meanlogB")
     }
     return(out_df)
 
