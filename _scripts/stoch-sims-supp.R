@@ -103,11 +103,11 @@ stoch_sim_df <- stoch_sim_df |>
 
 # ===========================================================================*
 # ===========================================================================*
-# plots ----
+# plot functions ----
 # ===========================================================================*
 # ===========================================================================*
 
-add_factors <- function(d, .exclude = "u") {
+add_factors <- function(d, .exclude = NULL) {
     if ("d_yp" %in% colnames(d) && !is.factor(d[["d_yp"]]) &&
         ! "d_yp" %in% .exclude) {
         d <- mutate(d, d_yp = factor(d_yp, levels = unname(d_yp__),
@@ -144,10 +144,12 @@ add_factors <- function(d, .exclude = "u") {
     return(d)
 }
 
-add_outcome_props <- function(d, .threshold = 0){
+add_outcome_props <- function(d){
 
     sc <- c(colnames(d)[!grepl("Y|B|H|rep", colnames(d))], "outcome")
     sf <- paste("~", paste(sc, collapse = " + ")) |> as.formula()
+
+    .threshold <- 0
 
     d |>
         mutate(outcome = case_when(maxY > .threshold & maxB > .threshold ~
@@ -179,146 +181,113 @@ add_outcome_props <- function(d, .threshold = 0){
 }
 
 
-# used for a bunch of functions below
-# had to define these bc label_both with a different separator gives weird error
-u_labeller <- function(labels) {
-    lapply(labels, \(z) paste("*u* = ", z))
-}
-q_labeller <- function(labels) {
-    lapply(labels, \(z) paste("*q* = ", z))
-}
 
 
-# =====================================================*
-#           outcomes ----
-# =====================================================*
+#'
+#' Make objects used for two plotting functions below:
+#'
+make_plot_objects <- function(x_var, facet_q, facet_u,
+                              env, facet_fxn = NULL) {
 
-
-
-outcome_plotter <- function(season_surv__, q__ = NULL, .threshold = 0) {
-
-    if (is.null(q__)) {
-        p <- stoch_sim_df |>
-            filter(season_surv == season_surv__) |>
-            select(q, u, d_yp, maxY, maxB) |>
-            add_outcome_props(.threshold) |>
-            add_factors() |>
-            ggplot(aes(u, prop, color = outcome)) +
-            ggtitle(sprintf("*s* = %s", season_surv__)) +
-            facet_grid(q ~ d_yp,
-                       labeller = labeller(q = q_labeller, d_yp = label_value))
+    .f_var <- ifelse(x_var == "u", "q", "u")
+    .f_lvls <- ifelse(x_var == "u", list(facet_q), list(facet_u)) |>
+        base::`[[`(1)
+    if (length(.f_lvls) > 1) {
+        # had to define f_var labeller manually bc label_both with a different
+        # separator gives weird error:
+        f_labeller <- eval(parse(text=paste0("function(x) { lapply(x, ",
+                                             "\\(z) paste('*", .f_var,
+                                             "* = ', z)) }")))
+        if (is.null(facet_fxn)) facet_fxn <- facet_grid
+        .facet <- facet_fxn(vars(.data[[.f_var]]), vars(d_yp),
+                             labeller = labeller(!!.f_var := f_labeller,
+                                                 d_yp = label_value))
     } else {
-        p <- stoch_sim_df |>
-            filter(season_surv == season_surv__,
-                   q == q__) |>
-            add_factors() |>
-            select(u, d_yp, maxY, maxB) |>
-            add_outcome_props(.threshold) |>
-            ggplot(aes(u, prop, color = outcome)) +
-            ggtitle(sprintf("*s* = %s, *q* = %s", season_surv__, q__)) +
-            facet_wrap( ~ d_yp, nrow = 1)
+        if (is.null(facet_fxn)) facet_fxn <- facet_wrap
+        .facet <- facet_fxn( ~ d_yp, nrow = 1)
     }
-    p <- p +
+    if (x_var == "u") {
+        .x_scale <- scale_x_continuous(paste("Strength of microbe--pollinator",
+                                            "effect (*u*)"),
+                                      breaks = seq(0, 10, 2.5),
+                                      labels = c("0", "", "5", "", "10"))
+    } else {
+        .x_scale <- scale_x_continuous("Between-season determinism (*q*)",
+                                      breaks = c(0:3 * 0.25, 0.95),
+                                      labels = c("0", "", "0.5", "", "0.95"))
+    }
+    env[["x_scale"]] <- .x_scale
+    env[["facet"]] <- .facet
+    env[["f_lvls"]] <- .f_lvls
+    env[["f_var"]] <- .f_var
+    env[["f_lvls"]] <- .f_lvls
+
+    invisible(NULL)
+}
+
+
+
+outcome_plotter <- function(x_var,
+                            facet_q = c(0, 0.25, 0.5, 0.75, 0.95),
+                            facet_u = c(0, 1, 4, 7, 10),
+                            add_title = FALSE) {
+
+    x_var <- match.arg(x_var, c("q", "u"))
+
+    # makes objects: x_scale, facet, f_lvls, f_var, f_lvls
+    make_plot_objects(x_var, facet_q, facet_u,
+                      env = sys.frame(sys.nframe()))
+
+
+    p <- stoch_sim_df |>
+        filter(season_surv == median(season_surv),
+               .data[[f_var]] %in% f_lvls) |>
+        select(q, u, d_yp, maxY, maxB) |>
+        add_outcome_props() |>
+        add_factors(.exclude = x_var) |>
+        ggplot(aes(.data[[x_var]], prop, color = outcome)) +
         geom_hline(yintercept = 0, linetype = 1, color = "gray80") +
-        geom_point(aes(shape = outcome)) +
-        geom_line() +
+        geom_point(aes(shape = outcome), show.legend = TRUE) +
+        geom_line(show.legend = TRUE) +
+        facet +
         scale_y_continuous("Percent of simulations",
                            limits = c(0, 1),
                            breaks = (0:4 * 25) / 100,
-                           labels = c("0%", "", "50%", "", "100%")) +
-        scale_x_continuous("Strength of microbe--pollinator effect (*u*)",
-                           breaks = seq(0, 10, 2.5),
-                           labels = c("0", "", "5", "", "10")) +
+                           labels = scales::label_percent()) +
+        x_scale +
         scale_shape_manual(NULL, values = outcome_shapes, drop = FALSE) +
         scale_color_manual(NULL, values = outcome_pal, drop = FALSE) +
         theme(axis.title.x = element_markdown(margin = margin(0,0,0,t=12)),
               strip.text.y = element_markdown(),
               plot.title = element_markdown())
-    if (season_surv__ != sort(unique(stoch_sim_df$season_surv))[2]) {
-        p <- p + theme(axis.title.x = element_blank())
+
+    if (add_title) {
+        .title <- sprintf("*s* = %s", median(stoch_sim_df$season_surv))
+        if (length(f_lvls) == 1) {
+            .title <- paste0(.title, sprintf(", *%s* = %s", f_var, f_lvls))
+        }
+        p <- p + ggtitle(.title)
     }
+
     return(p)
 }
 
 
 
-outcome_plotter2 <- function(season_surv__,
-                             u__ = c(0, 1, 4, 7, 10),
-                             .threshold = 0) {
-
-    if (length(u__) > 1) {
-        p <- stoch_sim_df |>
-            filter(season_surv == season_surv__) |>
-            filter(u %in% u__) |>
-            select(q, u, d_yp, maxY, maxB) |>
-            add_outcome_props(.threshold) |>
-            add_factors(.exclude = NULL) |>
-            ggplot(aes(q, prop, color = outcome)) +
-            ggtitle(sprintf("*s* = %s", season_surv__)) +
-            facet_grid(u ~ d_yp,
-                       labeller = labeller(u = u_labeller, d_yp = label_value))
-    } else {
-        p <- stoch_sim_df |>
-            filter(season_surv == season_surv__,
-                   u == u__) |>
-            select(q, d_yp, maxY, maxB) |>
-            add_outcome_props(.threshold) |>
-            # add_factors(.exclude = "q") |>
-            add_factors(.exclude = NULL) |>
-            ggplot(aes(q, prop, color = outcome)) +
-            ggtitle(sprintf("*s* = %s, *u* = %s", season_surv__, u__)) +
-            facet_grid( ~ d_yp)
-    }
-    p <- p +
-        geom_hline(yintercept = 0, linetype = 1, color = "gray80") +
-        geom_point(aes(shape = outcome)) +
-        geom_line(aes(x = as.numeric(q))) +
-        scale_y_continuous("Percent of simulations",
-                           limits = c(0, 1),
-                           breaks = (0:4 * 25) / 100,
-                           labels = c("0%", "", "50%", "", "100%")) +
-        scale_x_discrete("Between-season determinism (*q*)",
-                         labels = c("0", "", "0.5", "", "0.95")) +
-        scale_shape_manual(NULL, values = outcome_shapes, drop = FALSE) +
-        scale_color_manual(NULL, values = outcome_pal, drop = FALSE) +
-        theme(axis.title.x = element_markdown(margin = margin(0,0,0,t=12)),
-              axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
-              strip.text.y = element_markdown(),
-              plot.title = element_markdown())
-    if (season_surv__ != sort(unique(stoch_sim_df$season_surv))[2]) {
-        p <- p + theme(axis.title.x = element_blank())
-    }
-    return(p)
-}
 
 
-
-# =====================================================*
-#           abundances ----
-# =====================================================*
-
-
-abundance_plotter <- function(season_surv__,
-                              q__ = NULL,
+abundance_plotter <- function(x_var,
+                              facet_q = c(0, 0.25, 0.5, 0.75, 0.95),
+                              facet_u = c(0, 1, 4, 7, 10),
                               log_trans = TRUE,
                               spp__ = NULL,
-                              free_y = FALSE) {
+                              free_y = FALSE,
+                              add_title = FALSE) {
 
-    if (log_trans) {
-        .ylimits <- log1p(c(0, 100))
-        .ybreaks <- log1p(4^(0:3))
-        .ylabels <- c(4^(0:3))
-        yvar <- "meanlogY"
-        bvar <- "meanlogB"
-    } else {
-        .ylimits <- c(0, 100)
-        .ybreaks <- 0:4 * 25
-        .ylabels <- c("0", "", "50", "", "100")
-        yvar <- "meanY"
-        bvar <- "meanB"
-    }
+    x_var <- match.arg(x_var, c("q", "u"))
 
-    .facet_fxn <- \(...) facet_grid(scales = "fixed", ...)
+    yvar <- ifelse(log_trans, "meanlogY", "meanY")
+    bvar <- ifelse(log_trans, "meanlogB", "meanB")
 
     if (free_y) {
         .facet_fxn <- \(...) facet_wrap(scales = "free_y",
@@ -327,59 +296,46 @@ abundance_plotter <- function(season_surv__,
         .ylimits <- NULL
         .ybreaks <- waiver()
         .ylabels <- waiver()
-    }
-
-    if (is.null(q__)) {
-        dd <- stoch_sim_df |>
-            filter(season_surv == season_surv__) |>
-            select(q, u, d_yp, {{ yvar }}, {{ bvar }}) |>
-            pivot_longer({{ yvar }}:{{ bvar }}, names_to = "species") |>
-            mutate(species = str_sub(species, nchar(species), nchar(species))) |>
-            add_factors()
-        dds <- dd |>
-            group_by(q, u, d_yp, species) |>
-            summarize(value = mean(value), .groups = "drop")
-        if (!is.null(spp__)) {
-            dd <- dd |> filter(species == spp__)
-            dds <- dds |> filter(species == spp__)
-        }
-        p <- dd |>
-            ggplot(aes(u, value, color = species)) +
-            ggtitle(sprintf("*s* = %s", season_surv__)) +
-            .facet_fxn(q ~ d_yp, labeller = labeller(q = q_labeller,
-                                                     d_yp = label_value))
+        .hline <- list()
     } else {
-        dd <- stoch_sim_df |>
-            filter(season_surv == season_surv__,
-                   q == q__) |>
-            select(u, d_yp, {{ yvar }}, {{ bvar }}) |>
-            pivot_longer({{ yvar }}:{{ bvar }}, names_to = "species") |>
-            mutate(species = str_sub(species, nchar(species), nchar(species))) |>
-            add_factors()
-        dds <- dd |>
-            group_by(u, d_yp, species) |>
-            summarize(value = mean(value), .groups = "drop")
-        if (!is.null(spp__)) {
-            dd <- dd |> filter(species == spp__)
-            dds <- dds |> filter(species == spp__)
-        }
-        p <- dd |>
-            ggplot(aes(u, value, color = species)) +
-            ggtitle(sprintf("*s* = %s, *q* = %s", season_surv__, q__)) +
-            .facet_fxn( ~ d_yp)
+        .facet_fxn <- NULL
+        .ylimits <- ifelse(log_trans, list(log1p(c(0, 100))), list(c(0, 100))) |>
+            base::`[[`(1)
+        .ybreaks <- ifelse(log_trans, list(log1p(4^(0:3))), list(0:4 * 25)) |>
+            base::`[[`(1)
+        .ylabels <- ifelse(log_trans, list(c(4^(0:3))),
+                           list(c("0", "", "50", "", "100")))[[1]]
+        h_line <- geom_hline(yintercept = 0, linetype = 1, color = "gray80")
     }
 
-    if (!free_y) p <- p +
-        geom_hline(yintercept = 0, linetype = 1, color = "gray80")
+    # makes objects: x_scale, facet, f_lvls, f_var, f_lvls
+    make_plot_objects(x_var, facet_q, facet_u,
+                      facet_fxn = .facet_fxn,
+                      env = sys.frame(sys.nframe()))
 
-    p <- p +
+    dd <- stoch_sim_df |>
+        filter(season_surv == median(season_surv),
+               .data[[f_var]] %in% f_lvls) |>
+        select(q, u, d_yp, {{ yvar }}, {{ bvar }}) |>
+        pivot_longer({{ yvar }}:{{ bvar }}, names_to = "species") |>
+        mutate(species = str_sub(species, nchar(species), nchar(species))) |>
+        add_factors(.exclude = x_var)
+    dds <- dd |>
+        group_by(q, u, d_yp, species) |>
+        summarize(value = mean(value), .groups = "drop")
+    if (!is.null(spp__)) {
+        dd <- dd |> filter(species == spp__)
+        dds <- dds |> filter(species == spp__)
+    }
+    p <- dd |>
+        ggplot(aes(.data[[x_var]], value, color = species)) +
+        facet +
+        h_line +
         geom_point(aes(color = species), alpha = 0.1, shape = 1) +
         geom_line(data = dds, linewidth = 1) +
         scale_y_continuous("Microbial abundance", limits = .ylimits,
                            breaks = .ybreaks, labels = .ylabels) +
-        scale_x_continuous("Strength of microbe--pollinator effect (*u*)",
-                           breaks = seq(0, 10, 2.5),
-                           labels = c("0", "", "5", "", "10")) +
+        x_scale +
         scale_shape_manual(NULL, values = c(0, 2), drop = FALSE) +
         scale_linetype_manual(NULL, values = c(1, 1), drop = FALSE) +
         scale_color_manual(NULL, values = spp_pal, drop = FALSE,
@@ -388,111 +344,20 @@ abundance_plotter <- function(season_surv__,
               strip.text = element_markdown(),
               plot.title = element_markdown())
 
-    if (season_surv__ != sort(unique(stoch_sim_df$season_surv))[2]) {
-        p <- p + theme(axis.title.x = element_blank())
+    if (add_title) {
+        .title <- sprintf("*s* = %s", median(stoch_sim_df$season_surv))
+        if (length(f_lvls) == 1) {
+            .title <- paste0(.title, sprintf(", *%s* = %s", f_var, f_lvls))
+        }
+        if (!is.null(spp__)) {
+            .title <- paste0(.title, ", ", spp__)
+        }
+        p <- p + ggtitle(.title)
     }
 
     return(p)
 }
 
-
-abundance_plotter2 <- function(season_surv__,
-                               u__ = c(0, 1, 4, 7, 10),
-                               log_trans = TRUE,
-                               spp__ = NULL,
-                               free_y = FALSE) {
-
-    if (log_trans) {
-        .ylimits <- log1p(c(0, 100))
-        .ybreaks <- log1p(4^(0:3))
-        .ylabels <- c(4^(0:3))
-        yvar <- "meanlogY"
-        bvar <- "meanlogB"
-    } else {
-        .ylimits <- c(0, 100)
-        .ybreaks <- 0:4 * 25
-        .ylabels <- c("0", "", "50", "", "100")
-        yvar <- "meanY"
-        bvar <- "meanB"
-    }
-
-    .facet_fxn <- \(...) facet_grid(scales = "fixed", ...)
-
-    if (free_y) {
-        .facet_fxn <- \(...) facet_wrap(scales = "free_y",
-                                        ncol = length(unique(stoch_sim_df$d_yp)),
-                                        ...)
-        .ylimits <- NULL
-        .ybreaks <- waiver()
-        .ylabels <- waiver()
-    }
-
-    if (length(u__) > 1) {
-        dd <- stoch_sim_df |>
-            filter(season_surv == season_surv__) |>
-            filter(u %in% u__) |>
-            select(q, u, d_yp, {{ yvar }}, {{ bvar }}) |>
-            pivot_longer({{ yvar }}:{{ bvar }}, names_to = "species") |>
-            mutate(species = str_sub(species, nchar(species), nchar(species))) |>
-            add_factors(.exclude = NULL)
-        dds <- dd |>
-            group_by(q, u, d_yp, species) |>
-            summarize(value = mean(value), .groups = "drop")
-        if (!is.null(spp__)) {
-            dd <- dd |> filter(species == spp__)
-            dds <- dds |> filter(species == spp__)
-        }
-        p <- dd |>
-            ggplot(aes(q, value, color = species)) +
-            ggtitle(sprintf("*s* = %s", season_surv__)) +
-            .facet_fxn(u ~ d_yp, labeller = labeller(u = u_labeller,
-                                                     d_yp = label_value))
-    } else {
-        dd <- stoch_sim_df |>
-            filter(season_surv == season_surv__,
-                   u == u__) |>
-            select(q, d_yp, {{ yvar }}, {{ bvar }}) |>
-            pivot_longer({{ yvar }}:{{ bvar }}, names_to = "species") |>
-            mutate(species = str_sub(species, nchar(species), nchar(species))) |>
-            # add_factors(.exclude = "q")
-            add_factors(.exclude = NULL)
-        dds <- dd |>
-            group_by(q, d_yp, species) |>
-            summarize(value = mean(value), .groups = "drop")
-        if (!is.null(spp__)) {
-            dd <- dd |> filter(species == spp__)
-            dds <- dds |> filter(species == spp__)
-        }
-        p <- dd |>
-            ggplot(aes(q, value, color = species)) +
-            ggtitle(sprintf("*s* = %s, *u* = %s", season_surv__, u__)) +
-            .facet_fxn( ~ d_yp)
-    }
-
-    if (!free_y) p <- p +
-        geom_hline(yintercept = 0, linetype = 1, color = "gray80")
-
-    p <- p +
-        geom_point(aes(color = species), alpha = 0.1, shape = 1) +
-        geom_line(data = dds, aes(x = as.numeric(q)), linewidth = 1) +
-        scale_y_continuous("Microbial abundance", limits = .ylimits,
-                           breaks = .ybreaks, labels = .ylabels) +
-        scale_x_discrete("Between-season determinism (*q*)",
-                         labels = c("0", "", "0.5", "", "0.95")) +
-        scale_shape_manual(NULL, values = c(0, 2), drop = FALSE) +
-        scale_linetype_manual(NULL, values = c(1, 1), drop = FALSE) +
-        scale_color_manual(NULL, values = spp_pal, drop = FALSE,
-                           aesthetics = c("color", "fill")) +
-        theme(axis.title.x = element_markdown(margin = margin(0,0,0,t=12)),
-              axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
-              strip.text = element_markdown(),
-              plot.title = element_markdown())
-    if (season_surv__ != sort(unique(stoch_sim_df$season_surv))[2]) {
-        p <- p + theme(axis.title.x = element_blank())
-    }
-
-    return(p)
-}
 
 
 
@@ -555,385 +420,13 @@ if (! file.exists(gain_loss_stoch_sims_file)) {
 }
 
 
-#'
-#' Average proportion gained or lost (or net = gained - lost)
-#'
-prop_gl_sims <- map(c("gain", "loss", "net"), \(type__) {
-
-    .y_axis <- scale_y_continuous(sprintf("Average proportion %s",
-                                          case_when(type__ == "gain" ~ "gained",
-                                                    type__ == "loss" ~ "lost",
-                                                    TRUE ~ type__)),
-                                  limits = c(0, 1.1), breaks = 0:4/4,
-                                  labels = c("0", "", "0.5", "", "1.0"))
-    if (type__ == "net") {
-        .y_axis$limits <- NULL
-        .y_axis$breaks <- waiver()
-        .y_axis$labels <- waiver()
-    }
-    gl_sim_df |>
-        filter(season_surv == median(season_surv)) |>
-        filter(occup > 0) |>
-        mutate(net = gain - loss) |>
-        mutate(across(c(net, gain, loss), \(x) x / occup)) |>
-        # mean across reps and seasons:
-        group_by(u, d_yp, q, species) |>
-        summarize(across(c(net, gain, loss), mean), .groups = "drop") |>
-        mutate(q = as.numeric(paste(q))) |>
-        ggplot(aes(q, .data[[type__]], color = species)) +
-        geom_hline(yintercept = 0, linetype = 1, color = "gray70") +
-        geom_point(size = 2) +
-        geom_line(linewidth = 1) +
-        scale_x_continuous("Between-season determinism (*q*)",
-                           breaks = as.numeric(levels(gl_sim_df$q)),
-                           labels = c("0", "", "0.5", "", "0.95")) +
-        .y_axis +
-        facet_grid(u ~ d_yp,
-                   labeller = labeller(u = u_labeller, d_yp = label_value)) +
-        scale_color_manual(NULL, values = spp_pal) +
-        theme(axis.title.x = element_markdown(),
-              axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
-              strip.text = element_markdown())
-})
-
-do.call(wrap_plots, prop_gl_sims[1:3]) +
-    plot_layout(nrow = 1, guides = "collect") +
-    plot_annotation(tag_levels = "a", tag_prefix = "(", tag_suffix = ")") &
-    theme(plot.tag = element_text(size = 16, face = "bold", vjust = -10))
 
 
 
-# REALLY LEFT OFF ----
-# gl_plot <-
+# =====================================================*
+#           creating plots ----
+# =====================================================*
 
-map(1:2, \(i) {
-
-})
-
-dd <- gl_sim_df |>
-    filter(season_surv == median(season_surv)) |>
-    filter(occup > 0) |>
-    mutate(net = gain - loss) |>
-    mutate(across(c(net, gain, loss), \(x) x / occup)) |>
-    # mean across reps and seasons:
-    group_by(u, d_yp, q, species) |>
-    summarize(across(c(net, gain, loss), mean), .groups = "drop") |>
-    mutate(q = as.numeric(paste(q)))
-
-if (dd == 1) {
-    dd <- dd |>
-        select(-net) |>
-        pivot_longer(gain:loss)
-    .y_axis <- scale_y_continuous("Average proportion gained or lost",
-                                  limits = c(0, 1.1), breaks = 0:4/4,
-                                  labels = c("0", "", "0.5", "", "1.0"))
-} else {
-    dd <- dd |>
-        mutate(name = "net", value = net)
-    .y_axis <- scale_y_continuous("Average proportion net-gained")
-}
-
-dd |>
-    ggplot(aes(q, value, color = species)) +
-    geom_hline(yintercept = 0, linetype = 1, color = "gray70") +
-    geom_point(aes(shape = name), size = 1) +
-    geom_line(aes(linetype = name), linewidth = 1) +
-    scale_x_continuous("Between-season determinism (*q*)",
-                       breaks = as.numeric(levels(gl_sim_df$q)),
-                       labels = c("0", "", "0.5", "", "0.95")) +
-    .y_axis +
-    facet_grid(u ~ d_yp,
-               labeller = labeller(u = u_labeller, d_yp = label_value)) +
-    scale_color_manual(NULL, values = spp_pal) +
-    scale_shape_manual(values = c(0, 2)) +
-    scale_linetype_manual(values = c(net = "solid", gain = "solid",
-                                     loss = "22")) +
-    theme(axis.title.x = element_markdown(),
-          axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
-          legend.title = element_blank(),
-          strip.text = element_markdown())
-
-
-
-
-
-
-# gl_sim_df |>
-#     filter(season_surv == median(season_surv)) |>
-#     filter(occup > 0) |>
-#     mutate(net = (gain - loss) / occup) |>
-#     select(u, d_yp, q, rep, season, species, net) |>
-#     pivot_wider(names_from = species, values_from = net) |>
-#     filter(!is.na(yeast), !is.na(bacteria)) |>
-#     mutate(diff = yeast - bacteria,
-#            diff2 = ifelse(d_yp == "bacteria only",
-#                           yeast - bacteria, bacteria - yeast)) |>
-#     # mean across reps and seasons:
-#     group_by(u, d_yp, q) |>
-#     summarize(across(starts_with("diff"), mean), .groups = "drop") |>
-#     mutate(q = as.numeric(paste(q))) |>
-#     ggplot(aes(q, diff2)) +
-#     geom_hline(yintercept = 0, linetype = 1, color = "gray70") +
-#     geom_point(size = 2) +
-#     geom_line(linewidth = 1) +
-#     scale_x_continuous("Between-season determinism (*q*)",
-#                        breaks = as.numeric(levels(gl_sim_df$q)),
-#                        labels = c("0", "", "0.5", "", "0.95")) +
-#     ylab("rare - common") +
-#     # ylab("yeast - bacteria") +
-#     # facet_grid(u ~ d_yp,
-#     facet_wrap(u ~ d_yp,
-#                scales = "free_y", ncol = length(unique(stoch_sim_df$d_yp)),
-#                labeller = labeller(u = u_labeller, d_yp = label_value)) +
-#     scale_color_manual(values = spp_pal, guide = "none") +
-#     theme(axis.title.x = element_markdown(),
-#           axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
-#           strip.text = element_markdown(),
-#           plot.title = element_markdown())
-
-
-
-
-
-
-
-# |>
-#     group_by(u, d_yp, q, rep, species) |>
-#     summarize(sumnet = sum(net), .groups = "drop") |>
-#     pivot_wider(names_from = species, values_from = sumnet) |>
-#     mutate(diff = yeast - bacteria,
-#            q = as.numeric(paste(q)))
-# dds <- dd |>
-#     group_by(u, d_yp, q) |>
-#     summarize(diff = mean(diff), .groups = "drop")
-#
-# dd |>
-#     ggplot(aes(q, diff)) +
-#     ggtitle(sprintf("*s* = %s", season_surv__)) +
-#     geom_hline(yintercept = 0, linetype = 1, color = "gray70") +
-#     geom_point(alpha = 0.1, shape = 1) +
-#     geom_line(data = dds, linewidth = 1) +
-#     scale_y_continuous("Net gain yeast - net gain bacteria",
-#                        limits = .ylimits,
-#                        breaks = -1:2 * 50) +
-#     scale_x_continuous("Between-season determinism (*q*)",
-#                        breaks = as.numeric(levels(gl_sim_df$q)),
-#                        labels = c("0", "", "0.5", "", "0.95")) +
-#     facet_grid(u ~ d_yp,
-#                labeller = labeller(u = u_labeller, d_yp = label_value)) +
-#     scale_color_manual(values = spp_pal, guide = "none") +
-#     theme(axis.title.x = element_markdown(),
-#           axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
-#           strip.text.y = element_markdown(),
-#           plot.title = element_markdown())
-
-
-
-
-
-
-#' Plot difference in net gain/loss for yeast - net gain/loss for bacteria
-#' `ylims_by_ss` is whether to have separate y limits by `season_surv__`
-diff_net_plotter <- function(season_surv__,
-                             ylims_by_ss = TRUE) {
-
-    .ylimits <- NULL
-
-    if (!ylims_by_ss) {
-        .ylimits <- gl_sim_df |>
-            mutate(net = gain - loss) |>
-            group_by(u, d_yp, season_surv, q, rep, species) |>
-            summarize(sumnet = sum(net), .groups = "drop") |>
-            pivot_wider(names_from = species, values_from = sumnet) |>
-            mutate(diff = yeast - bacteria) |>
-            getElement("diff") |>
-            (\(x) range(x) + c(-1L, 1L))()
-    }
-
-
-    dd <- gl_sim_df |>
-        filter(season_surv == season_surv__) |>
-        mutate(net = gain - loss) |>
-        group_by(u, d_yp, q, rep, species) |>
-        summarize(sumnet = sum(net), .groups = "drop") |>
-        pivot_wider(names_from = species, values_from = sumnet) |>
-        mutate(diff = yeast - bacteria,
-               q = as.numeric(paste(q)))
-    dds <- dd |>
-        group_by(u, d_yp, q) |>
-        summarize(diff = mean(diff), .groups = "drop")
-
-    dd |>
-        ggplot(aes(q, diff)) +
-        ggtitle(sprintf("*s* = %s", season_surv__)) +
-        geom_hline(yintercept = 0, linetype = 1, color = "gray70") +
-        geom_point(alpha = 0.1, shape = 1) +
-        geom_line(data = dds, linewidth = 1) +
-        scale_y_continuous("Net gain yeast - net gain bacteria",
-                           limits = .ylimits,
-                           breaks = -1:2 * 50) +
-        scale_x_continuous("Between-season determinism (*q*)",
-                           breaks = as.numeric(levels(gl_sim_df$q)),
-                           labels = c("0", "", "0.5", "", "0.95")) +
-        facet_grid(u ~ d_yp,
-                   labeller = labeller(u = u_labeller, d_yp = label_value)) +
-        scale_color_manual(values = spp_pal, guide = "none") +
-        theme(axis.title.x = element_markdown(),
-              axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
-              strip.text.y = element_markdown(),
-              plot.title = element_markdown())
-}
-
-
-#' Plot net gain/loss for yeast and bacteria separately
-net_plotter <- function(season_surv__,
-                        ylims_by_ss = TRUE) {
-
-    .ylimits <- NULL
-
-    if (!ylims_by_ss) {
-        .ylimits <- gl_sim_df |>
-            mutate(net = gain - loss) |>
-            group_by(u, d_yp, season_surv, q, rep, species) |>
-            summarize(sumnet = sum(net), .groups = "drop") |>
-            getElement("sumnet") |>
-            (\(x) range(x) + c(-1L, 1L))()
-    }
-
-
-    dd <- gl_sim_df |>
-        filter(season_surv == season_surv__) |>
-        mutate(net = gain - loss) |>
-        group_by(u, d_yp, q, rep, species) |>
-        summarize(sumnet = sum(net), .groups = "drop") |>
-        mutate(q = as.numeric(paste(q)))
-    dds <- dd |>
-        group_by(u, d_yp, q, species) |>
-        summarize(sumnet = mean(sumnet), .groups = "drop")
-
-    dd |>
-        ggplot(aes(q, sumnet, color = species)) +
-        ggtitle(sprintf("*s* = %s", season_surv__)) +
-        geom_hline(yintercept = 0, linetype = 1, color = "gray70") +
-        geom_point(alpha = 0.1, shape = 1) +
-        geom_line(data = dds, linewidth = 1) +
-        scale_y_continuous("Summed net occupancy gains",
-                           limits = .ylimits,
-                           breaks = -1:2 * 50) +
-        scale_x_continuous("Between-season determinism (*q*)",
-                           breaks = as.numeric(levels(gl_sim_df$q)),
-                           labels = c("0", "", "0.5", "", "0.95")) +
-        facet_grid(u ~ d_yp,
-                   labeller = labeller(u = u_labeller, d_yp = label_value)) +
-        scale_color_manual(values = spp_pal, guide = "none") +
-        theme(axis.title.x = element_markdown(),
-              axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
-              strip.text.y = element_markdown(),
-              plot.title = element_markdown())
-}
-
-
-
-
-
-gl_plotter <- function(season_surv__,
-                       type__,
-                       ylims_by_ss = TRUE) {
-
-    type__ <- match.arg(type__, c("gain", "loss"))
-
-    if (!ylims_by_ss) {
-        .ylimits <- gl_sim_df |>
-            group_by(u, d_yp, season_surv, q, rep, species) |>
-            summarize(loss = sum(loss), gain = sum(gain), .groups = "drop") |>
-            pivot_longer(loss:gain) |>
-            group_by(u, d_yp, season_surv, q, species, name) |>
-            summarize(value = mean(value), .groups = "drop") |>
-            getElement("value") |>
-            (\(x) c(0L, max(x) + 1L))()
-    } else {
-        .ylimits <- gl_sim_df |>
-            filter(season_surv == season_surv__) |>
-            group_by(u, d_yp, q, rep, species) |>
-            summarize(loss = sum(loss), gain = sum(gain), .groups = "drop") |>
-            pivot_longer(loss:gain) |>
-            group_by(u, d_yp, q, species, name) |>
-            summarize(value = mean(value), .groups = "drop") |>
-            getElement("value") |>
-            (\(x) c(0L, max(x) + 1L))()
-    }
-
-    gl_sim_df |>
-        filter(season_surv == season_surv__) |>
-        group_by(u, d_yp, q, rep, species) |>
-        summarize({{ type__ }} := sum(.data[[type__]]), .groups = "drop") |>
-        group_by(u, d_yp, q, species) |>
-        summarize(value = mean(.data[[type__]]), .groups = "drop") |>
-        mutate(q = as.numeric(paste(q))) |>
-        ggplot(aes(q, value, color = species)) +
-        ggtitle(sprintf("*s* = %s", season_surv__)) +
-        geom_hline(yintercept = 0, linetype = 1, color = "gray70") +
-        geom_point() +
-        geom_line(linewidth = 1) +
-        scale_y_continuous(sprintf("Total %s over all seasons",
-                                   ifelse(type__ == "gain", "gains", "losses")),
-                           limits = .ylimits, breaks = 0:2 * 250) +
-        scale_x_continuous("Between-season determinism (*q*)",
-                           breaks = as.numeric(levels(gl_sim_df$q)),
-                           labels = c("0", "", "0.5", "", "0.95")) +
-        facet_grid(u ~ d_yp,
-                   labeller = labeller(u = u_labeller, d_yp = label_value)) +
-        scale_color_manual(values = spp_pal, guide = "none") +
-        theme(axis.title.x = element_markdown(),
-              axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
-              strip.text = element_markdown(),
-              plot.title = element_markdown())
-
-
-    # gl_sim_df |>
-    #     filter(season_surv == season_surv__) |>
-    #     group_by(u, d_yp, q, rep, species) |>
-    #     summarize(loss = sum(loss), gain = sum(gain), .groups = "drop") |>
-    #     pivot_longer(loss:gain) |>
-    #     mutate(q = as.numeric(paste(q))) |>
-    #     group_by(u, d_yp, q, species, name) |>
-    #     summarize(value = mean(value), .groups = "drop") |>
-    #     ggplot(aes(q, value, color = species)) +
-    #     ggtitle(sprintf("*s* = %s", season_surv__)) +
-    #     geom_hline(yintercept = 0, linetype = 1, color = "gray70") +
-    #     geom_point(aes(shape = name)) +
-    #     geom_line(aes(linetype = name), linewidth = 1) +
-    #     scale_y_continuous("Total gains or losses over 10 seasons",
-    #                        limits = .ylimits,
-    #                        breaks = 0:2 * 250) +
-    #     scale_x_continuous("Between-season determinism (*q*)",
-    #                        breaks = as.numeric(levels(gl_sim_df$q)),
-    #                        labels = c("0", "", "0.5", "", "0.95")) +
-    #     facet_grid(u ~ d_yp,
-    #                labeller = labeller(u = u_labeller, d_yp = label_value)) +
-    #     scale_color_manual(values = spp_pal, guide = "none") +
-    #     scale_shape_manual(NULL, values = c(0, 2)) +
-    #     scale_linetype_manual(NULL, values = c("solid", "22")) +
-    #     theme(axis.title.x = element_markdown(),
-    #           axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
-    #           strip.text = element_markdown(),
-    #           plot.title = element_markdown())
-}
-
-
-(net_plotter(median(gl_sim_df$season_surv)) +
-        diff_net_plotter(median(gl_sim_df$season_surv)) &
-        theme(plot.title = element_blank())) +
-    plot_layout(nrow = 1, guides = "collect") +
-    plot_annotation(tag_levels = "a", tag_prefix = "(", tag_suffix = ")") &
-    theme(plot.tag = element_text(size = 16, face = "bold"))
-
-
-# map(sort(unique(gl_sim_df$season_surv)), gl_plotter) |>
-#     do.call(what = wrap_plots) +
-#     plot_layout(guides = "collect", nrow = 1)
-
-gl_plotter(median(gl_sim_df$season_surv))
 
 
 # LEFT OFF ----
@@ -946,34 +439,96 @@ gl_plotter(median(gl_sim_df$season_surv))
 #'
 
 
-outcome_plotter(median(unique(stoch_sim_df$season_surv)), q__ = 0.5) /
-    abundance_plotter(median(unique(stoch_sim_df$season_surv)), q__ = 0.5) &
+outcome_plotter("u", facet_q = 0.5) /
+    abundance_plotter("u", facet_q = 0.5) &
+    theme(plot.title = element_blank())
+
+outcome_plotter("q", facet_u = 4) /
+    abundance_plotter("q", facet_u = 4) &
     theme(plot.title = element_blank())
 
 
 # For supplement
 
-supp_q_out_abund_p <-
-    (outcome_plotter(median(unique(stoch_sim_df$season_surv))) +
-         theme(plot.title = element_blank())) +
-    (abundance_plotter(median(unique(stoch_sim_df$season_surv))) +
-         theme(plot.title = element_blank())) +
-    plot_layout(nrow = 1, guides = "collect") +
-    plot_annotation(tag_levels = "a", tag_prefix = "(", tag_suffix = ")") &
-    theme(plot.tag = element_text(size = 16, face = "bold"))
-
-
 supp_u_out_abund_p <-
-    (outcome_plotter2(median(unique(stoch_sim_df$season_surv))) +
-    theme(plot.title = element_blank())) +
-    (abundance_plotter2(median(unique(stoch_sim_df$season_surv))) +
-         theme(plot.title = element_blank())) +
+    (outcome_plotter("u") + theme(plot.title = element_blank())) +
+    (abundance_plotter("u") + theme(plot.title = element_blank())) +
     plot_layout(nrow = 1, guides = "collect") +
     plot_annotation(tag_levels = "a", tag_prefix = "(", tag_suffix = ")") &
     theme(plot.tag = element_text(size = 16, face = "bold"))
 
-# save_plot("_figures/supp-q-out-abund.pdf", supp_q_out_abund_p, 9, 6)
+
+supp_q_out_abund_p <-
+    (outcome_plotter("q") + theme(plot.title = element_blank())) +
+    (abundance_plotter("q") + theme(plot.title = element_blank())) +
+    plot_layout(nrow = 1, guides = "collect") +
+    plot_annotation(tag_levels = "a", tag_prefix = "(", tag_suffix = ")") &
+    theme(plot.tag = element_text(size = 16, face = "bold"))
+
 # save_plot("_figures/supp-u-out-abund.pdf", supp_u_out_abund_p, 9, 6)
+# save_plot("_figures/supp-q-out-abund.pdf", supp_q_out_abund_p, 9, 6)
 
 
+
+
+#'
+#' Average proportion (1) gained or lost and (2) net (gained - lost)
+#'
+gl_plots <- map(1:2, \(i) {
+    dd <- gl_sim_df |>
+        filter(season_surv == median(season_surv)) |>
+        filter(occup > 0) |>
+        mutate(net = gain - loss) |>
+        mutate(across(c(net, gain, loss), \(x) x / occup)) |>
+        # mean across reps and seasons:
+        group_by(u, d_yp, q, species) |>
+        summarize(across(c(net, gain, loss), mean), .groups = "drop") |>
+        mutate(q = as.numeric(paste(q)))
+    if (i == 1) {
+        dd <- dd |>
+            select(-net) |>
+            pivot_longer(gain:loss) |>
+            mutate(name = factor(name, levels = c("gain", "loss", "net")))
+        .y_axis <- scale_y_continuous("Average proportion gained or lost",
+                                      limits = c(0, 1.1), breaks = 0:4/4,
+                                      labels = c("0", "", "0.5", "", "1.0"))
+        .guide <- guide_legend()
+    } else {
+        dd <- dd |>
+            mutate(name = factor("net", levels = c("gain", "loss", "net")),
+                   value = net)
+        .y_axis <- scale_y_continuous("Average proportion net-gained")
+        .guide <- "none"
+    }
+    u_labeller <- \(x) lapply(x, \(z) paste('*u* = ', z))
+    dd |>
+        ggplot(aes(q, value, color = species)) +
+        geom_hline(yintercept = 0, linetype = 1, color = "gray70") +
+        geom_point(aes(shape = name), size = 2, show.legend = TRUE) +
+        geom_line(aes(linetype = name), linewidth = 1, show.legend = TRUE) +
+        scale_x_continuous("Between-season determinism (*q*)",
+                           breaks = as.numeric(levels(gl_sim_df$q)),
+                           labels = c("0", "", "0.5", "", "0.95")) +
+        .y_axis +
+        facet_grid(u ~ d_yp,
+                   labeller = labeller(u = u_labeller,
+                                       d_yp = label_value)) +
+        scale_color_manual(NULL, values = spp_pal) +
+        scale_shape_manual(values = c(gain = 0, loss = 2, net = 19),
+                           drop = FALSE) +
+        scale_linetype_manual(values = c(gain = "solid", loss = "22",
+                                         net = "solid"),
+                              drop = FALSE) +
+        theme(axis.title.x = element_markdown(),
+              axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+              legend.title = element_blank(),
+              strip.text = element_markdown())
+})
+
+supp_q_gain_loss_p <- do.call(wrap_plots, gl_plots) +
+    plot_layout(nrow = 1, guides = "collect") +
+    plot_annotation(tag_levels = "a", tag_prefix = "(", tag_suffix = ")") &
+    theme(plot.tag = element_text(size = 16, face = "bold"))
+
+# save_plot("_figures/supp-q-gain-loss.pdf", supp_q_gain_loss_p, 9, 6)
 
