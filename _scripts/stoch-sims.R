@@ -230,6 +230,7 @@ make_plot_objects <- function(x_var, facet_q, facet_u,
 outcome_plotter <- function(x_var,
                             facet_q = c(0, 0.25, 0.5, 0.75, 0.95),
                             facet_u = c(0, 1, 4, 7, 10),
+                            drop_ext = TRUE,
                             add_title = FALSE) {
 
     x_var <- match.arg(x_var, c("q", "u"))
@@ -238,13 +239,20 @@ outcome_plotter <- function(x_var,
     make_plot_objects(x_var, facet_q, facet_u,
                       env = sys.frame(sys.nframe()))
 
-
-    p <- stoch_sim_df |>
+    dd <- stoch_sim_df |>
         filter(season_surv == median(season_surv),
                .data[[f_var]] %in% f_lvls) |>
         select(q, u, d_yp, maxY, maxB) |>
         add_outcome_props() |>
-        add_factors(.exclude = x_var) |>
+        add_factors(.exclude = x_var)
+
+    if (drop_ext && sum(dd$prop[dd$outcome == "extinction"]) == 0) {
+            dd <- dd |>
+                filter(outcome != "extinction") |>
+                mutate(outcome = fct_drop(outcome, "extinction"))
+    }
+
+    p <- dd |>
         ggplot(aes(.data[[x_var]], prop, color = outcome)) +
         geom_hline(yintercept = 0, linetype = 1, color = "gray80") +
         geom_point(aes(shape = outcome), show.legend = TRUE) +
@@ -322,7 +330,11 @@ abundance_plotter <- function(x_var,
         add_factors(.exclude = x_var)
     dds <- dd |>
         group_by(q, u, d_yp, species) |>
-        summarize(value = mean(value), .groups = "drop")
+        summarize(lo = min(value),
+                  hi = max(value),
+                  lo10 = quantile(value, 0.1),
+                  hi10 = quantile(value, 0.9),
+                  value = mean(value), .groups = "drop")
     if (!is.null(spp__)) {
         dd <- dd |> filter(species == spp__)
         dds <- dds |> filter(species == spp__)
@@ -333,6 +345,13 @@ abundance_plotter <- function(x_var,
         h_line +
         geom_point(aes(color = species), alpha = 0.1, shape = 1) +
         geom_line(data = dds, linewidth = 1) +
+        ## If you want to switch back to using ribbons
+        ## (also use `dds` instead of `dd`):
+        # geom_ribbon(aes(fill = species, ymin = lo, ymax = hi),
+        #             alpha = 0.25, color = NA) +
+        # geom_ribbon(aes(fill = species, ymin = lo10, ymax = hi10),
+        #             alpha = 0.25, color = NA) +
+        # geom_line(linewidth = 1) +
         scale_y_continuous("Microbial abundance", limits = .ylimits,
                            breaks = .ybreaks, labels = .ylabels) +
         x_scale +
@@ -439,19 +458,36 @@ if (! file.exists(gain_loss_stoch_sims_file)) {
 #'
 
 
-outcome_plotter("u", facet_q = 0.5) /
-    abundance_plotter("u", facet_q = 0.5) &
-    theme(plot.title = element_blank())
+for (v in c("u", "q")) {
+    pl <- c("outcome", "abundance") |>
+        set_names() |>
+        map(\(n) {
+                 fxn <- eval(parse(text = paste0(n, "_plotter")))
+                 p <- fxn(v, facet_q = 0.5, facet_u = 4) +
+                     theme(plot.title = element_blank(),
+                           legend.position = "none",
+                           panel.spacing.x = unit(1, "lines"),
+                           axis.title.y = element_blank(),
+                           axis.title.x = element_blank(),
+                           strip.text = element_blank())
+                 save_plot(sprintf("_figures/%s-%s.pdf", v, n), p, 4, 2)
+                 return(p)
+             })
+    pf <- pl[["abundance"]] + guides(y = guide_axis(position = "right"))
+    save_plot(sprintf("_figures/%s-abundance-flipY.pdf", v), pf, 4, 2)
 
-outcome_plotter("q", facet_u = 4) /
-    abundance_plotter("q", facet_u = 4) &
-    theme(plot.title = element_blank())
+    pc <- do.call(wrap_plots, pl) + plot_layout(ncol = 1)
+    save_plot(sprintf("_figures/%s-outcome+abundance.pdf", v), pc, 4, 3)
+
+}; rm(v, pl, pf, pc)
+
 
 
 # For supplement
 
 supp_u_out_abund_p <-
-    (outcome_plotter("u") + theme(plot.title = element_blank())) +
+    (outcome_plotter("u", drop_ext = FALSE) +
+         theme(plot.title = element_blank())) +
     (abundance_plotter("u") + theme(plot.title = element_blank())) +
     plot_layout(nrow = 1, guides = "collect") +
     plot_annotation(tag_levels = "a", tag_prefix = "(", tag_suffix = ")") &
@@ -459,7 +495,8 @@ supp_u_out_abund_p <-
 
 
 supp_q_out_abund_p <-
-    (outcome_plotter("q") + theme(plot.title = element_blank())) +
+    (outcome_plotter("q", drop_ext = FALSE) +
+         theme(plot.title = element_blank())) +
     (abundance_plotter("q") + theme(plot.title = element_blank())) +
     plot_layout(nrow = 1, guides = "collect") +
     plot_annotation(tag_levels = "a", tag_prefix = "(", tag_suffix = ")") &
