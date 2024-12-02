@@ -212,6 +212,7 @@ struct StochLandCFWorker : public RcppParallel::Worker {
     double max_t;
     double burnin;
     double save_every;
+    bool begin_end;
     int summarize;
     double season_len;
     double season_surv;
@@ -239,6 +240,7 @@ struct StochLandCFWorker : public RcppParallel::Worker {
                       const double& max_t_,
                       const double& burnin_,
                       const double& save_every_,
+                      const bool& begin_end_,
                       const int& summarize_)
         : output(n_reps, MatType(0,0)),
           seeds(n_reps, std::vector<uint64_t>(2)),
@@ -250,6 +252,7 @@ struct StochLandCFWorker : public RcppParallel::Worker {
           max_t(max_t_),
           burnin(burnin_),
           save_every(save_every_),
+          begin_end(begin_end_),
           summarize(summarize_),
           season_len(season_len_),
           season_surv(season_surv_),
@@ -315,7 +318,7 @@ private:
 
     /*
      Main function that does most of the work, can be used for the
-     MetaObsStoch, MetaObsStochSumm, or MetaObsStochSummRep classed
+     MetaObsStoch, MetaObsStochSumm, or MetaObsStochSummRep classes
      defined in `plant-metacomm.h`
      */
     template <class C>
@@ -323,8 +326,9 @@ private:
         pcg32 rng;
         const size_t& np(determ_sys0.n_plants);
         MatType x;
-        C obs(burnin, save_every);
-
+        std::vector<double> remainders = { 0.0 };
+        if (begin_end) remainders.push_back(dt);
+        C obs(burnin, save_every, remainders);
 
         for (size_t rep = begin; rep < end; rep++) {
 
@@ -374,6 +378,7 @@ arma::mat plant_metacomm_stoch_cpp(const uint32_t& n_reps,
                                    const double& max_t,
                                    const double& burnin,
                                    const double& save_every,
+                                   const bool& begin_end,
                                    const int& summarize) {
 
     /*
@@ -399,7 +404,7 @@ arma::mat plant_metacomm_stoch_cpp(const uint32_t& n_reps,
     StochLandCFWorker worker(n_reps, m, d_yp, d_b0, d_bp, g_yp, g_b0, g_bp,
                              L_0, u, X, Y0, B0, n_sigma,
                              season_len, season_surv, q, open_sys,
-                             dt, max_t, burnin, save_every, summarize);
+                             dt, max_t, burnin, save_every, begin_end, summarize);
 
     RcppParallel::parallelFor(0, n_reps, worker);
 

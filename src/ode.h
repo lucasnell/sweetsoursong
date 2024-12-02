@@ -28,11 +28,31 @@ typedef arma::mat MatType;
 
 typedef boost::numeric::odeint::runge_kutta_dopri5<MatType> MatStepperType;
 
+/*
+ This function checks for whether the remainder of numer / denom matches
+ one of the remainders inside the rmd vector.
+ The use of 1e-10 is to avoid rounding issues with std::fmod.
+ This function only works if numer > denom.
+ */
+inline bool remainder_equals(const double& numer,
+                             const double& denom,
+                             const std::vector<double>& rmd) {
+    double nd_rmd = std::fmod(numer, denom);
+    for (const double& r : rmd) {
+        if (std::abs(nd_rmd - r) < 1e-10) return true;
+    }
+    return false;
+}
 
-// this deals with std::remainder's rounding issues
+/*
+ This is similar to above but only checks for zero remainder
+ The use of 1e-10 is to avoid rounding issues with std::remainder.
+ This function works when numer < denom.
+ */
 inline bool zero_remainder(const double& numer, const double& denom) {
     return std::abs(std::remainder(numer, denom)) < 1e-10;
 }
+
 
 
 
@@ -135,11 +155,14 @@ struct ObserverBurnEvery
     std::vector<double> time;
     double burnin;
     double save_every;
-    ObserverBurnEvery(const double& burnin_, const double& save_every_)
-        : data(), time(), burnin(burnin_), save_every(save_every_) {};
+    std::vector<double> remainders;
+    ObserverBurnEvery(const double& burnin_, const double& save_every_,
+                      const std::vector<double>& remainders_)
+        : data(), time(), burnin(burnin_), save_every(save_every_),
+          remainders(remainders_) {};
 
     void operator()(const C& x, const double& t) {
-        if (t > burnin && zero_remainder(t, save_every)) {
+        if (t > burnin && remainder_equals(t, save_every, remainders)) {
             data.push_back(x);
             time.push_back(t);
         }

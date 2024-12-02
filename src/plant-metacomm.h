@@ -301,8 +301,9 @@ struct MetaObs : public Observer<MatType> {
 // and reps that need recorded:
 struct MetaObsStoch : public ObserverBurnEvery<MatType> {
 
-    MetaObsStoch(const double& burnin_, const double& save_every_)
-        : ObserverBurnEvery<MatType>(burnin_, save_every_) {};
+    MetaObsStoch(const double& burnin_, const double& save_every_,
+                 const std::vector<double>& remainders_)
+        : ObserverBurnEvery<MatType>(burnin_, save_every_, remainders_) {};
 
     // Fill output for one repetition:
     void fill_output(MatType& output,
@@ -340,8 +341,9 @@ struct MetaObsStoch : public ObserverBurnEvery<MatType> {
 // reps that need recorded, and summarizing by both rep and time point
 struct MetaObsStochSumm : public ObserverBurnEvery<MatType> {
 
-    MetaObsStochSumm(const double& burnin_, const double& save_every_)
-        : ObserverBurnEvery<MatType>(burnin_, save_every_) {};
+    MetaObsStochSumm(const double& burnin_, const double& save_every_,
+                     const std::vector<double>& remainders_)
+        : ObserverBurnEvery<MatType>(burnin_, save_every_, remainders_) {};
 
     void operator()(const MatType& x, const double& t) {
         if (t > burnin) {
@@ -452,8 +454,9 @@ protected:
 struct MetaObsStochSummRep : public MetaObsStochSumm {
 
     MetaObsStochSummRep(const double& burnin_,
-                        const double& save_every_)
-        : MetaObsStochSumm(burnin_, save_every_) {};
+                        const double& save_every_,
+                        const std::vector<double>& remainders_)
+        : MetaObsStochSumm(burnin_, save_every_, remainders_) {};
 
     /*
      Fill output for one repetition.

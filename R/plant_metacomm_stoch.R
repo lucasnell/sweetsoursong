@@ -45,9 +45,15 @@ dbl_check <- function(x, l, n, .min = NULL, .max = NULL) {
 #'     in output. This can help to avoid vector memory limit error in
 #'     simulations that use many plants.
 #' @param save_every Output will be stored every `save_every` days.
-#'     This argument is ignored if `summarize = "rep"`.
+#'     This argument is ignored if `summarize = "rep"` or if
+#'     `begin_end = TRUE`.
 #'     Must be a multiple of `dt`.
 #'     Defaults to `NULL`, which results in all time points being saved.
+#' @param begin_end Logical for whether to just include output from the
+#'     beginning and end of each season. This overrides `save_every`.
+#'     Will throw an error if this is `TRUE` and `summarize` is `"rep"`
+#'     or if `season_len` is `NULL`.
+#'     Defaults to `FALSE`.
 #' @param summarize Single string for how and whether to summarize output.
 #'     If `"none"`, no summarizing happens, and the output is a time series of
 #'     microbial abundances and pollinator visits by plant.
@@ -94,6 +100,7 @@ plant_metacomm_stoch <- function(np,
                                  save_every = NULL,
                                  no_immig = TRUE,
                                  open_sys = TRUE,
+                                 begin_end = FALSE,
                                  summarize = "none") {
 
     NotQuiteZero <- 1e-6  # used below for checking
@@ -135,13 +142,23 @@ plant_metacomm_stoch <- function(np,
     dbl_check(save_every, 1, "save_every")
     if (save_every %% dt != 0) stop("`save_every` must be a multiple of `dt`")
     stopifnot(length(no_immig) == 1 && is.logical(no_immig))
+    stopifnot(length(open_sys) == 1 && is.logical(open_sys))
+    stopifnot(length(begin_end) == 1 && is.logical(begin_end))
     stopifnot(length(summarize) == 1 && is.character(summarize))
     summarize <- match.arg(summarize, c("none", "time", "rep"))
     summarize <- which(c("none", "time", "rep") == summarize) - 1L
 
-    if (summarize == 2L) save_every <- dt
+    if (summarize == 2L) {
+        if (begin_end) stop("begin_end cannot be TRUE when summarize is 'rep'")
+        save_every <- dt
+    }
 
-    if (is.null(season_len)) season_len <- max_t + 1.0
+    if (is.null(season_len)) {
+        if (begin_end) stop("begin_end cannot be TRUE when season_len is NULL")
+        season_len <- max_t + 1.0
+    }
+
+    if (begin_end) save_every <- season_len
 
     if (no_immig) {
         g_yp <- 0
@@ -173,7 +190,7 @@ plant_metacomm_stoch <- function(np,
                                        L_0, u, X, Y0, B0, n_sigma,
                                        season_len, season_surv, q,
                                        open_sys, dt, max_t, burnin, save_every,
-                                       summarize) |>
+                                       begin_end, summarize) |>
         tibble::as_tibble(.name_repair = \(x) make.names(x, TRUE)) |>
         # this col will eventually be "rep"
         dplyr::mutate(X = factor(as.integer(X), levels = 1:n_reps))

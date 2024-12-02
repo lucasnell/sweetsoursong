@@ -29,6 +29,7 @@ plant_metacomm_stoch(
   save_every = NULL,
   no_immig = TRUE,
   open_sys = TRUE,
+  begin_end = FALSE,
   summarize = "none"
 )
 }
@@ -96,7 +97,8 @@ in output. This can help to avoid vector memory limit error in
 simulations that use many plants.}
 
 \item{save_every}{Output will be stored every \code{save_every} days.
-This argument is ignored if \code{summarize = "rep"}.
+This argument is ignored if \code{summarize = "rep"} or if
+\code{begin_end = TRUE}.
 Must be a multiple of \code{dt}.
 Defaults to \code{NULL}, which results in all time points being saved.}
 
@@ -109,6 +111,12 @@ from outside the system. If \code{FALSE}, immigration for each species
 is affected by their mean abundance across all plants.
 If \code{TRUE}, immigration is a constant trickle from outside the landscape.
 Defaults to \code{TRUE}.}
+
+\item{begin_end}{Logical for whether to just include output from the
+beginning and end of each season. This overrides \code{save_every}.
+Will throw an error if this is \code{TRUE} and \code{summarize} is \code{"rep"}
+or if \code{season_len} is \code{NULL}.
+Defaults to \code{FALSE}.}
 
 \item{summarize}{Single string for how and whether to summarize output.
 If \code{"none"}, no summarizing happens, and the output is a time series of
