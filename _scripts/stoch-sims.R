@@ -17,6 +17,8 @@ if (file.exists(".Rprofile")) source(".Rprofile")
 main_stoch_sims_file <- "_data/big-stoch-sims.rds"
 # sims of gain / loss:
 gain_loss_stoch_sims_file <- "_data/big-stoch-gain-loss-sims.rds"
+# sims of mutual invasibility:
+mutual_inv_stoch_sims_file <- "_data/big-stoch-mutual-inv-sims.rds"
 
 
 outcome_pal <- c("coexistence" = "#008B00",
@@ -40,13 +42,12 @@ spp_pal <- c(yeast = outcome_pal[["yeast only"]],
 # ===========================================================================*
 
 
-#' These are the bounds of where coexistence starts to occur (calculated
-#' in Mathematica), plus the middle of these bounds (when d_b0 = 0.3 and u = 1).
-#' We then moved the values that result in exclusion a bit further from the
-#' border so that the outcomes don't happen extremely slowly.
-d_yp__ = c("bacteria only" = 0.886308 - 0.1,
-           "coexistence" = 1.17755,
-           "yeast only" = 1.46879 + 0.1)
+#' "coexistence" is the boundary where coexistence occurs at u=0.
+#' The other two are on either side of that boundary and produce competitive
+#' exclusion.
+d_yp__ = c("bacteria only" = 0.8,
+           "coexistence" = 1,
+           "yeast only" = 1.2)
 
 
 
@@ -54,7 +55,7 @@ d_yp__ = c("bacteria only" = 0.886308 - 0.1,
 
 # ===========================================================================*
 # ===========================================================================*
-# simulations, outcomes/abundances ----
+# even sims ----
 # ===========================================================================*
 # ===========================================================================*
 
@@ -448,14 +449,8 @@ if (! file.exists(gain_loss_stoch_sims_file)) {
 
 
 
-# LEFT OFF ----
 
-#' What to include in figure (all are only for s = 0.02):
-#'   1. u vs outcomes (just for `q = 0.5`)
-#'   2. u vs microbial abundance (just for `q = 0.5`)
-#'   3. Something showing how non-random between seasons makes coexistence
-#'      less likely at low s and more likely at high s?
-#'
+
 
 
 for (v in c("u", "q")) {
@@ -504,6 +499,7 @@ supp_q_out_abund_p <-
 
 # save_plot("_figures/supp-u-out-abund.pdf", supp_u_out_abund_p, 9, 6)
 # save_plot("_figures/supp-q-out-abund.pdf", supp_q_out_abund_p, 9, 6)
+
 
 
 
@@ -568,4 +564,126 @@ supp_q_gain_loss_p <- do.call(wrap_plots, gl_plots) +
     theme(plot.tag = element_text(size = 16, face = "bold"))
 
 # save_plot("_figures/supp-q-gain-loss.pdf", supp_q_gain_loss_p, 9, 6)
+
+
+
+
+
+
+
+# =====================================================*
+#           mutual inv. sims ----
+# =====================================================*
+
+
+
+if (! file.exists(mutual_inv_stoch_sims_file)) {
+
+    # Takes ~17 min with 6 threads
+    set.seed(1771251461)
+    inv_sim_df <- crossing(.u = 0:10,
+                          .d_yp = d_yp__,
+                          .q = sort(unique(stoch_sim_df$q)),
+                          .rare_spp = c("yeast", "bacteria")) |>
+        # Don't do this in parallel bc plant_metacomm_stoch is already
+        # doing that
+        pmap_dfr(\(.u, .d_yp, .q, .rare_spp) {
+            if (.rare_spp == "yeast") {
+                .Y0 <- c(rep(0.5, 1L), rep(0,   99L))
+                .B0 <- c(rep(0,   1L), rep(0.5, 99L))
+            } else {
+                .B0 <- c(rep(0.5, 1L), rep(0,   99L))
+                .Y0 <- c(rep(0,   1L), rep(0.5, 99L))
+            }
+            plant_metacomm_stoch(np = 100L, u = .u, d_yp = .d_yp, q = .q,
+                                 Y0 = .Y0, B0 = .B0,
+                                 no_immig = TRUE,
+                                 n_sigma = 100,
+                                 season_surv = median(stoch_sim_df$season_surv),
+                                 save_every = 150,
+                                 max_t = 3000) |>
+                select(-P) |>
+                pivot_longer(Y:B, names_to = "species", values_to = "density") |>
+                mutate(season = as.integer((t - 0.1) %/% 150 + 1)) |>
+                mutate(occup = density > 0) |>
+                group_by(rep, season, species) |>
+                # number of patches occupied each season:
+                summarize(occup = sum(occup), .groups = "drop") |>
+                mutate(u = .u, d_yp = .d_yp, q = .q, rare_spp = .rare_spp) |>
+                add_factors(.exclude = NULL) |>
+                mutate(rare_spp = factor(rare_spp, levels = c("yeast",
+                                                              "bacteria"))) |>
+                select(u, d_yp, q, rare_spp, everything())
+        }, .progress = TRUE)
+
+    write_rds(inv_sim_df, mutual_inv_stoch_sims_file)
+
+
+} else {
+
+    inv_sim_df <- read_rds(mutual_inv_stoch_sims_file)
+
+}
+
+
+
+
+
+
+invasion_plotter <- function(v, double_facet) {
+
+    f_var <- ifelse(v == "u", "q", "u")
+
+    if (v == "u") {
+        x_axis <- scale_x_continuous(paste("Strength of microbe--pollinator",
+                                           "effect (*u*)"),
+                                     breaks = seq(0, 10, 2.5),
+                                     labels = c("0", "", "5", "", "10"))
+    } else {
+        x_axis <- scale_x_continuous("Between-season determinism (*q*)",
+                                     breaks = as.numeric(levels(inv_sim_df$q)),
+                                     labels = c("0", "", "0.5", "", "0.95"))
+    }
+
+    dd <- inv_sim_df |>
+        filter(season == max(season)) |>
+        mutate(occup = log1p(occup)) |>
+        group_by(u, d_yp, q, rare_spp, species) |>
+        summarize(lo = quantile(occup, 0.2),
+                  hi = quantile(occup, 0.8),
+                  occup = mean(occup),
+                  .groups = "drop") |>
+        filter(rare_spp == species) |>
+        mutate(increasing = factor(occup > log1p(1))) |>
+        mutate(!!v := as.numeric(paste(.data[[v]])))
+
+    if (double_facet) {
+        facet <- facet_grid(vars(.data[[f_var]]), vars(d_yp),
+                            labeller = labeller(!!f_var := \(x) lapply(
+                                x, \(z) paste0("*", f_var, "* = ", z)),
+                                       d_yp = label_value))
+    } else {
+        dd <- dd |>
+            filter(.data[[f_var]] == median(as.numeric(levels(.data[[f_var]]))))
+        facet <- facet_grid(~ d_yp)
+    }
+
+    dd |>
+        ggplot(aes(.data[[v]], occup, color = species)) +
+        geom_hline(yintercept = 0, linetype = 1, color = "gray70") +
+        geom_hline(yintercept = log1p(1), linetype = "22", color = "gray70") +
+        geom_point(aes(shape = increasing), size = 2) +
+        geom_line(linewidth = 1, show.legend = TRUE) +
+        x_axis +
+        scale_y_continuous("Occupancy after 20 seasons",
+                           breaks = log1p(c(0, 3^(0:3))),
+                           labels = c(0, 3^(0:3))) +
+        facet +
+        scale_color_manual(NULL, values = spp_pal) +
+        scale_shape_manual(NULL, values = c("TRUE" = 19, "FALSE" = 1),
+                           guide = "none") +
+        theme(axis.title.x = element_markdown(margin = margin(0,0,0,t=12)),
+              strip.text = element_markdown())
+
+}
 
