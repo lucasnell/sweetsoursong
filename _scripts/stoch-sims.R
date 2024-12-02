@@ -687,3 +687,46 @@ invasion_plotter <- function(v, double_facet) {
 
 }
 
+#'
+#' Supplemental figures with all combos:
+#'
+for (v in c("u", "q")) {
+    p <- invasion_plotter(v, double_facet = TRUE)
+    save_plot(sprintf("_figures/supp-%s-invasion.pdf", v), p, 4.5, 6)
+}; rm(p, v)
+
+
+
+#'
+#' Main text figures with intermediates for non-focal parameter:
+#'
+for (v in c("u", "q")) {
+    p <- invasion_plotter(v, double_facet = FALSE) +
+        theme(panel.spacing.x = unit(1, "lines"),
+              axis.title.y = element_blank(),
+              axis.title.x = element_blank(),
+              strip.text = element_blank())
+    save_plot(sprintf("_figures/invasion-%s.pdf", v), p, 4, 2)
+}; rm(p, v)
+
+
+
+
+
+
+main_plots <- list(outcome_plotter("u", facet_q = 0.5, facet_u = 4),
+                   abundance_plotter("u", facet_q = 0.5, facet_u = 4),
+                   invasion_plotter("u", double_facet = FALSE)) |>
+    map(\(p) {
+        p +
+            theme(plot.title = element_blank(),
+                  legend.position = "none",
+                  panel.spacing.x = unit(1, "lines"),
+                  axis.title.y = element_blank(),
+                  axis.title.x = element_blank(),
+                  strip.text = element_blank())
+    }) |>
+    do.call(what = wrap_plots) +
+    plot_layout(ncol = 1)
+
+save_plot("_figures/u-stochastic-main.pdf", main_plots, 4, 5)
