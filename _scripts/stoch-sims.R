@@ -37,7 +37,7 @@ spp_pal <- c(yeast = outcome_pal[["yeast only"]],
 
 # ===========================================================================*
 # ===========================================================================*
-# functions, objects ----
+# data functions, d_yp ----
 # ===========================================================================*
 # ===========================================================================*
 
@@ -50,63 +50,6 @@ d_yp__ = c("bacteria only" = 0.8,
            "yeast only" = 1.2)
 
 
-
-
-
-# ===========================================================================*
-# ===========================================================================*
-# even sims ----
-# ===========================================================================*
-# ===========================================================================*
-
-
-
-if (! file.exists(main_stoch_sims_file)) {
-
-    # Takes ~34 min with 6 threads
-    set.seed(1472844374)
-    stoch_sim_df <- crossing(.u = 0:10,
-                             .d_yp = d_yp__,
-                             .season_surv = c(0.01, 0.02, 0.04),
-                             .q = c(0, 0.25, 0.5, 0.75, 0.95, 1)) |>
-        # Don't do this in parallel bc plant_metacomm_stoch is already
-        # doing that
-        pmap_dfr(\(.u, .d_yp, .season_surv, .q) {
-            plant_metacomm_stoch(np = 100L, u = .u, d_yp = .d_yp,
-                                 q = .q,
-                                 no_immig = TRUE,
-                                 n_sigma = 100,
-                                 season_surv = .season_surv,
-                                 # only sample last 5 seasons:
-                                 burnin = 3000 * 15 / 20,
-                                 # summarize by rep:
-                                 summarize = "rep") |>
-                mutate(u = .u, d_yp = .d_yp, season_surv = .season_surv,
-                       q = .q) |>
-                select(u, d_yp, season_surv, q, everything())
-        }, .progress = TRUE)
-
-    write_rds(stoch_sim_df, main_stoch_sims_file)
-
-} else {
-
-    stoch_sim_df <- read_rds(main_stoch_sims_file)
-
-}
-
-#' q = 1 causes problems bc it causes any plant-level extinctions
-#' to be permanent
-stoch_sim_df <- stoch_sim_df |>
-    filter(q < 1)
-
-
-
-
-# ===========================================================================*
-# ===========================================================================*
-# plot functions ----
-# ===========================================================================*
-# ===========================================================================*
 
 add_factors <- function(d, .exclude = NULL) {
     if ("d_yp" %in% colnames(d) && !is.factor(d[["d_yp"]]) &&
@@ -181,6 +124,120 @@ add_outcome_props <- function(d){
 
 }
 
+
+
+
+# ===========================================================================*
+# ===========================================================================*
+# even sims ----
+# ===========================================================================*
+# ===========================================================================*
+
+
+
+if (! file.exists(main_stoch_sims_file)) {
+
+    # Takes ~34 min with 6 threads
+    set.seed(1472844374)
+    stoch_sim_df <- crossing(.u = 0:10,
+                             .d_yp = d_yp__,
+                             .season_surv = c(0.01, 0.02, 0.04),
+                             .q = c(0, 0.25, 0.5, 0.75, 0.95, 1)) |>
+        # Don't do this in parallel bc plant_metacomm_stoch is already
+        # doing that
+        pmap_dfr(\(.u, .d_yp, .season_surv, .q) {
+            plant_metacomm_stoch(np = 100L, u = .u, d_yp = .d_yp,
+                                 q = .q,
+                                 no_immig = TRUE,
+                                 n_sigma = 100,
+                                 season_surv = .season_surv,
+                                 # only sample last 5 seasons:
+                                 burnin = 3000 * 15 / 20,
+                                 # summarize by rep:
+                                 summarize = "rep") |>
+                mutate(u = .u, d_yp = .d_yp, season_surv = .season_surv,
+                       q = .q) |>
+                select(u, d_yp, season_surv, q, everything())
+        }, .progress = TRUE)
+
+    write_rds(stoch_sim_df, main_stoch_sims_file)
+
+} else {
+
+    stoch_sim_df <- read_rds(main_stoch_sims_file)
+
+}
+
+#' q = 1 causes problems bc it causes any plant-level extinctions
+#' to be permanent
+stoch_sim_df <- stoch_sim_df |>
+    filter(q < 1)
+
+
+
+
+# =====================================================*
+#           mutual inv. sims ----
+# =====================================================*
+
+
+
+if (! file.exists(mutual_inv_stoch_sims_file)) {
+
+    # Takes ~17 min with 6 threads
+    set.seed(1771251461)
+    inv_sim_df <- crossing(.u = 0:10,
+                           .d_yp = d_yp__,
+                           .q = sort(unique(stoch_sim_df$q)),
+                           .rare_spp = c("yeast", "bacteria")) |>
+        # Don't do this in parallel bc plant_metacomm_stoch is already
+        # doing that
+        pmap_dfr(\(.u, .d_yp, .q, .rare_spp) {
+            if (.rare_spp == "yeast") {
+                .Y0 <- c(rep(0.5, 1L), rep(0,   99L))
+                .B0 <- c(rep(0,   1L), rep(0.5, 99L))
+            } else {
+                .B0 <- c(rep(0.5, 1L), rep(0,   99L))
+                .Y0 <- c(rep(0,   1L), rep(0.5, 99L))
+            }
+            plant_metacomm_stoch(np = 100L, u = .u, d_yp = .d_yp, q = .q,
+                                 Y0 = .Y0, B0 = .B0,
+                                 no_immig = TRUE,
+                                 n_sigma = 100,
+                                 season_surv = median(stoch_sim_df$season_surv),
+                                 save_every = 150,
+                                 max_t = 3000) |>
+                select(-P) |>
+                pivot_longer(Y:B, names_to = "species", values_to = "density") |>
+                mutate(season = as.integer((t - 0.1) %/% 150 + 1)) |>
+                mutate(occup = density > 0) |>
+                group_by(rep, season, species) |>
+                # number of patches occupied each season:
+                summarize(occup = sum(occup), .groups = "drop") |>
+                mutate(u = .u, d_yp = .d_yp, q = .q, rare_spp = .rare_spp) |>
+                add_factors(.exclude = NULL) |>
+                mutate(rare_spp = factor(rare_spp, levels = c("yeast",
+                                                              "bacteria"))) |>
+                select(u, d_yp, q, rare_spp, everything())
+        }, .progress = TRUE)
+
+    write_rds(inv_sim_df, mutual_inv_stoch_sims_file)
+
+
+} else {
+
+    inv_sim_df <- read_rds(mutual_inv_stoch_sims_file)
+
+}
+
+
+
+
+# ===========================================================================*
+# ===========================================================================*
+# plot functions ----
+# ===========================================================================*
+# ===========================================================================*
 
 
 
@@ -383,253 +440,6 @@ abundance_plotter <- function(x_var,
 
 
 
-
-
-
-# =====================================================*
-#           gain/loss sims ----
-# =====================================================*
-
-
-
-if (! file.exists(gain_loss_stoch_sims_file)) {
-
-    # Takes ~12 min with 6 threads
-    set.seed(378929239)
-    gl_sim_df <- crossing(.u = c(0, 1, 4, 7, 10),
-                          .d_yp = d_yp__,
-                          .season_surv = sort(unique(stoch_sim_df$season_surv)),
-                          .q = sort(unique(stoch_sim_df$q))) |>
-        # Don't do this in parallel bc plant_metacomm_stoch is already
-        # doing that
-        pmap_dfr(\(.u, .d_yp, .season_surv, .q) {
-            plant_metacomm_stoch(np = 100L, u = .u, d_yp = .d_yp,
-                                 q = .q,
-                                 no_immig = TRUE,
-                                 n_sigma = 100,
-                                 season_surv = .season_surv,
-                                 save_every = 150,
-                                 max_t = 3000) |>
-                select(-P) |>
-                pivot_longer(Y:B, names_to = "species", values_to = "density") |>
-                mutate(season = as.integer((t - 0.1) %/% 150 + 1)) |>
-                mutate(occup = density > 0) |>
-                group_by(rep, p, species) |>
-                # this season is occupied and next one is unoccupied:
-                mutate(loss = occup & lead(!occup)) |>
-                # this season is unoccupied and next one is occupied:
-                mutate(gain = !occup & lead(occup)) |>
-                ungroup() |>
-                filter(season < max(season)) |>
-                group_by(rep, season, species) |>
-                # total landscape-wide loss / gain and abundance
-                summarize(across(c(density, occup, loss, gain), sum),
-                          .groups = "drop") |>
-                mutate(u = .u, d_yp = .d_yp, season_surv = .season_surv,
-                       q = .q) |>
-                add_factors(.exclude = NULL) |>
-                select(u, d_yp, season_surv, q, everything())
-        }, .progress = TRUE)
-
-    write_rds(gl_sim_df, gain_loss_stoch_sims_file)
-
-} else {
-
-    gl_sim_df <- read_rds(gain_loss_stoch_sims_file)
-
-}
-
-
-
-
-
-# =====================================================*
-#           creating plots ----
-# =====================================================*
-
-
-
-
-
-
-
-for (v in c("u", "q")) {
-    pl <- c("outcome", "abundance") |>
-        set_names() |>
-        map(\(n) {
-                 fxn <- eval(parse(text = paste0(n, "_plotter")))
-                 p <- fxn(v, facet_q = 0.5, facet_u = 4) +
-                     theme(plot.title = element_blank(),
-                           legend.position = "none",
-                           panel.spacing.x = unit(1, "lines"),
-                           axis.title.y = element_blank(),
-                           axis.title.x = element_blank(),
-                           strip.text = element_blank())
-                 save_plot(sprintf("_figures/%s-%s.pdf", v, n), p, 4, 2)
-                 return(p)
-             })
-    pf <- pl[["abundance"]] + guides(y = guide_axis(position = "right"))
-    save_plot(sprintf("_figures/%s-abundance-flipY.pdf", v), pf, 4, 2)
-
-    pc <- do.call(wrap_plots, pl) + plot_layout(ncol = 1)
-    save_plot(sprintf("_figures/%s-outcome+abundance.pdf", v), pc, 4, 3)
-
-}; rm(v, pl, pf, pc)
-
-
-
-# For supplement
-
-supp_u_out_abund_p <-
-    (outcome_plotter("u", drop_ext = FALSE) +
-         theme(plot.title = element_blank())) +
-    (abundance_plotter("u") + theme(plot.title = element_blank())) +
-    plot_layout(nrow = 1, guides = "collect") +
-    plot_annotation(tag_levels = "a", tag_prefix = "(", tag_suffix = ")") &
-    theme(plot.tag = element_text(size = 16, face = "bold"))
-
-
-supp_q_out_abund_p <-
-    (outcome_plotter("q", drop_ext = FALSE) +
-         theme(plot.title = element_blank())) +
-    (abundance_plotter("q") + theme(plot.title = element_blank())) +
-    plot_layout(nrow = 1, guides = "collect") +
-    plot_annotation(tag_levels = "a", tag_prefix = "(", tag_suffix = ")") &
-    theme(plot.tag = element_text(size = 16, face = "bold"))
-
-# save_plot("_figures/supp-u-out-abund.pdf", supp_u_out_abund_p, 9, 6)
-# save_plot("_figures/supp-q-out-abund.pdf", supp_q_out_abund_p, 9, 6)
-
-
-
-
-
-#'
-#' Average proportion (1) gained or lost and (2) net (gained - lost)
-#'
-gl_plots <- map(1:2, \(i) {
-    dd <- gl_sim_df |>
-        filter(season_surv == median(season_surv)) |>
-        filter(occup > 0) |>
-        mutate(net = gain - loss) |>
-        mutate(across(c(net, gain, loss), \(x) x / occup)) |>
-        # mean across reps and seasons:
-        group_by(u, d_yp, q, species) |>
-        summarize(across(c(net, gain, loss), mean), .groups = "drop") |>
-        mutate(q = as.numeric(paste(q)))
-    if (i == 1) {
-        dd <- dd |>
-            select(-net) |>
-            pivot_longer(gain:loss) |>
-            mutate(name = factor(name, levels = c("gain", "loss", "net")))
-        .y_axis <- scale_y_continuous("Average proportion gained or lost",
-                                      limits = c(0, 1.1), breaks = 0:4/4,
-                                      labels = c("0", "", "0.5", "", "1.0"))
-        .guide <- guide_legend()
-    } else {
-        dd <- dd |>
-            mutate(name = factor("net", levels = c("gain", "loss", "net")),
-                   value = net)
-        .y_axis <- scale_y_continuous("Average proportion net-gained")
-        .guide <- "none"
-    }
-    u_labeller <- \(x) lapply(x, \(z) paste('*u* = ', z))
-    dd |>
-        ggplot(aes(q, value, color = species)) +
-        geom_hline(yintercept = 0, linetype = 1, color = "gray70") +
-        geom_point(aes(shape = name), size = 2, show.legend = TRUE) +
-        geom_line(aes(linetype = name), linewidth = 1, show.legend = TRUE) +
-        scale_x_continuous("Between-season determinism (*q*)",
-                           breaks = as.numeric(levels(gl_sim_df$q)),
-                           labels = c("0", "", "0.5", "", "0.95")) +
-        .y_axis +
-        facet_grid(u ~ d_yp,
-                   labeller = labeller(u = u_labeller,
-                                       d_yp = label_value)) +
-        scale_color_manual(NULL, values = spp_pal) +
-        scale_shape_manual(values = c(gain = 0, loss = 2, net = 19),
-                           drop = FALSE) +
-        scale_linetype_manual(values = c(gain = "solid", loss = "22",
-                                         net = "solid"),
-                              drop = FALSE) +
-        theme(axis.title.x = element_markdown(),
-              axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
-              legend.title = element_blank(),
-              strip.text = element_markdown())
-})
-
-supp_q_gain_loss_p <- do.call(wrap_plots, gl_plots) +
-    plot_layout(nrow = 1, guides = "collect") +
-    plot_annotation(tag_levels = "a", tag_prefix = "(", tag_suffix = ")") &
-    theme(plot.tag = element_text(size = 16, face = "bold"))
-
-# save_plot("_figures/supp-q-gain-loss.pdf", supp_q_gain_loss_p, 9, 6)
-
-
-
-
-
-
-
-# =====================================================*
-#           mutual inv. sims ----
-# =====================================================*
-
-
-
-if (! file.exists(mutual_inv_stoch_sims_file)) {
-
-    # Takes ~17 min with 6 threads
-    set.seed(1771251461)
-    inv_sim_df <- crossing(.u = 0:10,
-                          .d_yp = d_yp__,
-                          .q = sort(unique(stoch_sim_df$q)),
-                          .rare_spp = c("yeast", "bacteria")) |>
-        # Don't do this in parallel bc plant_metacomm_stoch is already
-        # doing that
-        pmap_dfr(\(.u, .d_yp, .q, .rare_spp) {
-            if (.rare_spp == "yeast") {
-                .Y0 <- c(rep(0.5, 1L), rep(0,   99L))
-                .B0 <- c(rep(0,   1L), rep(0.5, 99L))
-            } else {
-                .B0 <- c(rep(0.5, 1L), rep(0,   99L))
-                .Y0 <- c(rep(0,   1L), rep(0.5, 99L))
-            }
-            plant_metacomm_stoch(np = 100L, u = .u, d_yp = .d_yp, q = .q,
-                                 Y0 = .Y0, B0 = .B0,
-                                 no_immig = TRUE,
-                                 n_sigma = 100,
-                                 season_surv = median(stoch_sim_df$season_surv),
-                                 save_every = 150,
-                                 max_t = 3000) |>
-                select(-P) |>
-                pivot_longer(Y:B, names_to = "species", values_to = "density") |>
-                mutate(season = as.integer((t - 0.1) %/% 150 + 1)) |>
-                mutate(occup = density > 0) |>
-                group_by(rep, season, species) |>
-                # number of patches occupied each season:
-                summarize(occup = sum(occup), .groups = "drop") |>
-                mutate(u = .u, d_yp = .d_yp, q = .q, rare_spp = .rare_spp) |>
-                add_factors(.exclude = NULL) |>
-                mutate(rare_spp = factor(rare_spp, levels = c("yeast",
-                                                              "bacteria"))) |>
-                select(u, d_yp, q, rare_spp, everything())
-        }, .progress = TRUE)
-
-    write_rds(inv_sim_df, mutual_inv_stoch_sims_file)
-
-
-} else {
-
-    inv_sim_df <- read_rds(mutual_inv_stoch_sims_file)
-
-}
-
-
-
-
-
-
 invasion_plotter <- function(v, double_facet) {
 
     f_var <- ifelse(v == "u", "q", "u")
@@ -675,7 +485,7 @@ invasion_plotter <- function(v, double_facet) {
         geom_point(aes(shape = increasing), size = 2) +
         geom_line(linewidth = 1, show.legend = TRUE) +
         x_axis +
-        scale_y_continuous("Occupancy after 20 seasons",
+        scale_y_continuous("Last-season occupancy",
                            breaks = log1p(c(0, 3^(0:3))),
                            labels = c(0, 3^(0:3))) +
         facet +
@@ -686,6 +496,18 @@ invasion_plotter <- function(v, double_facet) {
               strip.text = element_markdown())
 
 }
+
+
+
+
+
+
+# =====================================================*
+#           creating plots ----
+# =====================================================*
+
+
+
 
 #'
 #' Supplemental figures with all combos:
