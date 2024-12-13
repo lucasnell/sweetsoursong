@@ -53,7 +53,7 @@ arma::mat plant_metacomm_cpp(const std::vector<double>& m,
 
     MetaObs obs;
     LandscapeConstF system(m, d_yp, d_b0, d_bp, g_yp, g_b0, g_bp, L_0, u, X,
-                           open_sys, max_t, max_t + 1.0);
+                           open_sys, max_t, dt, max_t + 1.0);
 
     boost::numeric::odeint::integrate_const(
         MatStepperType(), std::ref(system),

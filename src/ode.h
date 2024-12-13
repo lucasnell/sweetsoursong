@@ -146,7 +146,8 @@ struct Observer
 
 /*
  Same as above but for simulations with a burn-in period and not saving every
- time step
+ time step.
+ This includes just saving begin and end of each season.
  */
 template< class C >
 struct ObserverBurnEvery
@@ -154,17 +155,31 @@ struct ObserverBurnEvery
     std::vector<C> data;
     std::vector<double> time;
     double burnin;
-    double save_every;
+    size_t save_every;
     std::vector<double> remainders;
-    ObserverBurnEvery(const double& burnin_, const double& save_every_,
-                      const std::vector<double>& remainders_)
+    ObserverBurnEvery(const double& burnin_, const size_t& save_every_,
+                      const size_t& season_len_, const bool& begin_end_)
         : data(), time(), burnin(burnin_), save_every(save_every_),
-          remainders(remainders_) {};
+          season_len(season_len_), begin_end(begin_end_),
+          iters(save_every_) {};
+    // note: setting `iters` to `save_every_` so that the first time step
+    // is always included
 
     void operator()(const C& x, const double& t) {
-        if (t > burnin && remainder_equals(t, save_every, remainders)) {
-            data.push_back(x);
-            time.push_back(t);
+        if (t >= burnin) {
+            if (begin_end) {
+                if (iters >= season_len) {
+                    push_back__(x, t);
+                    iters = 0;
+                } else if (iters == 1U) {
+                    push_back__(x, t);
+                }
+            } else if (iters >= save_every) {
+                push_back__(x, t);
+                iters = 0;
+            }
+            // Don't start iterating until after burn-in:
+            iters++;
         }
         return;
     }
@@ -172,6 +187,17 @@ struct ObserverBurnEvery
     void clear() {
         data.clear();
         time.clear();
+    }
+
+private:
+    size_t season_len;
+    bool begin_end;
+    size_t iters;
+
+    void push_back__(const C& x, const double& t) {
+        data.push_back(x);
+        time.push_back(t);
+        return;
     }
 };
 

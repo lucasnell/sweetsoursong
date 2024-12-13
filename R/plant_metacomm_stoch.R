@@ -152,11 +152,17 @@ plant_metacomm_stoch <- function(np,
         if (begin_end) stop("begin_end cannot be TRUE when summarize is 'rep'")
         save_every <- dt
     }
+    # convert save_every to number of time steps (to avoid using float
+    # remainders which has proven to be annoying):
+    save_every <- as.integer(round(save_every / dt))
 
     if (is.null(season_len)) {
         if (begin_end) stop("begin_end cannot be TRUE when season_len is NULL")
-        season_len <- max_t + 1.0
+        season_len <- max_t + 2 * dt
     }
+    # convert season_len to number of time steps in each season (to avoid
+    # using float remainders as for save_every):
+    season_len <- as.integer(round(season_len / dt))
 
     if (begin_end) save_every <- season_len
 
@@ -184,6 +190,12 @@ plant_metacomm_stoch <- function(np,
             warning("You may be at an unstable equilibrium")
         }
     }
+
+    # to make absolutely sure these don't get turned into massive numbers when
+    # c++ converts them to unsigned integers (zeros here also don't make sense)
+    if (n_reps <= 0) stop("n_reps <= 0")
+    if (season_len <= 0) stop("season_len <= 0")
+    if (save_every <= 0) stop("save_every <= 0")
 
     out_df <- plant_metacomm_stoch_cpp(n_reps, m, d_yp, d_b0, d_bp,
                                        g_yp, g_b0, g_bp,

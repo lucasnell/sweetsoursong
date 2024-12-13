@@ -70,8 +70,16 @@ inline double runif_01(pcg32& eng) {
 
 
 
-class StochLandscapeStepper
-{
+class StochLandscapeStepper {
+
+    MatType det;
+    MatType stoch;
+    arma::vec zeta;
+    size_t season_len;
+    double season_surv;
+    double q;
+    size_t iters = 0;
+
 public:
 
     typedef boost::numeric::odeint::stepper_tag stepper_category;
@@ -80,7 +88,7 @@ public:
 
     StochLandscapeStepper(const size_t& n_plants,
                           const size_t& n_states,
-                          const double& season_len_,
+                          const size_t& season_len_,
                           const double& season_surv_,
                           const double& q_)
         : det(n_plants, n_states),
@@ -97,7 +105,7 @@ public:
         if (x.has_nan() || x.has_inf()) return;
 
         // New season:
-        if (t > 0 && zero_remainder(t, season_len)) {
+        if (iters >= season_len) {
 
             if (q >= 1) {
 
@@ -140,8 +148,12 @@ public:
 
             }
 
+            iters = 1; // this counts as the first day of this season
+
             return;
+
         }
+
         // Standard iteration:
         system.first(x, det);
         system.second(x, stoch);
@@ -153,16 +165,13 @@ public:
                 if (x(i,j) < 0) x(i,j) = 0;
             }
         }
+
+        iters++;
+
         return;
     }
 
-private:
-    MatType det;
-    MatType stoch;
-    arma::vec zeta;
-    double season_len;
-    double season_surv;
-    double q;
+
 };
 
 
@@ -171,8 +180,8 @@ private:
 
 
 // Stochastic process of the stochastic landscape
-struct StochLandscapeStochProcess
-{
+struct StochLandscapeStochProcess {
+
     pcg32& m_rng;
     std::normal_distribution<double> m_dist;
     double n_sigma;
@@ -211,10 +220,10 @@ struct StochLandCFWorker : public RcppParallel::Worker {
     double dt;
     double max_t;
     double burnin;
-    double save_every;
+    size_t save_every;
     bool begin_end;
     int summarize;
-    double season_len;
+    size_t season_len;
     double season_surv;
     double q;
 
@@ -232,21 +241,21 @@ struct StochLandCFWorker : public RcppParallel::Worker {
                       const std::vector<double>& Y0,
                       const std::vector<double>& B0,
                       const double& n_sigma_,
-                      const double& season_len_,
+                      const size_t& season_len_,
                       const double& season_surv_,
                       const double& q_,
                       const bool& open_sys,
                       const double& dt_,
                       const double& max_t_,
                       const double& burnin_,
-                      const double& save_every_,
+                      const size_t& save_every_,
                       const bool& begin_end_,
                       const int& summarize_)
         : output(n_reps, MatType(0,0)),
           seeds(n_reps, std::vector<uint64_t>(2)),
           x0(m.size(), 2U),
           determ_sys0(m, d_yp, d_b0, d_bp, g_yp, g_b0, g_bp, L_0, u, X,
-                      open_sys, max_t_, season_len_),
+                      open_sys, max_t_, dt_, season_len_),
           n_sigma(n_sigma_),
           dt(dt_),
           max_t(max_t_),
@@ -326,9 +335,7 @@ private:
         pcg32 rng;
         const size_t& np(determ_sys0.n_plants);
         MatType x;
-        std::vector<double> remainders = { 0.0 };
-        if (begin_end) remainders.push_back(dt);
-        C obs(burnin, save_every, remainders);
+        C obs(burnin, save_every, season_len, begin_end);
 
         for (size_t rep = begin; rep < end; rep++) {
 
@@ -356,7 +363,7 @@ private:
 
 
 // [[Rcpp::export]]
-arma::mat plant_metacomm_stoch_cpp(const uint32_t& n_reps,
+arma::mat plant_metacomm_stoch_cpp(const size_t& n_reps,
                                    const std::vector<double>& m,
                                    const std::vector<double>& d_yp,
                                    const std::vector<double>& d_b0,
@@ -370,34 +377,28 @@ arma::mat plant_metacomm_stoch_cpp(const uint32_t& n_reps,
                                    const std::vector<double>& Y0,
                                    const std::vector<double>& B0,
                                    const double& n_sigma,
-                                   const double& season_len,
+                                   const size_t& season_len,
                                    const double& season_surv,
                                    const double& q,
                                    const bool& open_sys,
                                    const double& dt,
                                    const double& max_t,
                                    const double& burnin,
-                                   const double& save_every,
+                                   const size_t& save_every,
                                    const bool& begin_end,
                                    const int& summarize) {
 
     /*
      I can't just use 'stop()' because it causes a segfault (or similar).
      The system below is my workaround.
+     ^^ Holdover from using OpenMP. Remove later if you want. ^^
      */
     bool err = lanscape_constF_arg_checks(m, d_yp, d_b0, d_bp, g_yp, g_b0, g_bp,
                                           L_0, u, X, Y0, B0, dt, max_t);
     min_val_check(err, n_sigma, "n_sigma", 0, false);
-    min_val_check(err, season_len, "season_len", 0, false);
     min_val_check(err, season_surv, "season_surv", 0);
     max_val_check(err, season_surv, "season_surv", 1);
     min_val_check(err, q, "q", 0);
-    if (season_len < max_t && ! zero_remainder(season_len, dt)) {
-        Rcout << "season_len is " << std::to_string(season_len);
-        Rcout << " but should be divisible by dt (";
-        Rcout << std::to_string(dt) << ")!" << std::endl;
-        err = true;
-    }
     if (err) return arma::mat(0,0);
 
 

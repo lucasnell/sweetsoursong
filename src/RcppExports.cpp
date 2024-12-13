@@ -43,12 +43,12 @@ BEGIN_RCPP
 END_RCPP
 }
 // plant_metacomm_stoch_cpp
-arma::mat plant_metacomm_stoch_cpp(const uint32_t& n_reps, const std::vector<double>& m, const std::vector<double>& d_yp, const std::vector<double>& d_b0, const std::vector<double>& d_bp, const std::vector<double>& g_yp, const std::vector<double>& g_b0, const std::vector<double>& g_bp, const std::vector<double>& L_0, const double& u, const double& X, const std::vector<double>& Y0, const std::vector<double>& B0, const double& n_sigma, const double& season_len, const double& season_surv, const double& q, const bool& open_sys, const double& dt, const double& max_t, const double& burnin, const double& save_every, const bool& begin_end, const int& summarize);
+arma::mat plant_metacomm_stoch_cpp(const size_t& n_reps, const std::vector<double>& m, const std::vector<double>& d_yp, const std::vector<double>& d_b0, const std::vector<double>& d_bp, const std::vector<double>& g_yp, const std::vector<double>& g_b0, const std::vector<double>& g_bp, const std::vector<double>& L_0, const double& u, const double& X, const std::vector<double>& Y0, const std::vector<double>& B0, const double& n_sigma, const size_t& season_len, const double& season_surv, const double& q, const bool& open_sys, const double& dt, const double& max_t, const double& burnin, const size_t& save_every, const bool& begin_end, const int& summarize);
 RcppExport SEXP _sweetsoursong_plant_metacomm_stoch_cpp(SEXP n_repsSEXP, SEXP mSEXP, SEXP d_ypSEXP, SEXP d_b0SEXP, SEXP d_bpSEXP, SEXP g_ypSEXP, SEXP g_b0SEXP, SEXP g_bpSEXP, SEXP L_0SEXP, SEXP uSEXP, SEXP XSEXP, SEXP Y0SEXP, SEXP B0SEXP, SEXP n_sigmaSEXP, SEXP season_lenSEXP, SEXP season_survSEXP, SEXP qSEXP, SEXP open_sysSEXP, SEXP dtSEXP, SEXP max_tSEXP, SEXP burninSEXP, SEXP save_everySEXP, SEXP begin_endSEXP, SEXP summarizeSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const uint32_t& >::type n_reps(n_repsSEXP);
+    Rcpp::traits::input_parameter< const size_t& >::type n_reps(n_repsSEXP);
     Rcpp::traits::input_parameter< const std::vector<double>& >::type m(mSEXP);
     Rcpp::traits::input_parameter< const std::vector<double>& >::type d_yp(d_ypSEXP);
     Rcpp::traits::input_parameter< const std::vector<double>& >::type d_b0(d_b0SEXP);
@@ -62,14 +62,14 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const std::vector<double>& >::type Y0(Y0SEXP);
     Rcpp::traits::input_parameter< const std::vector<double>& >::type B0(B0SEXP);
     Rcpp::traits::input_parameter< const double& >::type n_sigma(n_sigmaSEXP);
-    Rcpp::traits::input_parameter< const double& >::type season_len(season_lenSEXP);
+    Rcpp::traits::input_parameter< const size_t& >::type season_len(season_lenSEXP);
     Rcpp::traits::input_parameter< const double& >::type season_surv(season_survSEXP);
     Rcpp::traits::input_parameter< const double& >::type q(qSEXP);
     Rcpp::traits::input_parameter< const bool& >::type open_sys(open_sysSEXP);
     Rcpp::traits::input_parameter< const double& >::type dt(dtSEXP);
     Rcpp::traits::input_parameter< const double& >::type max_t(max_tSEXP);
     Rcpp::traits::input_parameter< const double& >::type burnin(burninSEXP);
-    Rcpp::traits::input_parameter< const double& >::type save_every(save_everySEXP);
+    Rcpp::traits::input_parameter< const size_t& >::type save_every(save_everySEXP);
     Rcpp::traits::input_parameter< const bool& >::type begin_end(begin_endSEXP);
     Rcpp::traits::input_parameter< const int& >::type summarize(summarizeSEXP);
     rcpp_result_gen = Rcpp::wrap(plant_metacomm_stoch_cpp(n_reps, m, d_yp, d_b0, d_bp, g_yp, g_b0, g_bp, L_0, u, X, Y0, B0, n_sigma, season_len, season_surv, q, open_sys, dt, max_t, burnin, save_every, begin_end, summarize));

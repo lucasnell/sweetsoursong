@@ -95,7 +95,8 @@ public:
     bool open_sys;
     // These are only used for MetaObsStochSummRep::fill_output()
     double max_t;
-    double season_len;
+    double dt;
+    size_t season_len;
 
 
     LandscapeConstF(const std::vector<double>& m_,
@@ -110,7 +111,8 @@ public:
                     const double& X_,
                     const bool& open_sys_,
                     const double& max_t_,
-                    const double& season_len_)
+                    const double& dt_,
+                    const size_t& season_len_)
         : m(m_),
           d_yp(d_yp_),
           d_b0(d_b0_),
@@ -124,6 +126,7 @@ public:
           n_plants(m_.size()),
           open_sys(open_sys_),
           max_t(max_t_),
+          dt(dt_),
           season_len(season_len_),
           weights(m_.size()) {};
 
@@ -142,6 +145,7 @@ public:
           n_plants(other.n_plants),
           open_sys(other.open_sys),
           max_t(other.max_t),
+          dt(other.dt),
           season_len(other.season_len),
           weights(other.weights) {};
 
@@ -159,6 +163,7 @@ public:
         n_plants = other.n_plants;
         open_sys = other.open_sys;
         max_t = other.max_t;
+        dt = other.dt;
         season_len = other.season_len;
         weights = other.weights;
         return *this;
@@ -301,9 +306,10 @@ struct MetaObs : public Observer<MatType> {
 // and reps that need recorded:
 struct MetaObsStoch : public ObserverBurnEvery<MatType> {
 
-    MetaObsStoch(const double& burnin_, const double& save_every_,
-                 const std::vector<double>& remainders_)
-        : ObserverBurnEvery<MatType>(burnin_, save_every_, remainders_) {};
+    MetaObsStoch(const double& burnin_, const size_t& save_every_,
+                 const size_t& season_len_, const bool& begin_end_)
+        : ObserverBurnEvery<MatType>(burnin_, save_every_,
+                                     season_len_, begin_end_) {};
 
     // Fill output for one repetition:
     void fill_output(MatType& output,
@@ -341,9 +347,10 @@ struct MetaObsStoch : public ObserverBurnEvery<MatType> {
 // reps that need recorded, and summarizing by both rep and time point
 struct MetaObsStochSumm : public ObserverBurnEvery<MatType> {
 
-    MetaObsStochSumm(const double& burnin_, const double& save_every_,
-                     const std::vector<double>& remainders_)
-        : ObserverBurnEvery<MatType>(burnin_, save_every_, remainders_) {};
+    MetaObsStochSumm(const double& burnin_, const size_t& save_every_,
+                     const size_t& season_len_, const bool& begin_end_)
+        : ObserverBurnEvery<MatType>(burnin_, save_every_,
+                                     season_len_, begin_end_) {};
 
     void operator()(const MatType& x, const double& t) {
         if (t > burnin) {
@@ -453,10 +460,9 @@ protected:
 // Mostly the same as MetaObsStochSumm, except for the `fill_output` method
 struct MetaObsStochSummRep : public MetaObsStochSumm {
 
-    MetaObsStochSummRep(const double& burnin_,
-                        const double& save_every_,
-                        const std::vector<double>& remainders_)
-        : MetaObsStochSumm(burnin_, save_every_, remainders_) {};
+    MetaObsStochSummRep(const double& burnin_, const size_t& save_every_,
+                        const size_t& season_len_, const bool& begin_end_)
+        : MetaObsStochSumm(burnin_, save_every_, season_len_, begin_end_) {};
 
     /*
      Fill output for one repetition.
@@ -485,15 +491,16 @@ struct MetaObsStochSummRep : public MetaObsStochSumm {
         output(0, 3) = this->data[0](0,2);   // minimum(sum(Y))
         output(0, 4) = this->data[0](0,2);   // maximum(sum(Y))
         output(0, 5) = 0.0;                  // mean(sum(Y))
-        output(0, 6) = 0.0;                  // mean(log(sum(Y)))
+        output(0, 6) = 0.0;                  // mean(log(sum(Y)+1))
         output(0, 7) = this->data[0](0,3);   // minimum(sum(B))
         output(0, 8) = this->data[0](0,3);   // maximum(sum(B))
         output(0, 9) = 0.0;                  // mean(sum(B))
-        output(0,10) = 0.0;                  // mean(log(sum(B)))
+        output(0,10) = 0.0;                  // mean(log(sum(B)+1))
 
         double dbl_ls = 0; // # of last season's time points
         // time point directly before the last season:
-        double last_season_t0 = system.max_t - system.season_len;
+        double last_season_t0 = system.max_t - system.dt *
+            static_cast<double>(system.season_len);
         for (size_t i = 0; i < this->data.size(); i++) {
             const MatType& m(this->data[i]);
             // metrics
