@@ -142,7 +142,7 @@ if (! file.exists(main_stoch_sims_file)) {
     stoch_sim_df <- crossing(.u = 0:10,
                              .d_yp = d_yp__,
                              .season_surv = c(0.01, 0.02, 0.04),
-                             .q = c(0, 0.25, 0.5, 0.75, 0.95, 1)) |>
+                             .q = c(0, 0.25, 0.5, 0.75, 0.95)) |>
         # Don't do this in parallel bc plant_metacomm_stoch is already
         # doing that
         pmap_dfr(\(.u, .d_yp, .season_surv, .q) {
@@ -168,11 +168,6 @@ if (! file.exists(main_stoch_sims_file)) {
 
 }
 
-#' q = 1 causes problems bc it causes any plant-level extinctions
-#' to be permanent
-stoch_sim_df <- stoch_sim_df |>
-    filter(q < 1)
-
 
 
 
@@ -184,7 +179,7 @@ stoch_sim_df <- stoch_sim_df |>
 
 if (! file.exists(mutual_inv_stoch_sims_file)) {
 
-    # Takes ~17 min with 6 threads
+    # Takes ~26 min with 6 threads
     set.seed(1771251461)
     inv_sim_df <- crossing(.u = 0:10,
                            .d_yp = d_yp__,
@@ -200,20 +195,28 @@ if (! file.exists(mutual_inv_stoch_sims_file)) {
                 .B0 <- c(rep(0.5, 1L), rep(0,   99L))
                 .Y0 <- c(rep(0,   1L), rep(0.5, 99L))
             }
-            plant_metacomm_stoch(np = 100L, u = .u, d_yp = .d_yp, q = .q,
-                                 Y0 = .Y0, B0 = .B0,
-                                 no_immig = TRUE,
-                                 n_sigma = 100,
-                                 season_surv = median(stoch_sim_df$season_surv),
-                                 save_every = 150,
-                                 max_t = 3000) |>
+            z <- plant_metacomm_stoch(np = 100L, u = .u, d_yp = .d_yp, q = .q,
+                                      Y0 = .Y0, B0 = .B0,
+                                      no_immig = TRUE,
+                                      n_sigma = 100,
+                                      season_surv = median(stoch_sim_df$season_surv),
+                                      max_t = 3000,
+                                      # only calculate abundance based on the
+                                      # last half of the last season:
+                                      burnin = 3000 - 75 + 0.1) |>
                 select(-P) |>
-                pivot_longer(Y:B, names_to = "species", values_to = "density") |>
-                mutate(season = as.integer((t - 0.1) %/% 150 + 1)) |>
+                pivot_longer(Y:B, names_to = "species", values_to = "density")
+            x <- z |>
+                filter(t == max(t)) |>
                 mutate(occup = density > 0) |>
-                group_by(rep, season, species) |>
-                # number of patches occupied each season:
-                summarize(occup = sum(occup), .groups = "drop") |>
+                group_by(rep, species) |>
+                summarize(occup = sum(occup), .groups = "drop")
+            y <- z |>
+                group_by(rep, species, t) |>
+                summarize(density = sum(density), .groups = "drop") |>
+                group_by(rep, species) |>
+                summarize(density = mean(log1p(density)), .groups = "drop")
+            bind_cols(x, density = y$density) |>
                 mutate(u = .u, d_yp = .d_yp, q = .q, rare_spp = .rare_spp) |>
                 add_factors(.exclude = NULL) |>
                 mutate(rare_spp = factor(rare_spp, levels = c("yeast",
@@ -229,6 +232,8 @@ if (! file.exists(mutual_inv_stoch_sims_file)) {
     inv_sim_df <- read_rds(mutual_inv_stoch_sims_file)
 
 }
+
+
 
 
 
@@ -440,32 +445,48 @@ abundance_plotter <- function(x_var,
 
 
 
-invasion_plotter <- function(v, double_facet) {
+invasion_plotter <- function(x_var, y_var, double_facet, plot_rare = TRUE) {
 
-    f_var <- ifelse(v == "u", "q", "u")
+    y_var <- match.arg(y_var, c("occup", "density"))
 
-    if (v == "u") {
+    f_var <- ifelse(x_var == "u", "q", "u")
+
+    lgl_fun <- ifelse(plot_rare, `==`, `!=`)
+
+    if (x_var == "u") {
         x_axis <- scale_x_continuous(paste("Strength of microbe--pollinator",
                                            "effect (*u*)"),
                                      breaks = seq(0, 10, 2.5),
                                      labels = c("0", "", "5", "", "10"))
+        dd <- inv_sim_df
     } else {
         x_axis <- scale_x_continuous("Between-season determinism (*q*)",
                                      breaks = as.numeric(levels(inv_sim_df$q)),
                                      labels = c("0", "", "0.5", "", "0.95"))
+        dd <- inv_sim_df |> filter(u %in% c(0, 1, 4, 7, 10))
+    }
+    if (y_var == "occup") {
+        y_axis <- scale_y_continuous("Last-season occupancy",
+                                     breaks = log1p(c(0, 3^(0:3))),
+                                     labels = c(0, 3^(0:3)))
+        y0 <- 1
+    } else {
+        y_axis <- scale_y_continuous("Last-season abundance",
+                                     breaks = log1p(2^(0:3 * 2L - 1L)),
+                                     labels = 2^(0:3 * 2L - 1L))
+        y0 <- 0.5
     }
 
-    dd <- inv_sim_df |>
-        filter(season == max(season)) |>
-        mutate(occup = log1p(occup)) |>
+    dd <- dd |>
+        mutate(occup = log1p(occup)) |> # density is already transformed
         group_by(u, d_yp, q, rare_spp, species) |>
-        summarize(lo = quantile(occup, 0.2),
-                  hi = quantile(occup, 0.8),
-                  occup = mean(occup),
+        summarize(lo = quantile(.data[[y_var]], 0.2),
+                  hi = quantile(.data[[y_var]], 0.8),
+                  !!y_var := mean(.data[[y_var]]),
                   .groups = "drop") |>
-        filter(rare_spp == species) |>
-        mutate(increasing = factor(occup > log1p(1))) |>
-        mutate(!!v := as.numeric(paste(.data[[v]])))
+        filter(lgl_fun(rare_spp, species)) |>
+        mutate(increasing = factor(.data[[y_var]] > log1p(y0))) |>
+        mutate(!!x_var := as.numeric(paste(.data[[x_var]])))
 
     if (double_facet) {
         facet <- facet_grid(vars(.data[[f_var]]), vars(d_yp),
@@ -479,15 +500,13 @@ invasion_plotter <- function(v, double_facet) {
     }
 
     dd |>
-        ggplot(aes(.data[[v]], occup, color = species)) +
+        ggplot(aes(.data[[x_var]], .data[[y_var]], color = species)) +
         geom_hline(yintercept = 0, linetype = 1, color = "gray70") +
-        geom_hline(yintercept = log1p(1), linetype = "22", color = "gray70") +
+        geom_hline(yintercept = log1p(y0), linetype = "22", color = "gray70") +
         geom_point(aes(shape = increasing), size = 2) +
         geom_line(linewidth = 1, show.legend = TRUE) +
         x_axis +
-        scale_y_continuous("Last-season occupancy",
-                           breaks = log1p(c(0, 3^(0:3))),
-                           labels = c(0, 3^(0:3))) +
+        y_axis +
         facet +
         scale_color_manual(NULL, values = spp_pal) +
         scale_shape_manual(NULL, values = c("TRUE" = 19, "FALSE" = 1),
@@ -512,10 +531,12 @@ invasion_plotter <- function(v, double_facet) {
 #'
 #' Supplemental figures with all combos:
 #'
-for (v in c("u", "q")) {
-    p <- invasion_plotter(v, double_facet = TRUE)
-    save_plot(sprintf("_figures/supp-%s-invasion.pdf", v), p, 4.5, 6)
-}; rm(p, v)
+for (x in c("u", "q")) {
+    for (y in c("occup", "density")) {
+        p <- invasion_plotter(x, y, double_facet = TRUE)
+        save_plot(sprintf("_figures/supp-%s-%s-invasion.pdf", x, y), p, 4.5, 6)
+    }
+}; rm(p, x, y)
 
 
 
