@@ -81,7 +81,7 @@ plant_metacomm_stoch <- function(np,
                                  Y0 = NULL,
                                  B0 = NULL,
                                  m = 0.1,
-                                 d_yp = 1.1,
+                                 d_yp = 1.0,
                                  d_b0 = 0.3,
                                  d_bp = 0.4,
                                  g_yp = 0.005,
@@ -91,7 +91,7 @@ plant_metacomm_stoch <- function(np,
                                  X = 0,
                                  n_sigma = 200,
                                  season_len = 150,
-                                 season_surv = 0.1,
+                                 season_surv = 0.02,
                                  q = 1,
                                  n_reps = 100,
                                  dt = 0.1,
@@ -211,12 +211,16 @@ plant_metacomm_stoch <- function(np,
         out_df$p <- factor(as.integer(out_df$p), levels = 0:(np-1L),
                            labels = paste("patch", 1:np))
     } else if (summarize == 1L) {  # "time"
-        colnames(out_df) <- c("rep", "t", "BC", "H", "sumY", "sumB")
+        colnames(out_df) <- c("rep", "t", "BC", "H", "sumY", "sumB",
+                              "occupY", "occupB")
     } else {  # "rep"
         colnames(out_df) <- c("rep", "BC", "H",
                               "minY", "maxY", "meanY", "meanlogY",
-                              "minB", "maxB", "meanB", "meanlogB")
+                              "minB", "maxB", "meanB", "meanlogB",
+                              "minYoccup", "maxYoccup", "meanYoccup", "meanlogYoccup",
+                              "minBoccup", "maxBoccup", "meanBoccup", "meanlogBoccup")
     }
     return(out_df)
 
 }
+

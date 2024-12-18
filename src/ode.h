@@ -189,10 +189,13 @@ struct ObserverBurnEvery
         time.clear();
     }
 
-private:
+protected:
+
     size_t season_len;
     bool begin_end;
     size_t iters;
+
+private:
 
     void push_back__(const C& x, const double& t) {
         data.push_back(x);

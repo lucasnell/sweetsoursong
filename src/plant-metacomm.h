@@ -353,13 +353,20 @@ struct MetaObsStochSumm : public ObserverBurnEvery<MatType> {
                                      season_len_, begin_end_) {};
 
     void operator()(const MatType& x, const double& t) {
-        if (t > burnin) {
-            time.push_back(t);
-            data.push_back(MatType(1, 4));
-            data.back()(0,0) = dissimilarity(x);       // BC
-            data.back()(0,1) = diversity(x);           // H
-            data.back()(0,2) = arma::accu(x.col(0));   // sum Y
-            data.back()(0,3) = arma::accu(x.col(1));   // sum B
+        if (t >= burnin) {
+            if (begin_end) {
+                if (iters >= season_len) {
+                    push_back__(x, t);
+                    iters = 0;
+                } else if (iters == 1U) {
+                    push_back__(x, t);
+                }
+            } else if (iters >= save_every) {
+                push_back__(x, t);
+                iters = 0;
+            }
+            // Don't start iterating until after burn-in:
+            iters++;
         }
         return;
     }
@@ -377,8 +384,9 @@ struct MetaObsStochSumm : public ObserverBurnEvery<MatType> {
 
         if (n_steps < 1) return;
 
-        output.set_size(n_steps, 6U);
-        // colnames(output) = CharacterVector::create("rep", "t", "BC", "H", "sumY", "sumB");
+        output.set_size(n_steps, 8U);
+        // colnames(output) = CharacterVector::create("rep", "t", "BC", "H",
+        //                                            "sumY", "sumB", "occupY", "occupB");
         for (size_t t = 0; t < n_steps; t++) {
             output(t,0) = dbl_rep;
             output(t,1) = this->time[t];
@@ -386,6 +394,8 @@ struct MetaObsStochSumm : public ObserverBurnEvery<MatType> {
             output(t,3) = this->data[t](0,1);
             output(t,4) = this->data[t](0,2);
             output(t,5) = this->data[t](0,3);
+            output(t,6) = this->data[t](0,4);
+            output(t,7) = this->data[t](0,5);
         }
 
         return;
@@ -394,6 +404,7 @@ struct MetaObsStochSumm : public ObserverBurnEvery<MatType> {
 
 
 protected:
+
 
 
     // mean community dissimilarity at one time point:
@@ -451,6 +462,31 @@ protected:
     }
 
 
+private:
+
+
+    void push_back__(const MatType& x, const double& t) {
+        time.push_back(t);
+        data.push_back(MatType(1, 6));
+        data.back()(0,0) = dissimilarity(x);       // BC
+        data.back()(0,1) = diversity(x);           // H
+        // data.back()(0,2) = arma::accu(x.col(0));   // sum Y
+        // data.back()(0,3) = arma::accu(x.col(1));   // sum B
+        // data.back()(0,4) = arma::accu(x.col(0) > 0);   // sum Y>0
+        // data.back()(0,5) = arma::accu(x.col(1) > 0);   // sum B>0
+        data.back()(0,2) = 0;  // sum Y
+        data.back()(0,3) = 0;  // sum B
+        data.back()(0,4) = 0;  // sum Y>0
+        data.back()(0,5) = 0;  // sum B>0
+        for (size_t i = 0; i < x.n_rows; i++) {
+            data.back()(0,2) += x(i,0);
+            data.back()(0,3) += x(i,1);
+            if (x(i,0) > 0) data.back()(0,4) += 1;
+            if (x(i,1) > 0) data.back()(0,5) += 1;
+        }
+        return;
+    }
+
 };
 
 
@@ -481,13 +517,14 @@ struct MetaObsStochSummRep : public MetaObsStochSumm {
 
         // colnames = "rep", "BC", "H",
         //            "minY", "maxY", "meanY", "meanlogY",
-        //            "minB", "maxB", "meanB", "meanlogB"
-        output.set_size(1U, 11U);
+        //            "minB", "maxB", "meanB", "meanlogB",
+        //            "minYoccup", "maxYoccup", "meanYoccup", "meanlogYoccup",
+        //            "minBoccup", "maxBoccup", "meanBoccup", "meanlogBoccup"
+        output.set_size(1U, 19U);
 
         output(0, 0) = dbl_rep;
         output(0, 1) = 0.0;  // mean BC
         output(0, 2) = 0.0;  // mean H
-        // these are summarized for only the last season (if seasons included):
         output(0, 3) = this->data[0](0,2);   // minimum(sum(Y))
         output(0, 4) = this->data[0](0,2);   // maximum(sum(Y))
         output(0, 5) = 0.0;                  // mean(sum(Y))
@@ -496,29 +533,27 @@ struct MetaObsStochSummRep : public MetaObsStochSumm {
         output(0, 8) = this->data[0](0,3);   // maximum(sum(B))
         output(0, 9) = 0.0;                  // mean(sum(B))
         output(0,10) = 0.0;                  // mean(log(sum(B)+1))
+        output(0,11) = this->data[0](0,4);   // minimum(sum(Y>0))
+        output(0,12) = this->data[0](0,4);   // maximum(sum(Y>0))
+        output(0,13) = 0.0;                  // mean(sum(Y>0))
+        output(0,14) = 0.0;                  // mean(log(sum(Y>0)+1))
+        output(0,15) = this->data[0](0,5);   // minimum(sum(B>0))
+        output(0,16) = this->data[0](0,5);   // maximum(sum(B>0))
+        output(0,17) = 0.0;                  // mean(sum(B>0))
+        output(0,18) = 0.0;                  // mean(log(sum(B>0)+1))
 
-        double dbl_ls = 0; // # of last season's time points
-        // time point directly before the last season:
-        double last_season_t0 = system.max_t - system.dt *
-            static_cast<double>(system.season_len);
+
         for (size_t i = 0; i < this->data.size(); i++) {
             const MatType& m(this->data[i]);
             // metrics
             output(0,1) += m(0,0);
             output(0,2) += m(0,1);
             // yeast and bacteria
-            if (this->time[i] > last_season_t0) {
-                add_YB__(output, m);
-                dbl_ls += 1.0;
-            }
+            add_YB__(output, m);
         }
 
-        output(0, 1) /= dbl_n;
-        output(0, 2) /= dbl_n;
-        output(0, 5) /= dbl_ls;
-        output(0, 6) /= dbl_ls;
-        output(0, 9) /= dbl_ls;
-        output(0,10) /= dbl_ls;
+        std::vector<size_t> mean_inds = {1, 2, 5, 6, 9, 10, 13, 14, 17, 18};
+        for (const size_t& i : mean_inds) output(0, i) /= dbl_n;
 
         return;
 
@@ -526,18 +561,31 @@ struct MetaObsStochSummRep : public MetaObsStochSumm {
 
     // Add summary info for yeast and bacteria
     inline void add_YB__(MatType& output, const MatType& m) const {
-        // yeast
+        // yeast abundance
         const double& Yi(m(0,2));
         if (Yi < output(0,3)) output(0,3) = Yi;
         if (Yi > output(0,4)) output(0,4) = Yi;
         output(0, 5) += Yi;
         output(0, 6) += std::log(Yi + 1.0);
-        // bacteria
+        // bacteria abundance
         const double& Bi(m(0,3));
         if (Bi < output(0,7)) output(0,7) = Bi;
         if (Bi > output(0,8)) output(0,8) = Bi;
         output(0, 9) += Bi;
         output(0,10) += std::log(Bi + 1.0);
+        // yeast occupancy
+        const double& occupYi(m(0,4));
+        if (occupYi < output(0,11)) output(0,11) = occupYi;
+        if (occupYi > output(0,12)) output(0,12) = occupYi;
+        output(0, 13) += occupYi;
+        output(0, 14) += std::log(occupYi + 1);
+        // bacteria occupancy
+        const double& occupBi(m(0,5));
+        if (occupBi < output(0,15)) output(0,15) = occupBi;
+        if (occupBi > output(0,16)) output(0,16) = occupBi;
+        output(0,17) += occupBi;
+        output(0,18) += std::log(occupBi + 1);
+
         return;
     }
 
