@@ -11,6 +11,42 @@ using namespace Rcpp;
 
 
 
+// logit and inverse logit functions
+
+//' Logit function
+//'
+//' @param p Numeric vector of values in range `[0, 1]`.
+//'
+//' @export
+//'
+//[[Rcpp::export]]
+NumericVector logit(NumericVector p) {
+    NumericVector x(p.size());
+    for (size_t i = 0; i < p.size(); i++) {
+        x(i) = std::log(p(i) / (1 - p(i)));
+    }
+    return x;
+}
+
+
+//' Inverse logit function
+//'
+//' @param x Numeric vector.
+//'
+//' @export
+//'
+//[[Rcpp::export]]
+NumericVector inv_logit(NumericVector x) {
+    NumericVector p(x.size());
+    for (size_t i = 0; i < p.size(); i++) {
+        p(i) = 1 / (1 + std::exp(- x(i)));
+    }
+    return p;
+}
+
+
+
+
 /*
  =====================================================================================
  =====================================================================================

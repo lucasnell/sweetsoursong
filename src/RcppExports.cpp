@@ -101,6 +101,28 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// logit
+NumericVector logit(NumericVector p);
+RcppExport SEXP _sweetsoursong_logit(SEXP pSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type p(pSEXP);
+    rcpp_result_gen = Rcpp::wrap(logit(p));
+    return rcpp_result_gen;
+END_RCPP
+}
+// inv_logit
+NumericVector inv_logit(NumericVector x);
+RcppExport SEXP _sweetsoursong_inv_logit(SEXP xSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type x(xSEXP);
+    rcpp_result_gen = Rcpp::wrap(inv_logit(x));
+    return rcpp_result_gen;
+END_RCPP
+}
 // dissimilarity
 double dissimilarity(NumericVector yeast, NumericVector bact);
 RcppExport SEXP _sweetsoursong_dissimilarity(SEXP yeastSEXP, SEXP bactSEXP) {
@@ -159,6 +181,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_sweetsoursong_one_flower_ode", (DL_FUNC) &_sweetsoursong_one_flower_ode, 21},
     {"_sweetsoursong_plant_metacomm_stoch_cpp", (DL_FUNC) &_sweetsoursong_plant_metacomm_stoch_cpp, 24},
     {"_sweetsoursong_plant_metacomm_cpp", (DL_FUNC) &_sweetsoursong_plant_metacomm_cpp, 15},
+    {"_sweetsoursong_logit", (DL_FUNC) &_sweetsoursong_logit, 1},
+    {"_sweetsoursong_inv_logit", (DL_FUNC) &_sweetsoursong_inv_logit, 1},
     {"_sweetsoursong_dissimilarity", (DL_FUNC) &_sweetsoursong_dissimilarity, 2},
     {"_sweetsoursong_dissimilarity_vector", (DL_FUNC) &_sweetsoursong_dissimilarity_vector, 4},
     {"_sweetsoursong_diversity", (DL_FUNC) &_sweetsoursong_diversity, 3},

@@ -26,37 +26,6 @@ using namespace Rcpp;
 
 
 
-// logit and inverse logit functions
-inline double logit(const double& p) {
-    double x = std::log(p / (1 - p));
-    return x;
-}
-inline double inv_logit(const double& x) {
-    double p = 1 / (1 + std::exp(- x));
-    return p;
-}
-// overloaded for creating new vectors:
-inline arma::vec logit(const arma::vec& p) {
-    arma::vec x(arma::size(p));
-    for (size_t i = 0; i < p.n_elem; i++) x(i) = std::log(p(i) / (1 - p(i)));
-    return x;
-}
-inline arma::vec inv_logit(const arma::vec& x) {
-    arma::vec p(arma::size(x));
-    for (size_t i = 0; i < x.n_elem; i++) p(i) = 1 / (1 + std::exp(- x(i)));
-    return p;
-}
-// overloaded for filling vectors:
-inline void logit(const arma::vec& p, arma::vec& x) {
-    if (arma::size(x) != arma::size(p)) x.set_size(p.n_elem);
-    for (size_t i = 0; i < p.n_elem; i++) x(i) = std::log(p(i) / (1 - p(i)));
-    return;
-}
-inline void inv_logit(const arma::vec& x, arma::vec& p) {
-    if (arma::size(p) != arma::size(x)) p.set_size(x.n_elem);
-    for (size_t i = 0; i < x.n_elem; i++) p(i) = 1 / (1 + std::exp(- x(i)));
-    return;
-}
 
 
 

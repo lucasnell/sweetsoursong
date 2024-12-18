@@ -14,6 +14,26 @@ plant_metacomm_cpp <- function(m, d_yp, d_b0, d_bp, g_yp, g_b0, g_bp, L_0, u, X,
     .Call(`_sweetsoursong_plant_metacomm_cpp`, m, d_yp, d_b0, d_bp, g_yp, g_b0, g_bp, L_0, u, X, Y0, B0, open_sys, dt, max_t)
 }
 
+#' Logit function
+#'
+#' @param p Numeric vector of values in range `[0, 1]`.
+#'
+#' @export
+#'
+logit <- function(p) {
+    .Call(`_sweetsoursong_logit`, p)
+}
+
+#' Inverse logit function
+#'
+#' @param x Numeric vector.
+#'
+#' @export
+#'
+inv_logit <- function(x) {
+    .Call(`_sweetsoursong_inv_logit`, x)
+}
+
 #' Bray–Curtis dissimilarity.
 #'
 #' @param yeast Vector of yeast abundances.
