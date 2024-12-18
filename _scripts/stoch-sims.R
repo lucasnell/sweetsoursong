@@ -37,7 +37,7 @@ spp_pal <- c(yeast = outcome_pal[["yeast only"]],
 
 # ===========================================================================*
 # ===========================================================================*
-# data functions, d_b0 ----
+# data functions, d_yp ----
 # ===========================================================================*
 # ===========================================================================*
 
@@ -45,18 +45,17 @@ spp_pal <- c(yeast = outcome_pal[["yeast only"]],
 #' "coexistence" is the boundary where coexistence occurs at u=0.
 #' The other two are on either side of that boundary and produce competitive
 #' exclusion.
-d_b0__ = c("bacteria only" = 0.4,
-           "coexistence" = 0.3,
-           "yeast only" = 0.2)
-
+d_yp__ = c("bacteria only" = 0.8,
+           "coexistence" = 1,
+           "yeast only" = 1.2)
 
 
 
 add_factors <- function(d, .exclude = NULL) {
-    if ("d_b0" %in% colnames(d) && !is.factor(d[["d_b0"]]) &&
-        ! "d_b0" %in% .exclude) {
-        d <- mutate(d, d_b0 = factor(d_b0, levels = unname(d_b0__),
-                                     labels = names(d_b0__)))
+    if ("d_yp" %in% colnames(d) && !is.factor(d[["d_yp"]]) &&
+        ! "d_yp" %in% .exclude) {
+        d <- mutate(d, d_yp = factor(d_yp, levels = unname(d_yp__),
+                                     labels = names(d_yp__)))
     }
     if ("q" %in% colnames(d) && !is.factor(d[["q"]]) &&
         ! "q" %in% .exclude) {
@@ -138,24 +137,27 @@ add_outcome_props <- function(d){
 
 if (! file.exists(main_stoch_sims_file)) {
 
-    # Takes ~10 min with 6 threads
+    # Takes ~34 min with 6 threads
     set.seed(1472844374)
     stoch_sim_df <- crossing(.u = 0:10,
-                             .d_b0 = d_b0__,
+                             .d_yp = d_yp__,
+                             .season_surv = c(0.01, 0.02, 0.04),
                              .q = c(0, 0.25, 0.5, 0.75, 0.95)) |>
         # Don't do this in parallel bc plant_metacomm_stoch is already
         # doing that
-        pmap_dfr(\(.u, .d_b0, .q) {
-            plant_metacomm_stoch(np = 100L, u = .u, d_b0 = .d_b0,
+        pmap_dfr(\(.u, .d_yp, .season_surv, .q) {
+            plant_metacomm_stoch(np = 100L, u = .u, d_yp = .d_yp,
                                  q = .q,
                                  no_immig = TRUE,
                                  n_sigma = 100,
-                                 # only sample last season:
-                                 burnin = 3000 - 150,
+                                 season_surv = .season_surv,
+                                 # only sample last 5 seasons:
+                                 burnin = 3000 * 15 / 20,
                                  # summarize by rep:
                                  summarize = "rep") |>
-                mutate(u = .u, d_b0 = .d_b0, q = .q) |>
-                select(u, d_b0, q, everything())
+                mutate(u = .u, d_yp = .d_yp, season_surv = .season_surv,
+                       q = .q) |>
+                select(u, d_yp, season_surv, q, everything())
         }, .progress = TRUE)
 
     write_rds(stoch_sim_df, main_stoch_sims_file)
@@ -175,341 +177,61 @@ if (! file.exists(main_stoch_sims_file)) {
 
 
 
-# if (! file.exists(mutual_inv_stoch_sims_file)) {
-#
-#     # Takes ~26 min with 6 threads
-#     t0 <- Sys.time()
-#     set.seed(1771251461)
-#     inv_sim_df <- crossing(.u = 0:10,
-#                            .d_b0 = d_b0__,
-#                            .q = sort(unique(stoch_sim_df$q)),
-#                            .rare_spp = c("yeast", "bacteria")) |>
-#         # Don't do this in parallel bc plant_metacomm_stoch is already
-#         # doing that
-#         pmap_dfr(\(.u, .d_b0, .q, .rare_spp) {
-#             if (.rare_spp == "yeast") {
-#                 .Y0 <- c(rep(0.5, 1L), rep(0,   99L))
-#                 .B0 <- c(rep(0,   1L), rep(0.5, 99L))
-#             } else {
-#                 .B0 <- c(rep(0.5, 1L), rep(0,   99L))
-#                 .Y0 <- c(rep(0,   1L), rep(0.5, 99L))
-#             }
-#             z <- plant_metacomm_stoch(np = 100L, u = .u, d_b0 = .d_b0, q = .q,
-#                                       Y0 = .Y0, B0 = .B0,
-#                                       no_immig = TRUE,
-#                                       n_sigma = 100,
-#                                       max_t = 3000,
-#                                       # only calculate abundance based on the
-#                                       # last half of the last season:
-#                                       burnin = 3000 - 75 + 0.1) |>
-#                 select(-P) |>
-#                 pivot_longer(Y:B, names_to = "species", values_to = "density")
-#             x <- z |>
-#                 filter(t == max(t)) |>
-#                 mutate(occup = density > 0) |>
-#                 group_by(rep, species) |>
-#                 summarize(occup = sum(occup), .groups = "drop")
-#             y <- z |>
-#                 group_by(rep, species, t) |>
-#                 summarize(density = sum(density), .groups = "drop") |>
-#                 group_by(rep, species) |>
-#                 summarize(density = mean(log1p(density)), .groups = "drop")
-#             bind_cols(x, density = y$density) |>
-#                 mutate(u = .u, d_b0 = .d_b0, q = .q, rare_spp = .rare_spp) |>
-#                 add_factors(.exclude = NULL) |>
-#                 mutate(rare_spp = factor(rare_spp, levels = c("yeast",
-#                                                               "bacteria"))) |>
-#                 select(u, d_b0, q, rare_spp, everything())
-#         }, .progress = TRUE)
-#
-#     write_rds(inv_sim_df, mutual_inv_stoch_sims_file)
-#
-#     t1 <- Sys.time()
-#     t1 - t0; rm(t0, t1)
-#
-#
-# } else {
-#
-#     inv_sim_df <- read_rds(mutual_inv_stoch_sims_file)
-#
-# }
+if (! file.exists(mutual_inv_stoch_sims_file)) {
+
+    # Takes ~26 min with 6 threads
+    set.seed(1771251461)
+    inv_sim_df <- crossing(.u = 0:10,
+                           .d_yp = d_yp__,
+                           .q = sort(unique(stoch_sim_df$q)),
+                           .rare_spp = c("yeast", "bacteria")) |>
+        # Don't do this in parallel bc plant_metacomm_stoch is already
+        # doing that
+        pmap_dfr(\(.u, .d_yp, .q, .rare_spp) {
+            if (.rare_spp == "yeast") {
+                .Y0 <- c(rep(0.5, 1L), rep(0,   99L))
+                .B0 <- c(rep(0,   1L), rep(0.5, 99L))
+            } else {
+                .B0 <- c(rep(0.5, 1L), rep(0,   99L))
+                .Y0 <- c(rep(0,   1L), rep(0.5, 99L))
+            }
+            z <- plant_metacomm_stoch(np = 100L, u = .u, d_yp = .d_yp, q = .q,
+                                      Y0 = .Y0, B0 = .B0,
+                                      no_immig = TRUE,
+                                      n_sigma = 100,
+                                      season_surv = median(stoch_sim_df$season_surv),
+                                      max_t = 3000,
+                                      # only calculate abundance based on the
+                                      # last half of the last season:
+                                      burnin = 3000 - 75 + 0.1) |>
+                select(-P) |>
+                pivot_longer(Y:B, names_to = "species", values_to = "density")
+            x <- z |>
+                filter(t == max(t)) |>
+                mutate(occup = density > 0) |>
+                group_by(rep, species) |>
+                summarize(occup = sum(occup), .groups = "drop")
+            y <- z |>
+                group_by(rep, species, t) |>
+                summarize(density = sum(density), .groups = "drop") |>
+                group_by(rep, species) |>
+                summarize(density = mean(log1p(density)), .groups = "drop")
+            bind_cols(x, density = y$density) |>
+                mutate(u = .u, d_yp = .d_yp, q = .q, rare_spp = .rare_spp) |>
+                add_factors(.exclude = NULL) |>
+                mutate(rare_spp = factor(rare_spp, levels = c("yeast",
+                                                              "bacteria"))) |>
+                select(u, d_yp, q, rare_spp, everything())
+        }, .progress = TRUE)
+
+    write_rds(inv_sim_df, mutual_inv_stoch_sims_file)
 
 
+} else {
 
-# LEFT OFF ----
+    inv_sim_df <- read_rds(mutual_inv_stoch_sims_file)
 
-calc_P <- function(u, species, rare_sp) {
-
-    # for patch i, equation is: n * (1 - B[i])^u / (2 * sum((1 - B[j])^u))
-    # Below,
-    # Bi = (1 - B[i])^u
-    # sumBj = sum((1 - B[j])^u)
-    # n = 100
-    #
-    # I also assume the rare species occupies one plant with density = 0.5
-    # (the other with density = 0)
-    # The common species occupies 99 plants of the 100 total plants
-
-    if (length(species) == 1) species <- rep(species, length(u))
-    if (length(rare_sp) == 1) rare_sp <- rep(rare_sp, length(u))
-
-    stopifnot(length(u) == length(species))
-    stopifnot(length(u) == length(rare_sp))
-
-    Bi <- numeric(length(u))
-    spY <- species == "yeast"
-    Bi[spY] <- 1
-    Bi[!spY] <- 0.5^(u[!spY])
-
-    sumBj <- numeric(length(u))
-    rsY <- rare_sp == "yeast"
-    sumBj[rsY] <- 99 * 0.5^(u[rsY]) + 1
-    sumBj[!rsY] <- 99 + 0.5^(u[!rsY])
-
-    P <- 100 * Bi / (2 * sumBj)
-
-    return(P)
 }
-
-
-calc_dNdt <- function(P, species, d_yp, d_b0,
-                      d_bp = formals(plant_metacomm_stoch)[["d_bp"]],
-                      L0 = 0.5, Y = 0.5, B = 0.5,
-                      N = 0.5, m = 0.1) {
-
-    if (length(species) == 1) species <- rep(species, length(P))
-    if (length(d_yp) == 1) d_yp <- rep(d_yp, length(P))
-    if (length(d_b0) == 1) d_b0 <- rep(d_b0, length(P))
-    if (length(d_bp) == 1) d_bp <- rep(d_bp, length(P))
-
-    stopifnot(length(P) == length(species))
-    stopifnot(length(P) == length(d_yp))
-    stopifnot(length(P) == length(d_b0))
-    stopifnot(length(P) == length(d_bp))
-    dNdt <- numeric(length(P))
-    isY <- species == "yeast"
-    .delta <- d_yp[isY] * (P[isY] / (L0 + P[isY])) * Y
-    .gamma <- (d_b0[!isY] + d_bp[!isY] * (P[!isY] / (L0 + P[!isY]))) * B
-    dNdt[isY] <- .delta * N - m * Y
-    dNdt[!isY] <- .gamma * N - m * B
-    return(dNdt)
-}
-
-
-
-invasion_calcs <- crossing(u = 0:10,
-                           d_b0 = c(0.24, 0.3, 0.36),
-                           d_yp = c(0.8, 1, 1.2),
-                           species = c("yeast", "bacteria"),
-                           rare_sp = c("yeast", "bacteria")) |>
-    mutate(P = calc_P(u, species, rare_sp),
-           dN = calc_dNdt(P, species, d_yp, d_b0))
-
-
-# invasion_calcs |>
-#     filter(species == rare_sp) |>
-#     # These don't affect P:
-#     filter(d_b0 == median(d_b0), d_yp == median(d_yp)) |>
-#     ggplot(aes(u, P, color = species)) +
-#     geom_point(size = 2) +
-#     geom_line(linewidth = 1) +
-#     scale_color_manual(NULL, values = spp_pal, guide = "none")
-#
-# invasion_calcs |>
-#     filter(species == rare_sp) |>
-#     select(-rare_sp, -dN) |>
-#     # These don't affect P:
-#     filter(d_b0 == median(d_b0), d_yp == median(d_yp)) |>
-#     pivot_wider(names_from = species, values_from = P) |>
-#     mutate(rel_P = yeast / bacteria) |>
-#     ggplot(aes(u, rel_P)) +
-#     geom_point(size = 2) +
-#     geom_line(linewidth = 1)
-#
-#
-# invasion_calcs |>
-#     filter(species == rare_sp) |>
-#     ggplot(aes(u, dN, color = species)) +
-#     geom_hline(yintercept = 0, linetype = 1, color = "gray80") +
-#     geom_point(size = 2) +
-#     geom_line(linewidth = 1) +
-#     scale_color_manual(NULL, values = spp_pal, guide = "none") +
-#     facet_grid(d_b0 ~ d_yp, labeller =
-#                    labeller(d_yp = \(x) { lapply(x, \(z) paste("*d<sub>yp</sub>* =", z)) },
-#                             d_b0 = \(x) { lapply(x, \(z) paste("*d<sub>b0</sub>* =", z)) })) +
-#     theme(strip.text = element_markdown())
-#
-#
-# invasion_calcs |>
-#     select(-P) |>
-#     pivot_wider(names_from = species, values_from = dN) |>
-#     mutate(inv_rel_dN = case_when(rare_sp == "yeast" ~ yeast / bacteria,
-#                               TRUE ~ bacteria / yeast)) |>
-#     ggplot(aes(u, log2(inv_rel_dN), color = rare_sp)) +
-#     geom_hline(yintercept = 0, linetype = 1, color = "gray80") +
-#     geom_point(size = 2) +
-#     geom_line(linewidth = 1) +
-#     scale_color_manual(NULL, values = spp_pal, guide = "none") +
-#     facet_grid(d_b0 ~ d_yp, labeller =
-#                    labeller(d_yp = \(x) { lapply(x, \(z) paste("*d<sub>yp</sub>* =", z)) },
-#                             d_b0 = \(x) { lapply(x, \(z) paste("*d<sub>b0</sub>* =", z)) })) +
-#     theme(strip.text = element_markdown())
-
-
-
-# d_yp = 2 * d_b0 + 0.4
-
-
-
-# Takes ~5 min
-growth_df <- crossing(.u = c(0, 1, 10),
-                      # .d_b0 = c(0.1, 0.2, 0.3, 0.4),
-                      .d_b0 = 0.3,
-                      # .d_yp = c(0.6, 0.8, 1, 1.2),
-                      .d_bp = c(0.3, 0.4, 0.5),
-                      .d_yp = 2 * .d_b0 + .d_bp,
-                      .rare_sp = c("yeast", "bacteria")) |>
-    pmap_dfr(\(.u, .d_b0, .d_bp, .d_yp, .rare_sp) {
-        if (.rare_sp == "yeast") {
-            .Y0 <- c(rep(0.5, 1L), rep(0,   99L))
-            .B0 <- c(rep(0,   1L), rep(0.5, 99L))
-        } else {
-            .B0 <- c(rep(0.5, 1L), rep(0,   99L))
-            .Y0 <- c(rep(0,   1L), rep(0.5, 99L))
-        }
-        plant_metacomm_stoch(np = 100L, n_reps = 100L,
-                             u = .u,
-                             Y0 = .Y0, B0 = .B0,
-                             d_b0 = .d_b0,
-                             d_bp = .d_bp,
-                             d_yp = .d_yp,
-                             q = 0.5,
-                             no_immig = TRUE,
-                             n_sigma = 100,
-                             max_t = 3000,
-                             # burnin = 3000 - 600,
-                             # summarize = "time",
-                             # save_every = 1)
-                             begin_end = TRUE) |>
-            filter(round(t %% 150, 1) == 0.1) |>
-            mutate(dY = calc_dNdt(P, "yeast", d_yp = .d_yp, d_b0 = .d_b0,
-                                  Y = Y, B = B, N = 1 - Y - B),
-                   dB = calc_dNdt(P, "bacteria", d_yp = .d_yp, d_b0 = .d_b0,
-                                  Y = Y, B = B, N = 1 - Y - B)) |>
-            group_by(rep, t) |>
-            summarize(p_inv = ifelse(.rare_sp == "yeast", mean(dY > dB), mean(dB > dY)),
-                      .groups = "drop") |>
-            mutate(u = .u, d_b0 = .d_b0, d_bp = .d_bp, d_yp = .d_yp, rare_sp = .rare_sp)
-    }, .progress = TRUE)
-
-
-b_disp <- "d_bp"
-
-growth_ylims <- growth_df |>
-    group_by(t, d_yp, .data[[b_disp]], rare_sp, u) |>
-    summarize(p_inv = mean(p_inv), .groups = "drop") |>
-    filter(p_inv > 0, p_inv < 1) |>
-    getElement("p_inv") |> range()
-
-
-
-
-growth_plots <- map(c(0, 1, 10), \(.u) {
-    growth_df |>
-        filter(u == .u) |>
-        ggplot(aes(t, logit(p_inv), color = rare_sp)) +
-        ggtitle(sprintf("*u* = %i", .u)) +
-        # geom_hline(yintercept = 0, linetype = 1, color = "gray80") +
-        geom_hline(yintercept = logit(1/100), linetype = 1, color = "gray80") +
-        # geom_point(shape = 1, size = 2, alpha = 0.5) +
-        geom_line(data = growth_df |> filter(u == .u) |>
-                      group_by(t, d_yp, .data[[b_disp]], rare_sp) |>
-                      summarize(p_inv = mean(p_inv), .groups = "drop"),
-                  linewidth = 1) +
-        scale_color_manual(values = spp_pal, guide = "none") +
-        scale_y_continuous("Proportion flowers where invader wins",
-                           limits = logit(growth_ylims)) +
-        facet_grid(vars(.data[[b_disp]]), vars(d_yp), labeller =
-                       labeller(d_yp = \(x) { lapply(x, \(z) paste("*d<sub>yp</sub>* =", z)) },
-                                d_b0 = \(x) { lapply(x, \(z) paste("*d<sub>b0</sub>* =", z)) },
-                                d_bp = \(x) { lapply(x, \(z) paste("*d<sub>bp</sub>* =", z)) })) +
-        theme(strip.text = element_markdown(),
-              plot.title = element_markdown())
-})
-
-
-do.call(wrap_plots, growth_plots) +
-    plot_layout(nrow = 1)
-
-growth_df |>
-    group_by(d_yp, .data[[b_disp]], rare_sp, u) |>
-    summarize(p_inv = mean(p_inv), .groups = "drop") |>
-    ggplot(aes(factor(u), logit(p_inv), color = rare_sp)) +
-    geom_hline(yintercept = logit(1/100), linetype = 1, color = "gray80") +
-    geom_point(size = 2) +
-    geom_line(aes(x = as.numeric(factor(u))), linewidth = 1) +
-    scale_color_manual(values = spp_pal, guide = "none") +
-    scale_y_continuous("Proportion flowers where invader wins",
-                       limits = logit(growth_ylims)) +
-    facet_grid(vars(.data[[b_disp]]), vars(d_yp), labeller =
-                   labeller(d_yp = \(x) { lapply(x, \(z) paste("*d<sub>yp</sub>* =", z)) },
-                            d_b0 = \(x) { lapply(x, \(z) paste("*d<sub>b0</sub>* =", z)) },
-                            d_bp = \(x) { lapply(x, \(z) paste("*d<sub>bp</sub>* =", z)) })) +
-    theme(strip.text = element_markdown(),
-          plot.title = element_markdown())
-
-
-
-z |>
-    filter(round(t %% 150, 1) == 0.1) |>
-    mutate(dY = calc_dNdt(P, "yeast", d_yp = .d_yp, d_b0 = .d_b0,
-                          Y = Y, B = B, N = 1 - Y - B),
-           dB = calc_dNdt(P, "bacteria", d_yp = .d_yp, d_b0 = .d_b0,
-                          Y = Y, B = B, N = 1 - Y - B)) |>
-    ggplot(aes(t, dY - dB)) +
-    geom_hline(yintercept = 0, linetype = 1, color = "gray80") +
-    geom_point(alpha  = 0.5, shape = 1) +
-    stat_smooth(method = "gam", formula = y ~ s(x), se = FALSE) +
-    facet_wrap(~ rep, nrow = 2)
-
-
-z |>
-    ggplot(aes(t, p_inv)) +
-    geom_hline(yintercept = 0, linetype = 1, color = "gray80") +
-    geom_point(size = 2) +
-    # geom_line(linewidth = 1) +
-    # facet_wrap(~ rep, nrow = 2) +
-    ylim(0, 1)
-
-
-
-
-z |>
-    select(rep, t, sumY, sumB) |>
-    rename(Y = sumY, B = sumB) |>
-    pivot_longer(Y:B, names_to = "species", values_to = "density") |>
-    add_factors() |>
-    ggplot(aes(t, density, color = species)) +
-    geom_hline(yintercept = 0, linetype = 1, color = "gray80") +
-    geom_line(linewidth = 1) +
-    ylab("Abundance") +
-    facet_wrap(~ rep, nrow = 2) +
-    scale_color_manual(NULL, values = spp_pal, guide = "none")
-
-z |>
-    select(rep, t, occupY, occupB) |>
-    rename(Y = occupY, B = occupB) |>
-    pivot_longer(Y:B, names_to = "species", values_to = "density") |>
-    add_factors() |>
-    ggplot(aes(t, density, color = species)) +
-    geom_hline(yintercept = 0, linetype = 1, color = "gray80") +
-    geom_line(linewidth = 1) +
-    ylab("Occupancy") +
-    facet_wrap(~ rep, nrow = 2) +
-    scale_color_manual(NULL, values = spp_pal, guide = "none")
-
-
-
 
 
 
@@ -540,12 +262,12 @@ make_plot_objects <- function(x_var, facet_q, facet_u,
                                              "\\(z) paste('*", .f_var,
                                              "* = ', z)) }")))
         if (is.null(facet_fxn)) facet_fxn <- facet_grid
-        .facet <- facet_fxn(vars(.data[[.f_var]]), vars(d_b0),
+        .facet <- facet_fxn(vars(.data[[.f_var]]), vars(d_yp),
                              labeller = labeller(!!.f_var := f_labeller,
-                                                 d_b0 = label_value))
+                                                 d_yp = label_value))
     } else {
         if (is.null(facet_fxn)) facet_fxn <- facet_wrap
-        .facet <- facet_fxn( ~ d_b0, nrow = 1)
+        .facet <- facet_fxn( ~ d_yp, nrow = 1)
     }
     if (x_var == "u") {
         .x_scale <- scale_x_continuous(paste("Strength of microbe--pollinator",
@@ -581,8 +303,9 @@ outcome_plotter <- function(x_var,
                       env = sys.frame(sys.nframe()))
 
     dd <- stoch_sim_df |>
-        filter(.data[[f_var]] %in% f_lvls) |>
-        select(q, u, d_b0, maxY, maxB) |>
+        filter(season_surv == median(season_surv),
+               .data[[f_var]] %in% f_lvls) |>
+        select(q, u, d_yp, maxY, maxB) |>
         add_outcome_props() |>
         add_factors(.exclude = x_var)
 
@@ -610,7 +333,7 @@ outcome_plotter <- function(x_var,
               plot.title = element_markdown())
 
     if (add_title) {
-        .title <- ""
+        .title <- sprintf("*s* = %s", median(stoch_sim_df$season_surv))
         if (length(f_lvls) == 1) {
             .title <- paste0(.title, sprintf(", *%s* = %s", f_var, f_lvls))
         }
@@ -639,7 +362,7 @@ abundance_plotter <- function(x_var,
 
     if (free_y) {
         .facet_fxn <- \(...) facet_wrap(scales = "free_y",
-                                        ncol = length(unique(stoch_sim_df$d_b0)),
+                                        ncol = length(unique(stoch_sim_df$d_yp)),
                                         ...)
         .ylimits <- NULL
         .ybreaks <- waiver()
@@ -662,13 +385,14 @@ abundance_plotter <- function(x_var,
                       env = sys.frame(sys.nframe()))
 
     dd <- stoch_sim_df |>
-        filter(.data[[f_var]] %in% f_lvls) |>
-        select(q, u, d_b0, {{ yvar }}, {{ bvar }}) |>
+        filter(season_surv == median(season_surv),
+               .data[[f_var]] %in% f_lvls) |>
+        select(q, u, d_yp, {{ yvar }}, {{ bvar }}) |>
         pivot_longer({{ yvar }}:{{ bvar }}, names_to = "species") |>
         mutate(species = str_sub(species, nchar(species), nchar(species))) |>
         add_factors(.exclude = x_var)
     dds <- dd |>
-        group_by(q, u, d_b0, species) |>
+        group_by(q, u, d_yp, species) |>
         summarize(lo = min(value),
                   hi = max(value),
                   lo10 = quantile(value, 0.1),
@@ -703,7 +427,7 @@ abundance_plotter <- function(x_var,
               plot.title = element_markdown())
 
     if (add_title) {
-        .title <- ""
+        .title <- sprintf("*s* = %s", median(stoch_sim_df$season_surv))
         if (length(f_lvls) == 1) {
             .title <- paste0(.title, sprintf(", *%s* = %s", f_var, f_lvls))
         }
@@ -755,7 +479,7 @@ invasion_plotter <- function(x_var, y_var, double_facet, plot_rare = TRUE) {
 
     dd <- dd |>
         mutate(occup = log1p(occup)) |> # density is already transformed
-        group_by(u, d_b0, q, rare_spp, species) |>
+        group_by(u, d_yp, q, rare_spp, species) |>
         summarize(lo = quantile(.data[[y_var]], 0.2),
                   hi = quantile(.data[[y_var]], 0.8),
                   !!y_var := mean(.data[[y_var]]),
@@ -765,14 +489,14 @@ invasion_plotter <- function(x_var, y_var, double_facet, plot_rare = TRUE) {
         mutate(!!x_var := as.numeric(paste(.data[[x_var]])))
 
     if (double_facet) {
-        facet <- facet_grid(vars(.data[[f_var]]), vars(d_b0),
+        facet <- facet_grid(vars(.data[[f_var]]), vars(d_yp),
                             labeller = labeller(!!f_var := \(x) lapply(
                                 x, \(z) paste0("*", f_var, "* = ", z)),
-                                       d_b0 = label_value))
+                                       d_yp = label_value))
     } else {
         dd <- dd |>
             filter(.data[[f_var]] == median(as.numeric(levels(.data[[f_var]]))))
-        facet <- facet_grid(~ d_b0)
+        facet <- facet_grid(~ d_yp)
     }
 
     dd |>
@@ -804,52 +528,48 @@ invasion_plotter <- function(x_var, y_var, double_facet, plot_rare = TRUE) {
 
 
 
-#' #'
-#' #' Supplemental figures with all combos:
-#' #'
-#' for (x in c("u", "q")) {
-#'     for (y in c("occup", "density")) {
-#'         p <- invasion_plotter(x, y, double_facet = TRUE)
-#'         save_plot(sprintf("_figures/supp-%s-%s-invasion.pdf", x, y), p, 4.5, 6)
-#'     }
-#' }; rm(p, x, y)
-
-
-supp_u_out_abund_p <-
-    (outcome_plotter("u", drop_ext = FALSE) +
-         theme(plot.title = element_blank())) +
-    (abundance_plotter("u") + theme(plot.title = element_blank())) +
-    plot_layout(nrow = 1, guides = "collect") +
-    plot_annotation(tag_levels = "a", tag_prefix = "(", tag_suffix = ")") &
-    theme(plot.tag = element_text(size = 16, face = "bold"))
-supp_u_out_abund_p
-
-
-# save_plot("_figures/supp-u-out-abund.pdf", supp_u_out_abund_p, 9, 6)
-
-# LEFT OFF #2 -----
-# - RE-MAKE (BC OF ACCIDENTAL DELETION) FIGURE `supp-u-out-abund.pdf`
-# - MAKE SURE THIS FIGURE MAKES SENSE NOW THAT YOU'RE CHANGING `d_b0`
-#   INSTEAD OF `d_yp`
-# - ALSO ADJUST THE ORDER OF THESE PLOTS TO MATCH THE MANUSCRIPT
-
-
-#' #'
-#' #' Main text figure with `q = 0.5`:
-#' #'
-#' main_plots <- list(outcome_plotter("u", facet_q = 0.5, facet_u = 4),
-#'                    abundance_plotter("u", facet_q = 0.5, facet_u = 4),
-#'                    invasion_plotter("u", "occup", double_facet = FALSE)) |>
-#'     map(\(p) {
-#'         p +
-#'             theme(plot.title = element_blank(),
-#'                   legend.position = "none",
-#'                   panel.spacing.x = unit(1, "lines"),
-#'                   axis.title.y = element_blank(),
-#'                   axis.title.x = element_blank(),
-#'                   strip.text = element_blank())
-#'     }) |>
-#'     do.call(what = wrap_plots) +
-#'     plot_layout(ncol = 1)
 #'
-#' save_plot("_figures/u-stochastic-main.pdf", main_plots, 4, 5)
+#' Supplemental figures with all combos:
+#'
+for (x in c("u", "q")) {
+    for (y in c("occup", "density")) {
+        p <- invasion_plotter(x, y, double_facet = TRUE)
+        save_plot(sprintf("_figures/supp-%s-%s-invasion.pdf", x, y), p, 4.5, 6)
+    }
+}; rm(p, x, y)
+
+
+
+#'
+#' Main text figures with intermediates for non-focal parameter:
+#'
+for (v in c("u", "q")) {
+    p <- invasion_plotter(v, double_facet = FALSE) +
+        theme(panel.spacing.x = unit(1, "lines"),
+              axis.title.y = element_blank(),
+              axis.title.x = element_blank(),
+              strip.text = element_blank())
+    save_plot(sprintf("_figures/invasion-%s.pdf", v), p, 4, 2)
+}; rm(p, v)
+
+
+
+
+
+
+main_plots <- list(outcome_plotter("u", facet_q = 0.5, facet_u = 4),
+                   abundance_plotter("u", facet_q = 0.5, facet_u = 4),
+                   invasion_plotter("u", double_facet = FALSE)) |>
+    map(\(p) {
+        p +
+            theme(plot.title = element_blank(),
+                  legend.position = "none",
+                  panel.spacing.x = unit(1, "lines"),
+                  axis.title.y = element_blank(),
+                  axis.title.x = element_blank(),
+                  strip.text = element_blank())
+    }) |>
+    do.call(what = wrap_plots) +
+    plot_layout(ncol = 1)
+
+save_plot("_figures/u-stochastic-main.pdf", main_plots, 4, 5)
