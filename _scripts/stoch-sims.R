@@ -813,3 +813,134 @@ do.call(wrap_plots, inv_prop_win_plots) +
 
 
 
+calc_Nhat <- function(P, d_yp, is_Y) {
+    d_b0 <- formals(plant_metacomm_stoch)[["d_b0"]]
+    d_bp <- formals(plant_metacomm_stoch)[["d_bp"]]
+    L_0 <- formals(plant_metacomm_stoch)[["L_0"]]
+    m <- formals(plant_metacomm_stoch)[["m"]]
+    Lambda <- P / (L_0 + P)
+    if (is_Y) {
+        Nhat <- m / (d_yp * Lambda)
+    } else {
+        Nhat <- m / (d_b0 + d_bp * Lambda)
+    }
+    return(Nhat)
+}
+
+
+
+
+
+covar_df <- inv_growth_df |>
+    # only beginnings of seasons:
+    filter(round(t %% 150, 1) == 0.1) |>
+    group_by(rep, t, u, d_yp, rare_sp) |>
+    mutate(relY = Y / mean(Y),
+           relB = B / mean(B),
+           NhatY = calc_Nhat(P, d_yp, TRUE),
+           NhatB = calc_Nhat(P, d_yp, FALSE)) |>
+    ungroup() |>
+    filter(!is.na(relY), !is.na(relB)) |>
+    group_by(t, u, d_yp, rare_sp) |>
+    summarize(# growth--density covariance:
+              grow_dens_cov_Y = cov(dY, relY),
+              grow_dens_cov_B = cov(dB, relB),
+              # competition--density covariance
+              # (greater Nhat means they'll lose competitive outcome):
+              comp_dens_cov_Y = cov(NhatY - NhatB, relY),
+              comp_dens_cov_B = cov(NhatB - NhatY, relB),
+              # growth--pollinator covariance:
+              grow_poll_cov_Y = cov(dY, P),
+              grow_poll_cov_B = cov(dB, P),
+              # competition--pollinator covariance
+              # (greater Nhat means they'll lose competitive outcome):
+              comp_poll_cov_Y = cov(NhatY - NhatB, P),
+              comp_poll_cov_B = cov(NhatB - NhatY, P),
+              .groups = "drop")
+
+
+covar_df |>
+    # beginning of 2nd season (round used bc of R rounding issues):
+    filter(round(t, 1) == 150.1) |>
+    select(u, d_yp, rare_sp, grow_dens_cov_Y, grow_dens_cov_B) |>
+    pivot_longer(grow_dens_cov_Y:grow_dens_cov_B, names_to = "species") |>
+    mutate(species = str_remove(species, "grow_dens_cov_")) |>
+    add_factors(.exclude = "u") |>
+    ggplot(aes(u, value, color = species)) +
+    geom_hline(yintercept = 0, linetype = 1, color = "gray80") +
+    geom_line(linewidth = 1) +
+    geom_point(size = 2) +
+    scale_color_manual(values = spp_pal, guide = "none") +
+    scale_y_continuous("Growth--density covariance") +
+    scale_x_continuous(paste("Strength of microbe--pollinator",
+                             "effect (*u*)"),
+                       breaks = seq(0, 10, 2.5),
+                       labels = c("0", "", "5", "", "10")) +
+    facet_grid(rare_sp ~ d_yp) +
+    theme(axis.title = element_markdown())
+
+
+covar_df |>
+    # beginning of 2nd season (round used bc of R rounding issues):
+    filter(round(t, 1) == 150.1) |>
+    select(u, d_yp, rare_sp, comp_dens_cov_Y, comp_dens_cov_B) |>
+    pivot_longer(comp_dens_cov_Y:comp_dens_cov_B, names_to = "species") |>
+    mutate(species = str_remove(species, "comp_dens_cov_")) |>
+    add_factors(.exclude = "u") |>
+    ggplot(aes(u, value, color = species)) +
+    geom_hline(yintercept = 0, linetype = 1, color = "gray80") +
+    geom_line(linewidth = 1) +
+    geom_point(size = 2) +
+    scale_color_manual(values = spp_pal, guide = "none") +
+    scale_y_continuous("Competition--density covariance") +
+    scale_x_continuous(paste("Strength of microbe--pollinator",
+                             "effect (*u*)"),
+                       breaks = seq(0, 10, 2.5),
+                       labels = c("0", "", "5", "", "10")) +
+    facet_grid(rare_sp ~ d_yp) +
+    theme(axis.title = element_markdown())
+
+
+covar_df |>
+    # beginning of 2nd season (round used bc of R rounding issues):
+    filter(round(t, 1) == 150.1) |>
+    select(u, d_yp, rare_sp, grow_poll_cov_Y, grow_poll_cov_B) |>
+    pivot_longer(grow_poll_cov_Y:grow_poll_cov_B, names_to = "species") |>
+    mutate(species = str_remove(species, "grow_poll_cov_")) |>
+    add_factors(.exclude = "u") |>
+    ggplot(aes(u, value, color = species)) +
+    geom_hline(yintercept = 0, linetype = 1, color = "gray80") +
+    geom_line(linewidth = 1) +
+    geom_point(size = 2) +
+    scale_color_manual(values = spp_pal, guide = "none") +
+    scale_y_continuous("Growth--pollinator covariance") +
+    scale_x_continuous(paste("Strength of microbe--pollinator",
+                             "effect (*u*)"),
+                       breaks = seq(0, 10, 2.5),
+                       labels = c("0", "", "5", "", "10")) +
+    facet_grid(rare_sp ~ d_yp, scales = "free") +
+    theme(axis.title = element_markdown())
+
+covar_df |>
+    # beginning of 2nd season (round used bc of R rounding issues):
+    filter(round(t, 1) == 150.1) |>
+    select(u, d_yp, rare_sp, comp_poll_cov_Y, comp_poll_cov_B) |>
+    pivot_longer(comp_poll_cov_Y:comp_poll_cov_B, names_to = "species") |>
+    mutate(species = str_remove(species, "comp_poll_cov_")) |>
+    add_factors(.exclude = "u") |>
+    ggplot(aes(u, value, color = species)) +
+    geom_hline(yintercept = 0, linetype = 1, color = "gray80") +
+    geom_line(linewidth = 1) +
+    geom_point(size = 2) +
+    scale_color_manual(values = spp_pal, guide = "none") +
+    scale_y_continuous("Competition--pollinator covariance") +
+    scale_x_continuous(paste("Strength of microbe--pollinator",
+                             "effect (*u*)"),
+                       breaks = seq(0, 10, 2.5),
+                       labels = c("0", "", "5", "", "10")) +
+    facet_grid(rare_sp ~ d_yp, scales = "free") +
+    theme(axis.title = element_markdown())
+
+
+
+
