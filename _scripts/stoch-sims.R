@@ -13,12 +13,14 @@ setThreadOptions(numThreads = max(defaultNumThreads() - 2L, 1L))
 
 if (file.exists(".Rprofile")) source(".Rprofile")
 
-# sims of outcomes / abundances:
-main_stoch_sims_file <- "_data/big-stoch-sims.rds"
-# sims of gain / loss:
-gain_loss_stoch_sims_file <- "_data/big-stoch-gain-loss-sims.rds"
-# sims of mutual invasibility:
-mutual_inv_stoch_sims_file <- "_data/big-stoch-mutual-inv-sims.rds"
+# data files created here:
+data_files <- list(
+    # sims of outcomes / abundances:
+    main = "_data/big-stoch-sims.rds",
+    # sims of mutual invasibility:
+    mutual_inv = "_data/big-stoch-mutual-inv-sims.rds",
+    # sims of mutual invasiblity - growth rates:
+    mutual_inv_growth = "_data/big-stoch-mutual-inv-growth-sims.rds")
 
 
 outcome_pal <- c("coexistence" = "#008B00",
@@ -126,6 +128,82 @@ add_outcome_props <- function(d){
 
 
 
+calc_dYdt <- function(Y, P, N, d_yp, L0 = 0.5, m = 0.1) {
+
+    n <- length(Y)
+
+    stopifnot(length(P) == 1 || length(P) == n)
+    stopifnot(length(N) == 1 || length(N) == n)
+    stopifnot(length(d_yp) == 1 || length(d_yp) == n)
+    stopifnot(length(L0) == 1)
+    stopifnot(length(m) == 1)
+
+    .delta <- d_yp * (P / (L0 + P)) * Y
+    dYdt <- .delta * N - m * Y
+
+    return(dYdt)
+}
+
+
+calc_dBdt <- function(B, P, N,
+                      d_b0 = formals(plant_metacomm_stoch)[["d_b0"]],
+                      d_bp = formals(plant_metacomm_stoch)[["d_bp"]],
+                      L0 = 0.5, m = 0.1) {
+
+    n <- length(B)
+
+    stopifnot(length(P) == 1 || length(P) == n)
+    stopifnot(length(N) == 1 || length(N) == n)
+    stopifnot(length(d_b0) == 1 || length(d_b0) == n)
+    stopifnot(length(d_bp) == 1 || length(d_bp) == n)
+    stopifnot(length(L0) == 1)
+    stopifnot(length(m) == 1)
+
+    .gamma <- (d_b0 + d_bp * (P / (L0 + P))) * B
+    dBdt <- .gamma * N - m * B
+
+    return(dBdt)
+}
+
+
+#'
+#' NOTE: The function below calculates P for a specific scenario that was
+#' used as the starting conditions in the mutual invasibility simulations.
+#' The rare species occupies one plant with density = 0.5
+#' (the other with density = 0)
+#' The common species occupies 99 plants of the 100 total plants.
+#'
+calc_P <- function(u, species, rare_sp) {
+
+    #
+    # for patch i, equation for P is: n * (1 - B[i])^u / (2 * sum((1 - B[j])^u))
+    # Below,
+    # Bi = (1 - B[i])^u
+    # sumBj = sum((1 - B[j])^u)
+    # ... for the scenario described above.
+    #
+    if (length(species) == 1) species <- rep(species, length(u))
+    if (length(rare_sp) == 1) rare_sp <- rep(rare_sp, length(u))
+
+    stopifnot(length(u) == length(species))
+    stopifnot(length(u) == length(rare_sp))
+
+    Bi <- numeric(length(u))
+    spY <- species == "yeast"
+    Bi[spY] <- 1
+    Bi[!spY] <- 0.5^(u[!spY])
+
+    sumBj <- numeric(length(u))
+    rsY <- rare_sp == "yeast"
+    sumBj[rsY] <- 99 * 0.5^(u[rsY]) + 1
+    sumBj[!rsY] <- 99 + 0.5^(u[!rsY])
+
+    P <- 100 * Bi / (2 * sumBj)
+
+    return(P)
+}
+
+
 
 # ===========================================================================*
 # ===========================================================================*
@@ -135,7 +213,7 @@ add_outcome_props <- function(d){
 
 
 
-if (! file.exists(main_stoch_sims_file)) {
+if (! file.exists(data_files$main)) {
 
     # Takes ~34 min with 6 threads
     set.seed(1472844374)
@@ -160,11 +238,11 @@ if (! file.exists(main_stoch_sims_file)) {
                 select(u, d_yp, season_surv, q, everything())
         }, .progress = TRUE)
 
-    write_rds(stoch_sim_df, main_stoch_sims_file)
+    write_rds(stoch_sim_df, data_files$main)
 
 } else {
 
-    stoch_sim_df <- read_rds(main_stoch_sims_file)
+    stoch_sim_df <- read_rds(data_files$main)
 
 }
 
@@ -177,18 +255,18 @@ if (! file.exists(main_stoch_sims_file)) {
 
 
 
-if (! file.exists(mutual_inv_stoch_sims_file)) {
+if (! file.exists(data_files$mutual_inv)) {
 
     # Takes ~26 min with 6 threads
     set.seed(1771251461)
     inv_sim_df <- crossing(.u = 0:10,
                            .d_yp = d_yp__,
                            .q = sort(unique(stoch_sim_df$q)),
-                           .rare_spp = c("yeast", "bacteria")) |>
+                           .rare_sp = c("yeast", "bacteria")) |>
         # Don't do this in parallel bc plant_metacomm_stoch is already
         # doing that
-        pmap_dfr(\(.u, .d_yp, .q, .rare_spp) {
-            if (.rare_spp == "yeast") {
+        pmap_dfr(\(.u, .d_yp, .q, .rare_sp) {
+            if (.rare_sp == "yeast") {
                 .Y0 <- c(rep(0.5, 1L), rep(0,   99L))
                 .B0 <- c(rep(0,   1L), rep(0.5, 99L))
             } else {
@@ -217,22 +295,71 @@ if (! file.exists(mutual_inv_stoch_sims_file)) {
                 group_by(rep, species) |>
                 summarize(density = mean(log1p(density)), .groups = "drop")
             bind_cols(x, density = y$density) |>
-                mutate(u = .u, d_yp = .d_yp, q = .q, rare_spp = .rare_spp) |>
+                mutate(u = .u, d_yp = .d_yp, q = .q, rare_sp = .rare_sp) |>
                 add_factors(.exclude = NULL) |>
-                mutate(rare_spp = factor(rare_spp, levels = c("yeast",
+                mutate(rare_sp = factor(rare_sp, levels = c("yeast",
                                                               "bacteria"))) |>
-                select(u, d_yp, q, rare_spp, everything())
+                select(u, d_yp, q, rare_sp, everything())
         }, .progress = TRUE)
 
-    write_rds(inv_sim_df, mutual_inv_stoch_sims_file)
+    write_rds(inv_sim_df, data_files$mutual_inv)
 
 
 } else {
 
-    inv_sim_df <- read_rds(mutual_inv_stoch_sims_file)
+    inv_sim_df <- read_rds(data_files$mutual_inv)
 
 }
 
+
+
+
+
+
+# ===========================================================================*
+# ===========================================================================*
+# mutual inv growth sims ----
+# ===========================================================================*
+# ===========================================================================*
+
+
+if (! file.exists(data_files$mutual_inv_growth)) {
+
+    # Takes ~3.5 min
+    set.seed(32506739)
+    inv_growth_df <- crossing(.u = 0:10,
+                              .d_yp = d_yp__,
+                              .rare_sp = c("yeast", "bacteria")) |>
+        pmap_dfr(\(.u, .d_yp, .rare_sp) {
+            if (.rare_sp == "yeast") {
+                .Y0 <- c(rep(0.5, 1L), rep(0,   99L))
+                .B0 <- c(rep(0,   1L), rep(0.5, 99L))
+            } else {
+                .B0 <- c(rep(0.5, 1L), rep(0,   99L))
+                .Y0 <- c(rep(0,   1L), rep(0.5, 99L))
+            }
+            plant_metacomm_stoch(np = 100L,
+                                 u = .u,
+                                 Y0 = .Y0, B0 = .B0,
+                                 d_yp = .d_yp,
+                                 q = 0.5,
+                                 n_sigma = 100,
+                                 max_t = 3000,
+                                 begin_end = TRUE) |>
+                filter(round(t %% 150, 1) == 0.1) |>
+                mutate(dY = calc_dYdt(Y, P, N = 1 - Y - B, d_yp = .d_yp),
+                       dB = calc_dBdt(B, P, N = 1 - Y - B)) |>
+                mutate(u = .u, d_yp = .d_yp, rare_sp = .rare_sp)
+        }, .progress = TRUE)
+
+    write_rds(inv_growth_df, data_files$mutual_inv_growth)
+
+
+} else {
+
+    inv_growth_df <- read_rds(data_files$mutual_inv_growth)
+
+}
 
 
 
@@ -444,14 +571,11 @@ abundance_plotter <- function(x_var,
 
 
 
-
-invasion_plotter <- function(x_var, y_var, double_facet, plot_rare = TRUE) {
+invasion_plotter <- function(x_var, y_var, double_facet, .species = NULL) {
 
     y_var <- match.arg(y_var, c("occup", "density"))
 
     f_var <- ifelse(x_var == "u", "q", "u")
-
-    lgl_fun <- ifelse(plot_rare, `==`, `!=`)
 
     if (x_var == "u") {
         x_axis <- scale_x_continuous(paste("Strength of microbe--pollinator",
@@ -465,28 +589,36 @@ invasion_plotter <- function(x_var, y_var, double_facet, plot_rare = TRUE) {
                                      labels = c("0", "", "0.5", "", "0.95"))
         dd <- inv_sim_df |> filter(u %in% c(0, 1, 4, 7, 10))
     }
+
+    dd <- dd |>
+        mutate(occup = log1p(occup)) |> # density is already transformed
+        group_by(u, d_yp, q, rare_sp, species) |>
+        summarize(lo = quantile(.data[[y_var]], 0.2),
+                  hi = quantile(.data[[y_var]], 0.8),
+                  !!y_var := mean(.data[[y_var]]),
+                  .groups = "drop")
+    y_max <- max(dd[[y_var]])
+
     if (y_var == "occup") {
         y_axis <- scale_y_continuous("Last-season occupancy",
                                      breaks = log1p(c(0, 3^(0:3))),
-                                     labels = c(0, 3^(0:3)))
+                                     labels = c(0, 3^(0:3)),
+                                     limits = c(0, y_max))
         y0 <- 1
     } else {
         y_axis <- scale_y_continuous("Last-season abundance",
                                      breaks = log1p(2^(0:3 * 2L - 1L)),
-                                     labels = 2^(0:3 * 2L - 1L))
+                                     labels = 2^(0:3 * 2L - 1L),
+                                     limits = c(0, y_max))
         y0 <- 0.5
     }
 
     dd <- dd |>
-        mutate(occup = log1p(occup)) |> # density is already transformed
-        group_by(u, d_yp, q, rare_spp, species) |>
-        summarize(lo = quantile(.data[[y_var]], 0.2),
-                  hi = quantile(.data[[y_var]], 0.8),
-                  !!y_var := mean(.data[[y_var]]),
-                  .groups = "drop") |>
-        filter(lgl_fun(rare_spp, species)) |>
+        filter(rare_sp == species) |>
         mutate(increasing = factor(.data[[y_var]] > log1p(y0))) |>
         mutate(!!x_var := as.numeric(paste(.data[[x_var]])))
+
+    if (!is.null(.species)) dd <- filter(dd, species == .species)
 
     if (double_facet) {
         facet <- facet_grid(vars(.data[[f_var]]), vars(d_yp),
@@ -522,44 +654,16 @@ invasion_plotter <- function(x_var, y_var, double_facet, plot_rare = TRUE) {
 
 
 # =====================================================*
-#           creating plots ----
+#           even t0 plots ----
 # =====================================================*
 
-
-
-
-#'
-#' Supplemental figures with all combos:
-#'
-for (x in c("u", "q")) {
-    for (y in c("occup", "density")) {
-        p <- invasion_plotter(x, y, double_facet = TRUE)
-        save_plot(sprintf("_figures/supp-%s-%s-invasion.pdf", x, y), p, 4.5, 6)
-    }
-}; rm(p, x, y)
-
-
+# Plots for when species start evenly distributed.
 
 #'
-#' Main text figures with intermediates for non-focal parameter:
+#' Main text figure panels with `q = 0.5`:
 #'
-for (v in c("u", "q")) {
-    p <- invasion_plotter(v, double_facet = FALSE) +
-        theme(panel.spacing.x = unit(1, "lines"),
-              axis.title.y = element_blank(),
-              axis.title.x = element_blank(),
-              strip.text = element_blank())
-    save_plot(sprintf("_figures/invasion-%s.pdf", v), p, 4, 2)
-}; rm(p, v)
-
-
-
-
-
-
 main_plots <- list(outcome_plotter("u", facet_q = 0.5, facet_u = 4),
-                   abundance_plotter("u", facet_q = 0.5, facet_u = 4),
-                   invasion_plotter("u", double_facet = FALSE)) |>
+                   abundance_plotter("u", facet_q = 0.5, facet_u = 4)) |>
     map(\(p) {
         p +
             theme(plot.title = element_blank(),
@@ -572,4 +676,138 @@ main_plots <- list(outcome_plotter("u", facet_q = 0.5, facet_u = 4),
     do.call(what = wrap_plots) +
     plot_layout(ncol = 1)
 
-save_plot("_figures/u-stochastic-main.pdf", main_plots, 4, 5)
+save_plot("_figures/u-stochastic-main.pdf", main_plots, 4, 3.4)
+
+
+
+
+#'
+#' Supplemental figure of outcomes and abundances from evenly distributed
+#' starting abundances, with all `q x u` combos:
+#'
+supp_u_out_abund_p <-
+    (outcome_plotter("u", drop_ext = FALSE) +
+         theme(plot.title = element_blank())) +
+    (abundance_plotter("u") + theme(plot.title = element_blank())) +
+    plot_layout(nrow = 1, guides = "collect") +
+    plot_annotation(tag_levels = "a", tag_prefix = "(", tag_suffix = ")") &
+    theme(plot.tag = element_text(size = 16, face = "bold"))
+
+save_plot("_figures/supp-u-out-abund.pdf", supp_u_out_abund_p, 9, 6)
+
+
+
+
+# =====================================================*
+#           mutual inv. plots ----
+# =====================================================*
+
+
+# Plots for when one species is rare.
+
+#'
+#' Main text figure panels showing pollinator visits by species when
+#' each is rare:
+#'
+inv_poll_ps <- crossing(u = round(seq(0, 10, length.out = 101), 1),
+                       species = c("yeast", "bacteria"),
+                       rare_sp = c("yeast", "bacteria")) |>
+    mutate(P = calc_P(u, species, rare_sp)) |>
+    split(~ rare_sp) |>
+    map(\(d) {
+        d |>
+            ggplot(aes(u, P, color = species)) +
+            geom_hline(yintercept = 0, linetype = 1, color = "gray80") +
+            geom_line(linewidth = 1) +
+            scale_color_manual(NULL, values = spp_pal, guide = "none") +
+            scale_x_continuous(paste("Strength of microbe--pollinator",
+                                     "effect (*u*)"),
+                               breaks = seq(0, 10, 2.5),
+                               labels = c("0", "", "5", "", "10")) +
+            theme(axis.title.y = element_blank(),
+                  axis.title.x = element_blank())
+    })
+
+do.call(wrap_plots, inv_poll_ps) +
+    plot_layout(ncol = 1)
+
+
+for (sp in names(inv_poll_ps)) {
+    save_plot(sprintf("_figures/invasion-poll-rare-%s.pdf", sp),
+              inv_poll_ps[[sp]], 2, 2)
+}; rm(sp)
+
+
+
+inv_prop_win_plots <- unique(inv_growth_df$rare_sp) |>
+    set_names() |>
+    map(\(.rs) {
+        inv_growth_df |>
+            # beginning of 10th season (round used bc of R rounding issues):
+            filter(round(t, 1) == (10 - 1) * 150 + 0.1) |>
+            filter(rare_sp == .rs) |>
+            group_by(rep, u, d_yp, rare_sp) |>
+            summarize(p_inv = ifelse(.rs == "yeast",
+                                     mean(dY > dB),
+                                     mean(dB > dY)),
+                      .groups = "drop") |>
+            rename(species = rare_sp) |>
+            add_factors(.exclude = "u") |>
+            ggplot(aes(u, p_inv, color = species)) +
+            geom_hline(yintercept = 0, linetype = 1, color = "gray80") +
+            geom_point(shape = 1, size = 2, alpha = 0.1) +
+            stat_summary_bin(geom = "line", fun = "mean",
+                             breaks = -1:10 + 0.5,
+                             linewidth = 1) +
+            scale_color_manual(values = spp_pal, guide = "none") +
+            scale_y_continuous("Proportion flowers where invader wins",
+                               limits = c(0, 1)) +
+            scale_x_continuous(paste("Strength of microbe--pollinator",
+                                     "effect (*u*)"),
+                               breaks = seq(0, 10, 2.5),
+                               labels = c("0", "", "5", "", "10")) +
+            facet_grid(~ d_yp) +
+            theme(axis.title = element_markdown())
+    })
+
+do.call(wrap_plots, inv_prop_win_plots) +
+    plot_layout(ncol = 1)
+
+
+
+
+for (sp in names(inv_prop_win_plots)) {
+    ps <- list(inv_prop_win_plots[[sp]],
+               invasion_plotter("u", "occup", double_facet = FALSE, .species = sp)) |>
+        map(\(p) {
+            p + theme(axis.title.y = element_blank(),
+                      axis.title.x = element_blank(),
+                      legend.position = "none",
+                      strip.text = element_blank(),
+                      panel.spacing.x = unit(0.5, "lines"))
+        })
+    save_plot(sprintf("_figures/invasion-wins-rare-%s.pdf", sp), ps[[1]], 3.5, 2)
+    save_plot(sprintf("_figures/invasion-occup-rare-%s.pdf", sp), ps[[2]], 3.5, 2)
+}; rm(sp, ps)
+
+
+
+
+
+
+
+#'
+#' Supplemental figure of occupancies and abundances from mutual invasion
+#' simulations, with all `q x u` combos:
+#'
+for (x in c("u", "q")) {
+    for (y in c("occup", "density")) {
+        p <- invasion_plotter(x, y, double_facet = TRUE)
+        save_plot(sprintf("_figures/supp-%s-%s-invasion.pdf", x, y), p, 4.5, 6)
+    }
+}; rm(p, x, y)
+
+
+
+
+
