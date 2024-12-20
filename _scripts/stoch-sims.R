@@ -67,24 +67,27 @@ add_factors <- function(d, .exclude = NULL) {
         ! "u" %in% .exclude) {
         d <- mutate(d, u = factor(u))
     }
-    if ("species" %in% colnames(d) && !is.factor(d[["species"]]) &&
-        ! "species" %in% .exclude) {
-        if (all(d$species %in% c("Y", "B"))) {
-            d <- mutate(d, species = factor(species, levels = c("Y", "B"),
-                                            labels = c("yeast", "bacteria")))
-        } else if (all(d$species %in% c("yeast", "bacteria"))) {
-            d <- mutate(d, species = factor(species,
-                                            levels = c("yeast", "bacteria")))
-        } else if (all(d$species %in% c("Y", "B", "P"))) {
-            d <- mutate(d, species = factor(species, levels = c("Y", "B", "P"),
-                                            labels = c("yeast", "bacteria",
-                                                       "pollinators")))
-        } else if (all(d$species %in% c("yeast", "bacteria", "pollinators"))) {
-            d <- mutate(d, species = factor(species,
-                                            levels = c("yeast", "bacteria",
-                                                       "pollinators")))
+    adj_sp <- function(sp_col, col_name) {
+        if (all(sp_col %in% c("Y", "B"))) {
+            new_sp <- factor(sp_col, levels = c("Y", "B"),
+                             labels = c("yeast", "bacteria"))
+        } else if (all(sp_col %in% c("yeast", "bacteria"))) {
+            new_sp <- factor(sp_col, levels = c("yeast", "bacteria"))
+        } else if (all(sp_col %in% c("Y", "B", "P"))) {
+            new_sp <- factor(sp_col, levels = c("Y", "B", "P"),
+                             labels = c("yeast", "bacteria", "pollinators"))
+        } else if (all(sp_col %in% c("yeast", "bacteria", "pollinators"))) {
+            new_sp <- factor(sp_col, levels = c("yeast", "bacteria",
+                                                   "pollinators"))
         } else {
-            stop("strange values in d$species")
+            stop("strange values in d$", col_name)
+        }
+        return(new_sp)
+    }
+    for (spc in c("species", "rare_sp", "inv_sp", "res_sp")) {
+        if (spc %in% colnames(d) && !is.factor(d[[spc]]) &&
+            ! spc %in% .exclude) {
+            d[[spc]] <- adj_sp(d[[spc]], spc)
         }
     }
     return(d)
@@ -346,7 +349,6 @@ if (! file.exists(data_files$mutual_inv_growth)) {
                                  n_sigma = 100,
                                  max_t = 3000,
                                  begin_end = TRUE) |>
-                filter(round(t %% 150, 1) == 0.1) |>
                 mutate(dY = calc_dYdt(Y, P, N = 1 - Y - B, d_yp = .d_yp),
                        dB = calc_dBdt(B, P, N = 1 - Y - B)) |>
                 mutate(u = .u, d_yp = .d_yp, rare_sp = .rare_sp)
