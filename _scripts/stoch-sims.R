@@ -678,7 +678,7 @@ main_plots <- list(outcome_plotter("u", facet_q = 0.5, facet_u = 4),
     do.call(what = wrap_plots) +
     plot_layout(ncol = 1)
 
-save_plot("_figures/u-stochastic-main.pdf", main_plots, 4, 3.4)
+# save_plot("_figures/u-stochastic-main.pdf", main_plots, 4, 3.4)
 
 
 
@@ -695,7 +695,7 @@ supp_u_out_abund_p <-
     plot_annotation(tag_levels = "a", tag_prefix = "(", tag_suffix = ")") &
     theme(plot.tag = element_text(size = 16, face = "bold"))
 
-save_plot("_figures/supp-u-out-abund.pdf", supp_u_out_abund_p, 9, 6)
+# save_plot("_figures/supp-u-out-abund.pdf", supp_u_out_abund_p, 9, 6)
 
 
 
@@ -734,10 +734,10 @@ do.call(wrap_plots, inv_poll_ps) +
     plot_layout(ncol = 1)
 
 
-for (sp in names(inv_poll_ps)) {
-    save_plot(sprintf("_figures/invasion-poll-rare-%s.pdf", sp),
-              inv_poll_ps[[sp]], 2, 2)
-}; rm(sp)
+# for (sp in names(inv_poll_ps)) {
+#     save_plot(sprintf("_figures/invasion-poll-rare-%s.pdf", sp),
+#               inv_poll_ps[[sp]], 2, 2)
+# }; rm(sp)
 
 
 
@@ -778,19 +778,19 @@ do.call(wrap_plots, inv_prop_win_plots) +
 
 
 
-for (sp in names(inv_prop_win_plots)) {
-    ps <- list(inv_prop_win_plots[[sp]],
-               invasion_plotter("u", "occup", double_facet = FALSE, .species = sp)) |>
-        map(\(p) {
-            p + theme(axis.title.y = element_blank(),
-                      axis.title.x = element_blank(),
-                      legend.position = "none",
-                      strip.text = element_blank(),
-                      panel.spacing.x = unit(0.5, "lines"))
-        })
-    save_plot(sprintf("_figures/invasion-wins-rare-%s.pdf", sp), ps[[1]], 3.5, 2)
-    save_plot(sprintf("_figures/invasion-occup-rare-%s.pdf", sp), ps[[2]], 3.5, 2)
-}; rm(sp, ps)
+# for (sp in names(inv_prop_win_plots)) {
+#     ps <- list(inv_prop_win_plots[[sp]],
+#                invasion_plotter("u", "occup", double_facet = FALSE, .species = sp)) |>
+#         map(\(p) {
+#             p + theme(axis.title.y = element_blank(),
+#                       axis.title.x = element_blank(),
+#                       legend.position = "none",
+#                       strip.text = element_blank(),
+#                       panel.spacing.x = unit(0.5, "lines"))
+#         })
+#     save_plot(sprintf("_figures/invasion-wins-rare-%s.pdf", sp), ps[[1]], 3.5, 2)
+#     save_plot(sprintf("_figures/invasion-occup-rare-%s.pdf", sp), ps[[2]], 3.5, 2)
+# }; rm(sp, ps)
 
 
 
@@ -802,12 +802,12 @@ for (sp in names(inv_prop_win_plots)) {
 #' Supplemental figure of occupancies and abundances from mutual invasion
 #' simulations, with all `q x u` combos:
 #'
-for (x in c("u", "q")) {
-    for (y in c("occup", "density")) {
-        p <- invasion_plotter(x, y, double_facet = TRUE)
-        save_plot(sprintf("_figures/supp-%s-%s-invasion.pdf", x, y), p, 4.5, 6)
-    }
-}; rm(p, x, y)
+# for (x in c("u", "q")) {
+#     for (y in c("occup", "density")) {
+#         p <- invasion_plotter(x, y, double_facet = TRUE)
+#         save_plot(sprintf("_figures/supp-%s-%s-invasion.pdf", x, y), p, 4.5, 6)
+#     }
+# }; rm(p, x, y)
 
 
 
