@@ -1,6 +1,7 @@
 ^LICENSE\.md$
 ^.*\.Rproj$
 ^\.Rproj\.user$
-^_scripts$
 ^_data$
 ^_figures$
+^_mathematica$
+^_scripts$

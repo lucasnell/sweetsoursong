@@ -47,7 +47,5 @@ po/*~
 
 # RStudio Connect folder
 rsconnect/
-_data/
-_figures/
 
 .Rprofile
