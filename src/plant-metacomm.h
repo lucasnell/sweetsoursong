@@ -127,8 +127,7 @@ public:
           open_sys(open_sys_),
           max_t(max_t_),
           dt(dt_),
-          season_len(season_len_),
-          weights(m_.size()) {};
+          season_len(season_len_) {};
 
 
     LandscapeConstF(const LandscapeConstF& other)
@@ -146,8 +145,7 @@ public:
           open_sys(other.open_sys),
           max_t(other.max_t),
           dt(other.dt),
-          season_len(other.season_len),
-          weights(other.weights) {};
+          season_len(other.season_len) {};
 
     LandscapeConstF& operator=(const LandscapeConstF& other) {
         m = other.m;
@@ -165,21 +163,21 @@ public:
         max_t = other.max_t;
         dt = other.dt;
         season_len = other.season_len;
-        weights = other.weights;
         return *this;
     }
 
 
     void operator()(const MatType& x,
-                    MatType& dxdt) {
+                    MatType& dxdt) const {
 
-        make_weights(this->weights, x);
+        std::vector<double> weights(n_plants);
+        make_weights(weights, x);
 
         double Ybar = arma::mean(x.col(0));
         double Bbar = arma::mean(x.col(1));
 
         for (size_t i = 0; i < n_plants; i++) {
-            one_plant(i, Ybar, Bbar, x, dxdt);
+            one_plant(i, Ybar, Bbar, weights, x, dxdt);
         }
 
         return;
@@ -187,7 +185,7 @@ public:
 
     void operator()(const MatType& x,
                   MatType& dxdt,
-                  const double& t) {
+                  const double& t) const {
         this->operator()(x, dxdt);
         return;
     }
@@ -216,13 +214,12 @@ public:
 
 private:
 
-    std::vector<double> weights;
-
    void one_plant(const size_t& i,
                   const double& Ybar,
                   const double& Bbar,
+                  const std::vector<double>& weights,
                   const MatType& x,
-                  MatType& dxdt) {
+                  MatType& dxdt) const {
 
         const double& Y(x(i,0));
         const double& B(x(i,1));

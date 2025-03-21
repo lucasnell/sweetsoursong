@@ -68,7 +68,7 @@ public:
           q(q_) {}
 
     template< class System >
-    void do_step(System system, MatType& x, double t, double dt) {
+    void do_step(System& system, MatType& x, double t, double dt) {
 
         // No use continuing if x has NaNs or infinity
         if (x.has_nan() || x.has_inf()) return;
@@ -306,18 +306,21 @@ private:
         MatType x;
         C obs(burnin, save_every, season_len, begin_end);
 
+        using System = std::pair<LandscapeConstF, StochLandscapeStochProcess>;
+
         for (size_t rep = begin; rep < end; rep++) {
 
             rng.seed(seeds[rep][0], seeds[rep][1]);
+            StochLandscapeStochProcess stoch_sys(rng, n_sigma);
 
             x = x0;
             obs.clear();
 
+            System system = std::make_pair(determ_sys0, stoch_sys);
+
             boost::numeric::odeint::integrate_const(
                 StochLandscapeStepper(np, 2U, season_len, season_surv, q),
-                std::make_pair(determ_sys0,
-                               StochLandscapeStochProcess(rng, n_sigma)),
-                               x, 0.0, max_t, dt, std::ref(obs));
+                system, x, 0.0, max_t, dt, std::ref(obs));
 
             obs.fill_output(output[rep], determ_sys0,
                             static_cast<double>(rep) + 1.0);

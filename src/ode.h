@@ -18,40 +18,9 @@
 using namespace Rcpp;
 
 
-typedef std::vector<double> VecType;
+using MatType = arma::mat;
 
-typedef boost::numeric::odeint::runge_kutta_dopri5<VecType> VecStepperType;
-
-// Comment if you want to use boost matrix types:
-// typedef boost::numeric::ublas::matrix<double> MatType;
-typedef arma::mat MatType;
-
-typedef boost::numeric::odeint::runge_kutta_dopri5<MatType> MatStepperType;
-
-/*
- This function checks for whether the remainder of numer / denom matches
- one of the remainders inside the rmd vector.
- The use of 1e-10 is to avoid rounding issues with std::fmod.
- This function only works if numer > denom.
- */
-inline bool remainder_equals(const double& numer,
-                             const double& denom,
-                             const std::vector<double>& rmd) {
-    double nd_rmd = std::fmod(numer, denom);
-    for (const double& r : rmd) {
-        if (std::abs(nd_rmd - r) < 1e-10) return true;
-    }
-    return false;
-}
-
-/*
- This is similar to above but only checks for zero remainder
- The use of 1e-10 is to avoid rounding issues with std::remainder.
- This function works when numer < denom.
- */
-inline bool zero_remainder(const double& numer, const double& denom) {
-    return std::abs(std::remainder(numer, denom)) < 1e-10;
-}
+using MatStepperType = boost::numeric::odeint::runge_kutta_dopri5<MatType, double, MatType, double, boost::numeric::odeint::vector_space_algebra>;
 
 
 
@@ -109,6 +78,16 @@ struct resize_impl<arma::mat, arma::mat>
     }
 };
 
+template<>
+struct vector_space_norm_inf<arma::mat>
+{
+    typedef double return_type;
+    return_type operator()(const arma::mat &u) const {
+        return arma::norm(u, "inf");
+    }
+};
+
+
 } } } // namespace boost::numeric::odeint
 
 
@@ -156,7 +135,7 @@ struct ObserverBurnEvery
     std::vector<double> time;
     double burnin;
     size_t save_every;
-    std::vector<double> remainders;
+
     ObserverBurnEvery(const double& burnin_, const size_t& save_every_,
                       const size_t& season_len_, const bool& begin_end_)
         : data(), time(), burnin(burnin_), save_every(save_every_),
