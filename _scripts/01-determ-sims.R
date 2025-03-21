@@ -74,6 +74,6 @@ if (.write_plots) {
         save_plot(fn, u_plots[[n]], 2.25, 2.5)
     }; rm(n, .u, .d_yp, fn)
 } else {
-    do.call(wrap_plots, u_plots)
+    do.call(wrap_plots, u_plots) + plot_layout(nrow = 1)
 }
 
