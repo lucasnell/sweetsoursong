@@ -9,6 +9,7 @@
 
 // To avoid many warnings from BOOST
 #pragma clang diagnostic ignored "-Wlanguage-extension-token"
+#include <boost/version.hpp>
 #include <boost/numeric/odeint.hpp>
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/io.hpp>
@@ -31,7 +32,11 @@ namespace boost { namespace numeric { namespace odeint {
 template <>
 struct is_resizeable<arma::vec>
 {
+#if BOOST_VERSION >= 108700
+    typedef std::true_type type;
+#else
     typedef boost::true_type type;
+#endif
     const static bool value = type::value;
 };
 
@@ -56,7 +61,11 @@ struct resize_impl<arma::vec, arma::vec>
 template <>
 struct is_resizeable<arma::mat>
 {
+#if BOOST_VERSION >= 108700
+    typedef std::true_type type;
+#else
     typedef boost::true_type type;
+#endif
     const static bool value = type::value;
 };
 
