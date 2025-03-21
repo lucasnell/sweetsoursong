@@ -1,21 +1,28 @@
 
-library(sweetsoursong)
-library(tidyverse)
+#'
+#' This script creates the following files inside `_figures`:
+#'
+#'   - `determ-u0-d_yp1.4.pdf`
+#'   - `determ-u1-d_yp1.4.pdf`
+#'   - `determ-u1-d_yp1.9.pdf`
+#'   - `determ-u4-d_yp1.9.pdf`
+#'
+#' They are used inside figure 3 (panels d-g) to show time series for outcomes
+#' of competition among yeast and bacteria for the deterministic, two-plant
+#' model. These plots differ in their values of `u` (strength of
+#' microbe-pollinator effect) and `d_yp` (yeast pollinator-dependent dispersal
+#' rate).
+#'
 
+source("_scripts/00-preamble.R")
 
-outcome_pal <- c("coexist" = "#008B00",
-                 "yeast only" = "#FFCC33",
-                 "bacteria only" = "#333399")
-
-spp_pal <- c(yeast = outcome_pal[["yeast only"]],
-             bacteria = outcome_pal[["bacteria only"]],
-             pollinators = "gray60")
-
-
+#' Change to `TRUE` if you want to write new plots to files.
+#' Otherwise, this script will just create the plot objects for viewing.
+.write_plots <- FALSE
 
 
 #'
-#' Simulations to compare dynamics across values of u and yeast dispersal
+#' Simulations to compare dynamics across values of `u` and `d_yp`
 #' where one plant has lots of yeast and little bacteria, and another
 #' plant is the opposite.
 #'
@@ -46,11 +53,7 @@ one_u_plot <- function(x, ymax = 1, no_labs = FALSE, .theme = NULL) {
         xlab("Time (days)") +
         scale_color_manual(NULL, values = spp_pal) +
         scale_linetype_manual(NULL, values = c("solid", "solid", "24"))
-    if (no_labs) p <- p +
-            theme(strip.text = element_blank(),
-                  strip.background = element_blank(),
-                  legend.position = "none",
-                  axis.title = element_blank())
+    if (no_labs) p <- p + subpanel_theme
     if (!is.null(ymax)) p <- p + ylim(0, ymax)
     if (!is.null(.theme)) p <- p + do.call(theme, .theme)
     return(p)
@@ -61,13 +64,16 @@ u_plots <- u_sims |>
     map(one_u_plot, no_labs = TRUE,
         .theme = list(panel.spacing.y = unit(2, "lines")))
 
-# do.call(patchwork::wrap_plots, u_plots)
 
 
-for (n in names(u_plots)) {
-    .u <- strsplit(n, "_")[[1]][[1]]
-    .d_yp <- strsplit(n, "_")[[1]][[2]]
-    fn <- sprintf("_figures/determ-u%s-d_yp%s.pdf", .u, .d_yp)
-    save_plot(fn, u_plots[[n]], 2.25, 2.5)
-}; rm(n, .u, .d_yp, fn)
+if (.write_plots) {
+    for (n in names(u_plots)) {
+        .u <- strsplit(n, "_")[[1]][[1]]
+        .d_yp <- strsplit(n, "_")[[1]][[2]]
+        fn <- sprintf("_figures/determ-u%s-d_yp%s.pdf", .u, .d_yp)
+        save_plot(fn, u_plots[[n]], 2.25, 2.5)
+    }; rm(n, .u, .d_yp, fn)
+} else {
+    do.call(wrap_plots, u_plots)
+}
 
