@@ -58,3 +58,56 @@ Here are descriptions of each:
 * `sweetsoursong.Rproj`: RStudio project file for this project.
 
 
+
+
+
+
+# Replicating R environment
+
+I used R version 4.4.3 (platform: aarch64-apple-darwin20) for all my scripts.
+
+This project uses the `renv` package, so if you want to use this, you must
+first install it:
+
+```r
+install.packages("renv")
+```
+
+Then to install all the packages I used for these analyses, you can simply run
+the following while having this project's main directory as your working
+directory:
+
+```r
+renv::restore()
+```
+
+
+If you'd rather avoid `renv`, then you can install all the packages 
+(in the versions I used) this way:
+
+```r
+pkgs <- c("BH@1.87.0.1", "dplyr@1.1.4", "dqrng@0.4.1", "ggplot2@3.5.1", 
+          "ggtext@0.1.2", "patchwork@1.3.0", "Rcpp@1.0.14", 
+          "RcppArmadillo@14.4.0.1", "RcppParallel@5.1.10", 
+          "tibble@3.2.1", "tidyverse@2.0.0")
+install.packages(pkgs)
+install.packages("remotes")
+remotes::install_github("lucasnell/sweetsoursong@v1.0.0")
+```
+
+Note that these only install the proper versions of the packages I manually 
+installed (or were dependencies of `sweetsoursong`),
+so dependencies might vary from what I used.
+
+
+Similarly, but without version numbers at all:
+
+```r
+pkgs <- c("BH", "dplyr", "dqrng", "ggplot2", 
+          "ggtext", "patchwork", "Rcpp", 
+          "RcppArmadillo", "RcppParallel", 
+          "tibble", "tidyverse")
+install.packages(pkgs)
+install.packages("remotes")
+remotes::install_github("lucasnell/sweetsoursong")
+```
