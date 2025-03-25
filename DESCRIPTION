@@ -1,6 +1,6 @@
 Package: sweetsoursong
 Title: A Song of Sweet and Sour (Nectar)
-Version: 0.0.0.9000
+Version: 1.0.0
 Authors@R: 
     person(c("Lucas", "A."), "Nell", , "lucnell@gmail.com", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0003-3209-0517"))

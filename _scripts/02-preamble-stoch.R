@@ -7,7 +7,6 @@ source("_scripts/00-preamble.R")
 
 suppressPackageStartupMessages({
     library(ggtext)
-    # library(grid)
     library(RcppParallel)
 })
 setThreadOptions(numThreads = max(defaultNumThreads() - 2L, 1L))
