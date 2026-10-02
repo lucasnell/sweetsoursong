@@ -1,0 +1,9 @@
+Full model, Pmax = 12, eps = 1e-5 (2026-10-02). Session run after eps_pmax_full.wl, using its gY/gB helpers.
+Chris's FullInvY/FullInvB (Arnoldi + Chop) vs direct solve (gY/gB) at the two candidate thresholds:
+PR        FullInvY (Chris)   direct
+0.729677  0.948853           1.000007
+0.731249  1.000003           1.052965
+PR        FullInvB (Chris)   direct
+2.86269   0.999993           1.035116
+2.867489  0.964325           0.999998
+FullInvY at PR 0.729677 with Block[{Chop = Identity}, ...]: 1.0000072  -> the gap is caused by Chop, not by Arnoldi.

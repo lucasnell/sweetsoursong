@@ -1,0 +1,14 @@
+Output of invB_check.wl (2026-10-02, Wolfram 15.0.1)
+PR    InvB (code)    E[(n-y) P]/eps    FullInvB (notebook, sec 3.3)
+0.6   2.99143e6      598287            596254
+1.0   4.97351e6      994704            991412
+2.6   69.2235        14.6447           10.0123
+2.8   6.76076        2.15215           --
+2.9   0.848219       0.969644          --
+
+Identity check: direct = 1 + (m/mB)(code - 1), m/mB = 0.2
+PR 0.6  predicted 598287  direct 598287
+PR 1.0  predicted 994703  direct 994704
+PR 2.6  predicted 14.6447  direct 14.6447
+PR 2.8  predicted 2.15215  direct 2.15215
+PR 2.9  predicted 0.969644  direct 0.969644
