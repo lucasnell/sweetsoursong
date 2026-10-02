@@ -1,3 +1,27 @@
+source("_scripts/00-preamble.R")
+
+
+plant_metacomm(np = 2, u = 10, d_yp = 1.0,
+               B0 = c(0.8, 0.8), Y0 = c(0, 1e-4), max_t = 10e3) |>
+    filter(t == max(t))
+
+cP <- function(u, B, Bj) {
+    n <- 100 # number of plants
+
+    (n/2) * (1-B)^u / ((n-1) * (1-Bj)^u + (1-B)^u)
+}
+
+crossing(u = c(0, 1, 2, 4, 8, 20),
+         Bj = c(0, 0.4, 0.8),
+         B = round(0:1000 / 1000, 3)) |>
+    mutate(P = cP(u, B, Bj),
+           across(u:Bj, factor)) |>
+    ggplot(aes(B, P, color = u)) +
+    geom_hline(yintercept = 0, color = "gray80") +
+    geom_line(linewidth = 0.75) +
+    scale_color_viridis_d() +
+    facet_wrap( ~ Bj, scales = "free", labeller = label_both)
+
 
 #'
 #' This script creates the following files inside `_figures`:
