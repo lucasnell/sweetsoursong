@@ -29,6 +29,7 @@
 - [x] Fix the figure issues: Fig 2A axis label, Fig 4E P_R value, Fig 1 ∅_j label (2026-10-02)
 - [x] Draft the Significance Statement; remove the stale word count (2026-10-02)
 - [x] Restore the Overleaf–GitHub sync after the history rewrite (2026-10-02)
+- [x] Scaffold project context files; commit and push them with the check scripts and outputs (2026-10-02)
 
 ## New-model code
 
