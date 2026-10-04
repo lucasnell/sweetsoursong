@@ -1,3 +1,29 @@
+# Handoff — 2026-10-04
+
+## Session topic
+
+Fixed the Overleaf word count, which failed with 27 TeXcount errors ("Reached end of file while waiting for `\]`"). Commit `1937795` in `sweetsoursong-ms`, pushed and pulled into Overleaf; the user confirmed the count works there.
+
+## What was wrong and what changed
+
+- **Cause:** Overleaf's word count runs TeXcount, which does not honour `\iffalse`. The hidden Mathematica block in `02-methods.tex` (the `\iffalse` before `\[EmptySet]sub = …`) contains 23 `\[EmptySet]` tokens, each read as an unclosed display equation. This also swallowed the rest of Methods, so the old count (3282) was too low.
+- **Fix 1:** `%TC:ignore` / `%TC:endignore` around that block. The other `\iffalse` blocks in the main text hold only equations and do not affect the count.
+- **Fix 2:** the top of `__ms.tex` now has `%TC:macro` lines so TeXcount skips `\deleted{}`, the old argument of `\replaced{}{}`, and `\comment{}`. The count therefore reflects the text with all changes accepted.
+
+## Current counts (2026-10-04, `texcount`)
+
+- Main text: 3065 words (`texcount -inc -total __ms.tex` in `sweetsoursong-ms`). The title page, abstract, acknowledgments, figures, and SI sit in `%TC:ignore` regions.
+- Abstract: 157 words; Significance Statement: 104 words (`texcount -sub=section 00-abstract.tex`). PNAS limits are 250 and 120.
+- The title-page note in `__ms.tex` still reads "main text = 3870, abstract = 149" inside `\deleted{}`. I drafted a `\replaced{}{}` update and the user asked me to undo it because they are editing on Overleaf; they may update it there.
+
+## Context for the next session
+
+- The user is actively editing on Overleaf, so Overleaf is ahead of GitHub. Before any local edit to `sweetsoursong-ms`, ask the user to push from Overleaf (Menu → GitHub), then `git fetch` and fast-forward.
+- Sync order that worked: user pushes from Overleaf → `git fetch`, stash local edits, `git merge --ff-only origin/main`, pop → commit, check `origin/main` is an ancestor of `HEAD`, push (only with the user's say-so) → user pulls in Overleaf.
+- `sweetsoursong-ms` was clean at `1937795` on 2026-10-04, matching `origin/main`.
+
+---
+
 # Handoff — 2026-10-02
 
 ## Session topic

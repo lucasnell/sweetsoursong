@@ -14,9 +14,9 @@
 
 - [ ] Check PNAS Research Report limits: 4 medium graphical elements (the main text has 6 figures and 1 table), 4,000 words, 50 references
 - [ ] Revise the Discussion beyond its figure and wording swaps; its argument still follows the old multi-plant model
-- [ ] Review the draft Significance Statement (116 words) with co-authors
+- [ ] Review the draft Significance Statement (104 words on 2026-10-04) with co-authors
 - [ ] Accept all tracked changes (`\usepackage[final]{changes}`) once co-authors have reviewed
-- [ ] Recount words after accepting the changes
+- [ ] Update the title-page word-count note in `__ms.tex` (still 3870 / 149; on 2026-10-04 the counts were main text 3065, abstract 157, significance 104). Recount with `texcount -inc -total __ms.tex` after accepting the changes
 
 ### Blocked
 
@@ -24,6 +24,7 @@
 
 ### Done
 
+- [x] Fix the Overleaf word count (TeXcount errors from the hidden Mathematica block; skip deleted and replaced text), commit `1937795` (2026-10-04)
 - [x] Numerical checks of the invasion criteria: ε, Pmax, `Chop`, R_B definition (2026-10-02)
 - [x] Rewrite Methods, Results, captions, and SI for the new model, with tracked changes (2026-10-02)
 - [x] Fix the figure issues: Fig 2A axis label, Fig 4E P_R value, Fig 1 ∅_j label (2026-10-02)

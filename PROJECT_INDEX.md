@@ -37,3 +37,4 @@ A continuous-time Markov chain for one plant with N flowers (uncolonized, yeast-
 | 2026-10-02 | Track manuscript edits with the `changes` package, in red | User can see every change on Overleaf |
 | 2026-10-02 | Word count removed from the title page | Stale after the rewrite |
 | 2026-10-02 | Never rewrite `sweetsoursong-ms` history; keep figures tracked | The Overleaf project can't be unlinked, and its sync ignores `.gitignore` |
+| 2026-10-04 | TeXcount skips the hidden Mathematica block and the text in `\deleted`, old `\replaced`, and `\comment` (`%TC:` lines in `__ms.tex`, `02-methods.tex`) | Overleaf's word count errored on `\[EmptySet]` and counted deleted text |
