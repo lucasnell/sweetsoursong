@@ -1,0 +1,593 @@
+[Section] 0) Setup (run first)
+
+[Text] TextData[{"This notebook uses ", Cell[BoxData[Cell["definitions_unified.wl", Background -> None, ExpressionUUID -> "e8da0e31-b3f1-4bae-b534-51ec1e013ebf"]], "InlineCode", ExpressionUUID -> "4630982b-94d8-46e6-b82b-06c405504feb"], ", which keeps the full stochastic model and the reduced closure models in one ordinary Wolfram context. The stochastic transition matrix ", Cell[BoxData[Cell["TM", Background -> None, ExpressionUUID -> "8d43fc6b-0ccb-4c0e-a76e-a73595e813f1"]], "InlineCode", ExpressionUUID -> "24e179be-d743-4f64-9035-caf85d83aa0b"], " is intentionally active-state-like: run one of the explicit setters before using the corresponding stochastic helpers. "}]
+
+[Input] HoldComplete[SetDirectory[NotebookDirectory[]]; , Null, Get["definitions_unified.wl"]; ]
+
+[Input] HoldComplete[SetParameters := (n = 50; Pmax = 12; c = 500; d = 0.1; {m, mB} = {0.01, 0.05}; {eY, eB} = {1, 0.5}; cB∅ = 5; ϵ = 10^(-5); ); ]
+
+[Input] HoldComplete[(graphicsBaseStyle = {FontFamily -> "Helvetica", FontSize -> 14}; )*(Scan[SetOptions[#1, BaseStyle -> graphicsBaseStyle] & , {Graphics, Graphics3D, Plot, ListPlot, ListLinePlot, LogPlot, ListLogPlot, LogLinearPlot, LogLogPlot, ParametricPlot, ParametricPlot3D, ContourPlot, ListContourPlot, DensityPlot, ListDensityPlot, VectorPlot, StreamPlot, Histogram, BarChart}]; )*(SetOptions[{Plot, ListPlot, ListLinePlot, ContourPlot, ArrayPlot, RegionPlot}, LabelStyle -> graphicsBaseStyle, TicksStyle -> graphicsBaseStyle]; )]
+
+[Section] 1) Deterministic YP model
+
+[Subsection] 1.1) Closed system
+
+[Text] This is the baseline expectation for how flower-scale founder control scales up to plant-scale competitive exclusion.
+
+[Input] HoldComplete[ClearParameters; , Null, SetNoImmigrationEcoEvoModel; , Null, m = mB = 0; ]
+
+[Input] HoldComplete[EcoEqns[]]
+
+[Input] HoldComplete[eq = SolveEcoEq[]]
+
+[Input] HoldComplete[Null]
+
+[Input] HoldComplete[Simplify[EcoEigenvalues[eq[[1]]]]]
+
+[Input] HoldComplete[Solve[-((d*(cB∅*n + c*(eB - eY)*P))/(cB∅*n + c*eB*P)) == 0, P]]
+
+[Input] HoldComplete[Simplify[EcoEigenvalues[eq[[3]]]]]
+
+[Input] HoldComplete[Solve[(d*(cB∅*n + c*(eB - eY)*P))/(c*eY*P) == 0, P]]
+
+[Input] HoldComplete[Pcrit = (cB∅*n)/(c*(eY - eB))]
+
+[Text] There’s a critical P where outcome changes. For P < cB∅n/(c(eY-eB)), B wins.  For P > cB∅ n/(c(eY-eB)), Y wins.  Coexistence (and founder control) is impossible.
+
+[Input] HoldComplete[SetParameters, Null, m = mB = 0; , Null, ParameterValues]
+
+[Input] HoldComplete[Pcrit]
+
+[Input] HoldComplete[sol = EcoSim[{Y -> 25, P -> 0.8}, 4000]; , Null, GraphicsRow[{PlotDynamics[sol, Y], PlotDynamics[sol, P]}], Null, sol = EcoSim[{Y -> 25, P -> 1.2}, 4000]; , Null, GraphicsRow[{PlotDynamics[sol, Y], PlotDynamics[sol, P]}]]
+
+[Subsection] 1.2) Open system (but no Y & B immigration)
+
+[Text] Now we enable the pollinator feedback by opening up pollinator dispersal.
+
+[Input] HoldComplete[ClearParameters; , Null, SetNoImmigrationEcoEvoModel; ]
+
+[Input] HoldComplete[EcoEqns[]]
+
+[Input] HoldComplete[Simplify[SolveEcoEq[]]]
+
+[Input] HoldComplete[SetParameters; , Null, {PYR, PBR} = 2*n*{1, 0}; , Null, eq = SelectValid[SolveEcoEq[]]; , Null, NumberedGridForm[eq, EcoEigenvalues[eq]]]
+
+[Input] HoldComplete[PlotEcoPhasePlane[{P, 0, 3}, {Y, 0, 50.001}]]
+
+[Text] Two stable equilibria: Y with large P, B with small P (#1 and #3).  Conclusion: pollinator feedback can lead to founder control at plant scale.
+
+[Subsubsection] 1.2.1) One or two stable equilibria?
+
+[Text] How does multiple stable equilibria depend on PR and mb (strength of pollinator feedback)?
+
+[Input] HoldComplete[ClearParameters, Null, Clear[Pcrit]]
+
+[Input] HoldComplete[Solve[(mB*PBR + m*PYR)/(mB*n) == Pcrit /. {PBR -> 0, PYR -> PR*n}, mB]*Solve[(mB*PBR + m*PYR)/(m*n) == Pcrit /. {PBR -> PR*n, PYR -> 0}, mB]]
+
+[Input] HoldComplete[Solve[(mB*PBR + m*PYR)/(mB*n) == Pcrit /. {PBR -> 0, PYR -> PR*n}, PR]*Solve[(mB*PBR + m*PYR)/(m*n) == Pcrit /. {PBR -> PR*n, PYR -> 0}, PR]]
+
+[Input] HoldComplete[m = 0.01; , Null, Pcrit = 1; , Null, biplot1 = Plot[{(m*Pcrit)/PR, (m*PR)/Pcrit}, {PR, 0.1, 10}, PlotRange -> {0.01, 1}, PlotStyle -> Directive[Dashed, DarkGray], AxesLabel -> {"PR", "mB"}, ScalingFunctions -> {"Log10"}], Null, biplot01 = Plot[{(m*Pcrit)/PR, (m*PR)/Pcrit}, {PR, 0.1, 10}, PlotRange -> {0.01, 0.1}, PlotStyle -> Directive[Dashed, DarkGray], AxesLabel -> {"PR", "mB"}, ScalingFunctions -> {"Log10"}]]
+
+[Input] HoldComplete[RegionPlot[(mB*Pcrit)/m > PR > (m*Pcrit)/mB, {PR, 0.1, 10}, {mB, 0, 0.1}, BoundaryStyle -> None, PlotStyle -> LightBlue, ScalingFunctions -> {"Log10"}]]
+
+[Input] HoldComplete[SetParameters; ]
+
+[Input] HoldComplete[(PR = 3; )*Plot[{(mB*n*(P - PR))/((mB - m)*P), (mB*n*P - m*n*PR)/((mB - m)*P)}, {P, 0, 8}, PlotRange -> {0, 50}, Filling -> {1 -> {2}}, FillingStyle -> Directive[Opacity[0.25], Lighter[Color[P]]], PlotStyle -> Directive[Thin, Color[P]], Epilog :> {Color[Y], Thickness[0.005], Line[{{Pcrit, 0}, {Pcrit, n}}]}, AxesLabel -> {"P", "Y"}]]
+
+[Subsection] 1.3) Open system (P+microbes)
+
+[Text] Now we add dispersal of all species to show that a little bit of mass effects doesn’t ruin the multiple stable equilibria.
+
+[Input] HoldComplete[ClearParameters; , Null, SetReducedEcoEvoModel; ]
+
+[Input] HoldComplete[EcoEqns[]]
+
+[Input] HoldComplete[SetParameters, Null, {PYR, PBR} = {18, 32}; ]
+
+[Input] HoldComplete[eq = SelectValid[SolveEcoEq[]]; , Null, NumberedGridForm[eq, EcoEigenvalues[eq]]]
+
+[Text] Still two stable equilibria (#1 and #3).
+
+[Input] HoldComplete[PlotEcoPhasePlane[{P, 0, 5}, {Y, 0, 50.001}]]
+
+[Input] HoldComplete[Clear[PYR, PBR]]
+
+[Subsection] 1.4) Fig. 2
+
+[Input] HoldComplete[Show[Graphics[{{Color[Y], Thickness[0.006], Dashing[{0.04, 0.02}], Line[{{Pcrit, 0}, {Pcrit, n}}]}, {Color[Y], Thickness[0.006], Line[{{0, 0}, {Pcrit, 0}}]}, {Color[Y], Thickness[0.006], Dashed, Line[{{Pcrit, 0}, {3, 0}}]}, {Color[Y], Thickness[0.006], Dashed, Line[{{0, n}, {Pcrit, n}}]}, {Color[Y], Thickness[0.006], Line[{{Pcrit, n}, {3, n}}]}}], Frame -> True, PlotRange -> {{0, 3}, {0, 50.001}}, AspectRatio -> 1, PlotRangePadding -> Scaled[0.02], FrameTicks -> {{{{0, 0}, {n, "N"}}, {{0, "N"}, {n, 0}}}, {{{0, 0}, {1, "Pcrit"}}, Automatic}}]]
+
+[Input] HoldComplete[(ClearParameters; )*(SetNoImmigrationEcoEvoModel; )*(SetParameters; )*(mB = 0.01; )*({PYR, PBR} = 2*n*{0.9, 0.1}; )*(eq = SelectValid[SolveEcoEq[]]; )*Show[PlotEcoIsoclines[{P, 0, 3}, {Y, 0, 50.001}, PlotPoints -> 100], RuleListPlot[eq, {P, Y}, PlotMarkers -> EcoStableQ[eq]], FrameLabel -> None, Frame -> True, PlotRange -> {{0, 3}, {0, 50.001}}, AspectRatio -> 1, PlotRangePadding -> Scaled[0.02], FrameTicks -> {{{{0, 0}, {n, "N"}}, {{0, "N"}, {n, 0}}}, {{{0, 0}, {1, "Pcrit"}}, Automatic}}]]
+
+[Input] HoldComplete[(ClearParameters; )*(SetNoImmigrationEcoEvoModel; )*(SetParameters; )*(mB = 0.015; )*(PR = 2; )*({PYR, PBR} = n*PR*{0.9, 0.1}; )*(eq = SelectValid[SolveEcoEq[]])*Show[PlotEcoIsoclines[{P, 0, 3}, {Y, 0, 50.001}, PlotPoints -> 100], RuleListPlot[eq, {P, Y}, PlotMarkers -> EcoStableQ[eq]], FrameLabel -> None, Frame -> True, PlotRange -> {{0, 3}, {0, 50.001}}, AspectRatio -> 1, PlotRangePadding -> Scaled[0.02], FrameTicks -> {{{{0, 0}, {n, "N"}}, {{0, "N"}, {n, 0}}}, {{{0, 0}, {1, "Pcrit"}}, Automatic}}]]
+
+[Input] HoldComplete[(mB*PBR + m*PYR)/(mB*n), Null, (mB*PBR + m*PYR)/(m*n)]
+
+[Input] HoldComplete[(ClearParameters; )*(SetNoImmigrationEcoEvoModel; )*(SetParameters; )*(mB = 0.05; )*({PYR, PBR} = 2*n*{0.9, 0.1}; )*(eq = SelectValid[SolveEcoEq[]]; )*Show[PlotEcoIsoclines[{P, 0, 3}, {Y, 0, 50.001}, PlotPoints -> 100], RuleListPlot[eq, {P, Y}, PlotMarkers -> EcoStableQ[eq]], FrameLabel -> None, Frame -> True, PlotRange -> {{0, 3}, {0, 50.001}}, AspectRatio -> 1, PlotRangePadding -> Scaled[0.02], FrameTicks -> {{{{0, 0}, {n, "N"}}, {{0, "N"}, {n, 0}}}, {{{0, 0}, {1, "Pcrit"}}, Automatic}}]]
+
+[Input] HoldComplete[(ClearParameters; )*(SetReducedEcoEvoModel; )*(SetParameters; )*(mB = 0.05; )*({PYR, PBR} = 2*n*{0.9, 0.1}; )*(eq = SelectValid[SolveEcoEq[]]; )*Show[PlotEcoIsoclines[{P, 0, 3}, {Y, 0, 50.001}, PlotPoints -> 100], RuleListPlot[eq, {P, Y}, PlotMarkers -> EcoStableQ[eq]], FrameLabel -> None, Frame -> True, PlotRange -> {{0, 3}, {0, 50.001}}, AspectRatio -> 1, PlotRangePadding -> Scaled[0.02], FrameTicks -> {{{{0, 0}, {n, "N"}}, {{0, "N"}, {n, 0}}}, {{{0, 0}, {1, "Pcrit"}}, Automatic}}]]
+
+[Input] HoldComplete[Show[Graphics[{{Color[Y], Thickness[0.006], Dashing[{0.04, 0.02}], Line[{{Pcrit, 0}, {Pcrit, n}}]}, {Color[Y], Thickness[0.006], Line[{{0, 0}, {Pcrit, 0}}]}, {Color[Y], Thickness[0.006], Dashed, Line[{{Pcrit, 0}, {2, 0}}]}, {Color[Y], Thickness[0.006], Dashed, Line[{{0, n}, {Pcrit, n}}]}, {Color[Y], Thickness[0.006], Line[{{Pcrit, n}, {2, n}}]}}], VectorPlot[Which[P < Pcrit, {0, -1}, P == Pcrit, {0, 0}, P > Pcrit, {0, 1}], {P, 0, 2}, {Y, 2, 48}, VectorStyle -> Gray, VectorColorFunction -> None], Frame -> True, PlotRange -> {{0, 2}, {0, 50.001}}, AspectRatio -> 1, PlotRangePadding -> Scaled[0.02], FrameTicks -> {{{{0, 0}, {n, "N"}}, {{0, "N"}, {n, 0}}}, {{{0, 0}, {1, "Pcrit"}}, Automatic}}]]
+
+[Input] HoldComplete[PR = 1.5; , Null, Show[Graphics[{{Color[Y], Thickness[0.006], Dashing[{0.04, 0.02}], Line[{{Pcrit, 0}, {Pcrit, n}}]}, {Color[Y], Thickness[0.006], Line[{{0, 0}, {Pcrit, 0}}]}, {Color[Y], Thickness[0.006], Dashed, Line[{{Pcrit, 0}, {2, 0}}]}, {Color[Y], Thickness[0.006], Dashed, Line[{{0, n}, {Pcrit, n}}]}, {Color[Y], Thickness[0.006], Line[{{Pcrit, n}, {2, n}}]}}], VectorPlot[Which[P < Pcrit, {1, -1}, Pcrit < P < PR, {1, 1}, Else, {-1, 1}], {P, 0, 2}, {Y, 0, 2}, VectorStyle -> Gray, VectorColorFunction -> None], Frame -> True, PlotRange -> {{0, 2}, {0, 2.001}}, AspectRatio -> 1, PlotRangePadding -> Scaled[0.02], FrameTicks -> {{{{0, 0}, {2, "N"}}, {{0, "N"}, {2, 0}}}, {{{0, 0}, {1, "Pcrit"}}, Automatic}}]]
+
+[Section] 2) Closed metacommunity YP model (CTMC closure)
+
+[Text] This solves a reduced model (YP only) based on no empty flowers, with a closure that solves a little CTMC to determine replacement probabilities (i.e. intermediate pollinators).
+
+[Input] HoldComplete[ClearParameters; , Null, SetReducedEcoEvoModel; , Null, SetParameters; , Null, SetCTMCClosureTM; ]
+
+[Subsection] 2.1) Invasion rate vs PR
+
+[Input] HoldComplete[(Clear[PR]; )*(PrintTemporary[Dynamic[PR]]; )*LogPlot[{InvY, InvB, 1}, {PR, 0.1, 3}, PlotStyle -> {Color[Y], Color[B], Directive[Gray, Dashed]}, PlotPoints -> 5]]
+
+[Input] HoldComplete[FindRoot[InvY == 1, {PR, 0.7}]*FindRoot[InvB == 1, {PR, 2.9}]]
+
+[Subsection] 2.2) Examples (Figs. 3-4)
+
+[Subsubsection] PR=0.6 — B wins
+
+[Input] HoldComplete[PR = 0.6; ]
+
+[Input] HoldComplete[{InvY, InvB}]
+
+[Input] HoldComplete[eq = FindRoot[InOutPY[pyr] == pyr, {pyr, 25}]]
+
+[Input] HoldComplete[dist = GetPDF[pyr /. eq]; , Null, mean = Mean[dist], Null, decomp = DecomposeDistribution[dist]; , Null, decomp[[1]], Null, Mean /@ decomp[[2]]]
+
+[Input] HoldComplete[Block[{PYR, PBR}, {PYR, PBR} = {pyr, n*PR - pyr} /. eq; Show[PlotDistribution[dist], PlotEcoPhasePlane[{P, 0, 12}, {Y, 0, 50.001}, PlotEcoStreamsOpts -> {StreamStyle -> Opacity[0]}], PlotRange -> {{-0.5, 8.5}, All}, ImageSize -> 300]]]
+
+[Input] HoldComplete[datB = decomp[[2,1,2,1]]; , Null, indices = decomp[[2,1,2,2]]; , Null, randB = RandomChoice[Flatten[datB] -> indices, Round[50*decomp[[1,1]]]]; , Null, BarChart[randB[[All,2]], ImageSize -> 600, AspectRatio -> 0.08, Ticks -> {None, {0, 4, 8}}, TicksStyle -> {Opacity[0], Automatic}, ChartStyle -> Color[P], BarSpacing -> 0.1, AxesOrigin -> {0, 0}, PlotRange -> {0, 8}], Null, BarChart[Join[Transpose[{Transpose[randB][[1]], n - Transpose[randB][[1]]}]], ChartLayout -> "Stacked", ChartStyle -> {Color[Y], Color[B]}, BarSpacing -> 0.1, AxesOrigin -> {0, 0}, ImageSize -> 600, AspectRatio -> 0.2, TicksStyle -> {Opacity[0], Automatic}]]
+
+[Input] HoldComplete[(BuildCTMCClosureTM[{pyr, n*PR - pyr} /. eq]; )*(SeedRandom[12]; )*(ssol = GillespieSSA[proc, {Y -> 0, P -> 0}, 10000]; )*(ssol2 = Append[ssol, B -> Reinterpolation[n - Y /. ssol, InterpolationOrder -> 0]]; )*GraphicsRow[{PlotDynamics[ssol2, {Y, B}, PlotStyle -> {Color[Y], Color[B]}, PlotPoints -> 500], PlotDynamics[ssol2, P, PlotPoints -> 500]}]*Quiet[TemporalMean[ssol]]*(SeedRandom[12]; )*(ssol = GillespieSSA[proc, {Y -> 49, P -> 3}, 10000]; )*(ssol2 = Append[ssol, B -> Reinterpolation[n - Y /. ssol, InterpolationOrder -> 0]]; )*GraphicsRow[{PlotDynamics[ssol2, {Y, B}, PlotStyle -> {Color[Y], Color[B]}, PlotPoints -> 500], PlotDynamics[ssol2, P, PlotPoints -> 500]}]*Quiet[TemporalMean[ssol]]]
+
+[Subsubsection] PR=1 — coex
+
+[Input] HoldComplete[PR = 1; ]
+
+[Input] HoldComplete[{InvY, InvB}]
+
+[Input] HoldComplete[eq = FindRoot[InOutPY[pyr] == pyr, {pyr, 25}]]
+
+[Input] HoldComplete[dist = GetPDF[pyr /. eq]; , Null, mean = Mean[dist], Null, decomp = DecomposeDistribution[dist]; , Null, decomp[[1]], Null, Mean /@ decomp[[2]]]
+
+[Input] HoldComplete[Block[{PYR, PBR}, {PYR, PBR} = {pyr, n*PR - pyr} /. eq; Show[PlotDistribution[dist], PlotEcoPhasePlane[{P, 0, 12}, {Y, 0, 50.001}, PlotEcoStreamsOpts -> {StreamStyle -> Opacity[0]}], PlotRange -> {{-0.5, 8.5}, All}, ImageSize -> 300]]]
+
+[Input] HoldComplete[{datY, datB} = decomp[[2,{1, 2},2,1]]; , Null, indices = decomp[[2,1,2,2]]; , Null, randY = RandomChoice[Flatten[datY] -> indices, Round[50*decomp[[1,1]]]]; , Null, randB = RandomChoice[Flatten[datB] -> indices, Round[50*decomp[[1,2]]]]; , Null, BarChart[Join[Transpose[Transpose[randY][[2]]], Transpose[Transpose[randB][[2]]]], ImageSize -> 600, AspectRatio -> 0.08, Ticks -> {None, {0, 4, 8}}, TicksStyle -> {Opacity[0], Automatic}, ChartStyle -> Color[P], BarSpacing -> 0.1, AxesOrigin -> {0, 0}, PlotRange -> {0, 8}], Null, BarChart[Join[Transpose[{Transpose[randY][[1]], n - Transpose[randY][[1]]}], Transpose[{Transpose[randB][[1]], n - Transpose[randB][[1]]}]], ChartLayout -> "Stacked", ChartStyle -> {Color[Y], Color[B]}, BarSpacing -> 0.1, AxesOrigin -> {0, 0}, ImageSize -> 600, AspectRatio -> 0.2, TicksStyle -> {Opacity[0], Automatic}]]
+
+[Input] HoldComplete[(BuildCTMCClosureTM[{pyr, n*PR - pyr} /. eq]; )*(SeedRandom[12]; )*(ssol = GillespieSSA[proc, {Y -> 0, P -> 0}, 10000]; )*(ssol2 = Append[ssol, B -> Reinterpolation[n - Y /. ssol, InterpolationOrder -> 0]]; )*GraphicsRow[{PlotDynamics[ssol2, {Y, B}, PlotStyle -> {Color[Y], Color[B]}, PlotPoints -> 500], PlotDynamics[ssol2, P, PlotPoints -> 500]}]*Quiet[TemporalMean[ssol]]*(SeedRandom[12]; )*(ssol = GillespieSSA[proc, {Y -> 49, P -> 3}, 10000]; )*(ssol2 = Append[ssol, B -> Reinterpolation[n - Y /. ssol, InterpolationOrder -> 0]]; )*GraphicsRow[{PlotDynamics[ssol2, {Y, B}, PlotStyle -> {Color[Y], Color[B]}, PlotPoints -> 500], PlotDynamics[ssol2, P, PlotPoints -> 500]}]*Quiet[TemporalMean[ssol]]]
+
+[Subsubsection] PR=1.8 — coex
+
+[Input] HoldComplete[PR = 1.8; ]
+
+[Input] HoldComplete[{InvY, InvB}]
+
+[Input] HoldComplete[eq = FindRoot[InOutPY[pyr] == pyr, {pyr, 85}]]
+
+[Input] HoldComplete[dist = GetPDF[pyr /. eq]; , Null, mean = Mean[dist], Null, decomp = DecomposeDistribution[dist]; , Null, decomp[[1]], Null, Mean /@ decomp[[2]]]
+
+[Input] HoldComplete[Block[{PYR, PBR}, {PYR, PBR} = {pyr, n*PR - pyr} /. eq; Show[PlotDistribution[dist], PlotEcoPhasePlane[{P, 0, 12}, {Y, 0, 50.001}, PlotEcoStreamsOpts -> {StreamStyle -> Opacity[0]}], PlotRange -> {{-0.5, 8.5}, All}, ImageSize -> 300]]]
+
+[Input] HoldComplete[{datY, datB} = decomp[[2,{1, 2},2,1]]; , Null, indices = decomp[[2,1,2,2]]; , Null, randY = RandomChoice[Flatten[datY] -> indices, Round[50*decomp[[1,1]]]]; , Null, randB = RandomChoice[Flatten[datB] -> indices, Round[50*decomp[[1,2]]]]; , Null, BarChart[Join[Transpose[Transpose[randY][[2]]], Transpose[Transpose[randB][[2]]]], ImageSize -> 600, AspectRatio -> 0.08, Ticks -> {None, {0, 4, 8}}, TicksStyle -> {Opacity[0], Automatic}, ChartStyle -> Color[P], BarSpacing -> 0.1, AxesOrigin -> {0, 0}, PlotRange -> {0, 8}], Null, BarChart[Join[Transpose[{Transpose[randY][[1]], n - Transpose[randY][[1]]}], Transpose[{Transpose[randB][[1]], n - Transpose[randB][[1]]}]], ChartLayout -> "Stacked", ChartStyle -> {Color[Y], Color[B]}, BarSpacing -> 0.1, AxesOrigin -> {0, 0}, ImageSize -> 600, AspectRatio -> 0.2, TicksStyle -> {Opacity[0], Automatic}]]
+
+[Input] HoldComplete[(BuildCTMCClosureTM[{pyr, n*PR - pyr} /. eq]; )*(SeedRandom[15]; )*(ssol = GillespieSSA[proc, {Y -> 5, P -> 1}, 1000]; )*(ssol2 = Append[ssol, B -> Reinterpolation[n - Y /. ssol, InterpolationOrder -> 0]]; )*GraphicsRow[{PlotDynamics[ssol2, {Y, B}, PlotStyle -> {Color[Y], Color[B]}, PlotPoints -> 500], PlotDynamics[ssol2, P, PlotPoints -> 500]}]*Quiet[TemporalMean[ssol]]*(SeedRandom[15]; )*(ssol = GillespieSSA[proc, {Y -> 49, P -> 3}, 1000]; )*(ssol2 = Append[ssol, B -> Reinterpolation[n - Y /. ssol, InterpolationOrder -> 0]]; )*GraphicsRow[{PlotDynamics[ssol2, {Y, B}, PlotStyle -> {Color[Y], Color[B]}, PlotPoints -> 500], PlotDynamics[ssol2, P, PlotPoints -> 500]}]*Quiet[TemporalMean[ssol]]]
+
+[Input] HoldComplete[(BuildCTMCClosureTM[{pyr, n*PR - pyr} /. eq]; )*(SeedRandom[12]; )*(ssol = GillespieSSA[proc, {Y -> 0, P -> 0}, 100000]; )*(ssol2 = Append[ssol, B -> Reinterpolation[n - Y /. ssol, InterpolationOrder -> 0]]; )*GraphicsRow[{PlotDynamics[ssol2, {Y, B}, PlotStyle -> {Color[Y], Color[B]}, PlotPoints -> 500], PlotDynamics[ssol2, P, PlotPoints -> 500]}]]
+
+[Subsubsection] PR=2.6 — coex
+
+[Input] HoldComplete[PR = 2.6; ]
+
+[Input] HoldComplete[{InvY, InvB}]
+
+[Input] HoldComplete[eq = FindRoot[InOutPY[pyr] == pyr, {pyr, 130}]]
+
+[Input] HoldComplete[dist = GetPDF[pyr /. eq]; , Null, mean = Mean[dist], Null, decomp = DecomposeDistribution[dist]; , Null, decomp[[1]], Null, Mean /@ decomp[[2]]]
+
+[Input] HoldComplete[{datY, datB} = decomp[[2,{1, 2},2,1]]; , Null, indices = decomp[[2,1,2,2]]; , Null, randY = RandomChoice[Flatten[datY] -> indices, Round[50*decomp[[1,1]]]]; , Null, randB = RandomChoice[Flatten[datB] -> indices, Round[50*decomp[[1,2]]]]; , Null, BarChart[Join[Transpose[Transpose[randY][[2]]], Transpose[Transpose[randB][[2]]]], ImageSize -> 600, AspectRatio -> 0.08, Ticks -> {None, {0, 4, 8}}, TicksStyle -> {Opacity[0], Automatic}, ChartStyle -> Color[P], BarSpacing -> 0.1, AxesOrigin -> {0, 0}, PlotRange -> {0, 8}], Null, BarChart[Join[Transpose[{Transpose[randY][[1]], n - Transpose[randY][[1]]}], Transpose[{Transpose[randB][[1]], n - Transpose[randB][[1]]}]], ChartLayout -> "Stacked", ChartStyle -> {Color[Y], Color[B]}, BarSpacing -> 0.1, AxesOrigin -> {0, 0}, ImageSize -> 600, AspectRatio -> 0.2, TicksStyle -> {Opacity[0], Automatic}]]
+
+[Input] HoldComplete[Block[{PYR, PBR}, {PYR, PBR} = {pyr, n*PR - pyr} /. eq; Show[PlotDistribution[dist], PlotEcoPhasePlane[{P, 0, 12}, {Y, 0, 50.001}, PlotEcoStreamsOpts -> {StreamStyle -> Opacity[0]}], PlotRange -> {{-0.5, 8.5}, All}, ImageSize -> 300]]]
+
+[Input] HoldComplete[(BuildCTMCClosureTM[{pyr, n*PR - pyr} /. eq]; )*(SeedRandom[14]; )*(ssol = GillespieSSA[proc, {Y -> 0, P -> 0}, 1000]; )*(ssol2 = Append[ssol, B -> Reinterpolation[n - Y /. ssol, InterpolationOrder -> 0]]; )*GraphicsRow[{PlotDynamics[ssol2, {Y, B}, PlotStyle -> {Color[Y], Color[B]}, PlotPoints -> 500], PlotDynamics[ssol2, P, PlotPoints -> 500]}]*Quiet[TemporalMean[ssol]]*(SeedRandom[14]; )*(ssol = GillespieSSA[proc, {Y -> 49, P -> 3}, 1000]; )*(ssol2 = Append[ssol, B -> Reinterpolation[n - Y /. ssol, InterpolationOrder -> 0]]; )*GraphicsRow[{PlotDynamics[ssol2, {Y, B}, PlotStyle -> {Color[Y], Color[B]}, PlotPoints -> 500], PlotDynamics[ssol2, P, PlotPoints -> 500]}]*Quiet[TemporalMean[ssol]]]
+
+[Subsubsection] PR=3 — Y wins
+
+[Input] HoldComplete[PR = 3; ]
+
+[Input] HoldComplete[{InvY, InvB}]
+
+[Input] HoldComplete[eq = FindRoot[InOutPY[pyr] == pyr, {pyr, 130}]]
+
+[Input] HoldComplete[dist = GetPDF[pyr /. eq]; , Null, mean = Mean[dist], Null, decomp = DecomposeDistribution[dist]; , Null, decomp[[1]], Null, Mean /@ decomp[[2]]]
+
+[Input] HoldComplete[datY = decomp[[2,1,2,1]]; , Null, indices = decomp[[2,1,2,2]]; , Null, randY = RandomChoice[Flatten[datY] -> indices, Round[50*decomp[[1,1]]]]; , Null, BarChart[randY[[All,2]], ImageSize -> 600, AspectRatio -> 0.08, Ticks -> {None, {0, 4, 8}}, TicksStyle -> {Opacity[0], Automatic}, ChartStyle -> Color[P], BarSpacing -> 0.1, AxesOrigin -> {0, 0}, PlotRange -> {0, 8}], Null, BarChart[Join[Transpose[{Transpose[randY][[1]], n - Transpose[randY][[1]]}]], ChartLayout -> "Stacked", ChartStyle -> Color[Y], BarSpacing -> 0.1, AxesOrigin -> {0, 0}, ImageSize -> 600, AspectRatio -> 0.2, TicksStyle -> {Opacity[0], Automatic}]]
+
+[Input] HoldComplete[Block[{PYR, PBR}, {PYR, PBR} = {pyr, n*PR - pyr} /. eq; Show[PlotDistribution[dist], PlotEcoPhasePlane[{P, 0, 12}, {Y, 0, 50.001}, PlotEcoStreamsOpts -> {StreamStyle -> Opacity[0]}], PlotRange -> {{-0.5, 8.5}, All}, ImageSize -> 300]]]
+
+[Input] HoldComplete[(BuildCTMCClosureTM[{pyr, n*PR - pyr} /. eq]; )*(SeedRandom[14]; )*(ssol = GillespieSSA[proc, {Y -> 0, P -> 0}, 10000]; )*(ssol2 = Append[ssol, B -> Reinterpolation[n - Y /. ssol, InterpolationOrder -> 0]]; )*GraphicsRow[{PlotDynamics[ssol2, {Y, B}, PlotStyle -> {Color[Y], Color[B]}, PlotPoints -> 500], PlotDynamics[ssol2, P, PlotPoints -> 500]}]*Quiet[TemporalMean[ssol]]*(SeedRandom[14]; )*(ssol = GillespieSSA[proc, {Y -> 49, P -> 3}, 1000]; )*(ssol2 = Append[ssol, B -> Reinterpolation[n - Y /. ssol, InterpolationOrder -> 0]]; )*GraphicsRow[{PlotDynamics[ssol2, {Y, B}, PlotStyle -> {Color[Y], Color[B]}, PlotPoints -> 500], PlotDynamics[ssol2, P, PlotPoints -> 500]}]*Quiet[TemporalMean[ssol]]]
+
+[Subsection] 2.3) Bifurcation diagram (Fig. 5)
+
+[Input] HoldComplete[(PR = 1; )*(eq0 = FindRoot[InOutPY[pyr] == pyr, {pyr, 25}])]
+
+[Input] HoldComplete[(Clear[PR]; )*(pyr0 = pyr /. eq0; )*(PrintTemporary[Dynamic[PR], " ", Dynamic[pyr0], " ", Dynamic[{yprop, bprop}]]; )*(resUp = Table[eq = FindRoot[InOutPY[pyr] == pyr, {pyr, pyr0}]; pyr0 = pyr /. eq; dist = GetPDF[pyr /. eq]; md = DecomposeDistribution[dist]; {PR, eq, {yav, Pav} = Mean[dist], {yprop, bprop} = md[[1]], Mean /@ md[[2]], {InvY, InvB}}, {PR, 1., 2.89, 0.01}]; )]
+
+[Input] HoldComplete[pyr0 = pyr /. eq0; , Null, PrintTemporary[Dynamic[PR], " ", Dynamic[pyr0], " ", Dynamic[{yprop, bprop}]]; , Null, resDown = Table[eq = FindRoot[InOutPY[pyr] == pyr, {pyr, pyr0}]; pyr0 = pyr /. eq; dist = GetPDF[pyr /. eq]; md = DecomposeDistribution[dist]; {PR, eq, {yav, Pav} = Mean[dist], {yprop, bprop} = md[[1]], Mean /@ md[[2]], {InvY, InvB}}, {PR, 0.99, 0.74, -0.01}]; ]
+
+[Input] HoldComplete[res = Sort[Join[resUp, resDown]]; ]
+
+[Input] HoldComplete[DumpSave["~/Projects/lucas-codex/resCTMC_10x.mx", res]; ]
+
+[Input] HoldComplete[DumpGet["~/Projects/lucas-codex/resCTMC_10x.mx"]; ]
+
+[Input] HoldComplete[ListPlot[Transpose[{res[[All,1]], res[[All,3,2]]}], Joined -> True, PlotStyle -> Color[P], AxesLabel -> {"PR", "\!\(\*OverscriptBox[\(P\), \(_\)]\)"}]]
+
+[Input] HoldComplete[Plot[PR, {PR, 0, 3.6}, PlotStyle -> Color[P], AxesLabel -> {"PR", "\!\(\*OverscriptBox[\(P\), \(_\)]\)"}, AxesOrigin -> {0, 0}, AspectRatio -> 0.4]]
+
+[Input] HoldComplete[Show[ListPlot[{Transpose[{res[[All,1]], res[[All,3,1]]}], Transpose[{res[[All,1]], n - res[[All,3,1]]}]}, Joined -> True, PlotStyle -> {Color[Y], Color[B]}, AxesLabel -> {"PR", "\!\(\*OverscriptBox[\(Y\), \(_\)]\),\!\(\*OverscriptBox[\(B\), \(_\)]\)"}], Plot[{0, n}, {PR, 0, 0.74}, PlotStyle -> {Color[Y], Color[B]}], Plot[{n, 0}, {PR, 2.89, 3.6}, PlotStyle -> {Color[Y], Color[B]}], PlotRange -> {{0, 3.6}, All}, AxesOrigin -> {0, 0}, AspectRatio -> 0.4]]
+
+[Input] HoldComplete[Show[ListPlot[{Transpose[{res[[All,1]], res[[All,4,1]]}], Transpose[{res[[All,1]], res[[All,4,2]]}]}, Joined -> True, PlotStyle -> {Color[Y], Directive[Color[B], Dashed]}, AxesLabel -> {"PR", "p(Y),p(B)"}], Plot[{0, 1}, {PR, 0, 0.74}, PlotStyle -> {Color[Y], Directive[Color[B], Dashed]}], Plot[{1, 0}, {PR, 2.89, 3.6}, PlotStyle -> {Color[Y], Directive[Color[B], Dashed]}], PlotRange -> {{0, 3.6}, All}, AxesOrigin -> {0, 0}, AspectRatio -> 0.4]]
+
+[Input] HoldComplete[Show[ListPlot[{Transpose[{res[[All,1]], res[[All,5,1,2]]}], Transpose[{res[[All,1]], res[[All,5,2,2]]}]}, Joined -> True, PlotStyle -> {Color[P], Directive[Color[P], Dashed]}], Plot[PR, {PR, 0, 0.74}, PlotStyle -> Directive[Color[P], Dashed]], Plot[PR, {PR, 2.89, 3.6}, PlotStyle -> Color[P]], AxesOrigin -> {0, 0}, PlotRange -> {0, 4}, AxesLabel -> {"PR", "\!\(\*OverscriptBox[\(P\), \(_\)]\)"}, AspectRatio -> 0.4]]
+
+[Input] HoldComplete[Show[ListPlot[{Transpose[{res[[All,1]], res[[All,5,1,1]]}], Transpose[{res[[All,1]], n - res[[All,5,1,1]]}], Transpose[{res[[All,1]], res[[All,5,2,1]]}], Transpose[{res[[All,1]], n - res[[All,5,2,1]]}]}, Joined -> True, PlotStyle -> {Color[Y], Color[B], Directive[Dashed, Color[Y]], Directive[Dashed, Color[B]]}], Plot[{0, n}, {PR, 0, 0.74}, PlotStyle -> {Directive[Dashed, Color[Y]], Directive[Dashed, Color[B]]}], Plot[{n, 0}, {PR, 2.89, 3.6}, PlotStyle -> {Color[Y], Color[B]}], AxesOrigin -> {0, 0}, PlotRange -> All, AxesLabel -> {"PR", "\!\(\*OverscriptBox[\(Y\), \(_\)]\),\!\(\*OverscriptBox[\(B\), \(_\)]\)"}, AspectRatio -> 0.4]]
+
+[Input] HoldComplete[GraphicsRow[{ListPlot[{Transpose[{res[[All,1]], res[[All,5,1,1]]}], Transpose[{res[[All,1]], n - res[[All,5,1,1]]}], Transpose[{res[[All,1]], res[[All,5,1,2]]}]}, Joined -> True, PlotStyle -> {Color[Y], Color[B], Color[P]}, PlotRange -> {0, n}, AxesLabel -> {"PR", "\!\(\*OverscriptBox[\(Y\), \(_\)]\),\!\(\*OverscriptBox[\(B\), \(_\)]\),\!\(\*OverscriptBox[\(P\), \(_\)]\) (Y)"}], ListPlot[{Transpose[{res[[All,1]], res[[All,5,2,1]]}], Transpose[{res[[All,1]], n - res[[All,5,2,1]]}], Transpose[{res[[All,1]], res[[All,5,2,2]]}]}, Joined -> True, PlotStyle -> {Color[Y], Color[B], Color[P]}, PlotRange -> {0, n}, AxesLabel -> {"PR", "\!\(\*OverscriptBox[\(Y\), \(_\)]\),\!\(\*OverscriptBox[\(B\), \(_\)]\),\!\(\*OverscriptBox[\(P\), \(_\)]\) (B)"}]}]]
+
+[Subsection] 2.4) Coexistence region vs mB & PR (Fig. 6)
+
+[Input] HoldComplete[Clear[mB, PR]]
+
+[Input] HoldComplete[ParameterValues]
+
+[Input] HoldComplete[Clear[invY′, invB′]; , Null, invY′[(mBin_)?NumericQ, (PRin_)?NumericQ] := invY′[mBin, PRin] = Block[{mB = mBin, PR = PRin}, InvY]; , Null, invB′[(mBin_)?NumericQ, (PRin_)?NumericQ] := invB′[mBin, PRin] = Block[{mB = mBin, PR = PRin}, InvB]; ]
+
+[Input] HoldComplete[(PrintTemporary[Dynamic[{PR, mB}]]; )*(outcomeplot01 = RegionPlot[{invY′[mB, PR] < 1 && invB′[mB, PR] > 1, invY′[mB, PR] > 1 && invB′[mB, PR] > 1, invY′[mB, PR] > 1 && invB′[mB, PR] < 1}, {PR, 0.1, 10}, {mB, m, 0.1}, ScalingFunctions -> {"Log10"}, PlotStyle -> {Directive[Opacity[1], Color[B]], Directive[Opacity[0.5], Blend[{Color[Y], Color[B]}]], Directive[Opacity[1], Color[Y]]}, BoundaryStyle -> None])]
+
+[Input] HoldComplete[Show[outcomeplot01, biplot01, Graphics[{Black, Line[{{-1, 0.01}, {1, 0.01}}]}], PlotRange -> {All, {0, 0.1}}]]
+
+[Input] HoldComplete[(PrintTemporary[Dynamic[{PR, mB}]]; )*(outcomeplot1 = RegionPlot[{invY′[mB, PR] < 1 && invB′[mB, PR] > 1, invY′[mB, PR] > 1 && invB′[mB, PR] > 1, invY′[mB, PR] > 1 && invB′[mB, PR] < 1}, {PR, 0.1, 10}, {mB, m, 1}, ScalingFunctions -> {"Log10"}, PlotStyle -> {Directive[Opacity[1], Color[B]], Directive[Opacity[0.5], Blend[{Color[Y], Color[B]}]], Directive[Opacity[1], Color[Y]]}, BoundaryStyle -> None])]
+
+[Input] HoldComplete[Show[outcomeplot1, biplot1, Graphics[{Black, Line[{{-1, 0.01}, {1, 0.01}}]}], PlotRange -> {All, {0, 1}}]]
+
+[Input] HoldComplete[(PrintTemporary[Dynamic[{Pp, mB}]]; )*(yinvplot = ContourPlot[invY′[mB, 10^Pp] == 1, {Pp, -1, 1}, {mB, 0.002, 0.1}, ContourStyle -> Gray]; )*(binvplot = ContourPlot[invB′[mB, 10^Pp] == 1, {Pp, -1, 1}, {mB, 0.002, 0.1}, ContourStyle -> Gray]; )*Show[yinvplot, binvplot]]
+
+[Input] HoldComplete[FindRoot[{invY′[mB, 10^Pp] == 1, invB′[mB, 10^Pp] == 1}, {Pp, 0.2}, {mB, 0.008}]]
+
+[Input] HoldComplete[10^0.184020153830466]
+
+[Input] HoldComplete[{invY′[0.005, 10^0.2], invB′[0.005, 10^0.2]}]
+
+[Subsection] 2.5) Invasion rate vs PR (mB=0.01)
+
+[Input] HoldComplete[ClearParameters; , Null, SetReducedEcoEvoModel; , Null, SetParameters; , Null, mB = 0.01; , Null, SetCTMCClosureTM; ]
+
+[Input] HoldComplete[(Clear[PR]; )*(PrintTemporary[Dynamic[PR]]; )*LogPlot[{InvY, InvB, 1}, {PR, 1, 2}, PlotStyle -> {Color[Y], Color[B], Directive[Gray, Dashed]}, PlotPoints -> 5]]
+
+[Input] HoldComplete[FindRoot[InvY == 1, {PR, 1.45}]*FindRoot[InvB == 1, {PR, 1.55}]]
+
+[Input] HoldComplete[PR = 1.5; ]
+
+[Input] HoldComplete[{InvY, InvB}]
+
+[Input] HoldComplete[eq = FindRoot[InOutPY[pyr] == pyr, {pyr, 25}]]
+
+[Input] HoldComplete[dist = GetPDF[pyr /. eq]; , Null, mean = Mean[dist], Null, decomp = DecomposeDistribution[dist]; , Null, decomp[[1]], Null, Mean /@ decomp[[2]]]
+
+[Input] HoldComplete[Block[{PYR, PBR}, {PYR, PBR} = {pyr, n*PR - pyr} /. eq; Show[PlotDistribution[dist], PlotEcoPhasePlane[{P, 0, 12}, {Y, 0, 50.001}, PlotEcoStreamsOpts -> {StreamStyle -> Opacity[0]}], PlotRange -> {{-0.5, 8.5}, All}, ImageSize -> 300]]]
+
+[Section] 3) Full three-species model
+
+[Subsection] 3.1) Analytical results
+
+[Input] HoldComplete[SetFullEcoEvoModel]
+
+[Input] HoldComplete[EcoEqns[]]
+
+[Subsubsection] 3.1.1) Closed system
+
+[Text] This is the baseline expectation for how flower-scale founder control scales up to plant-scale competitive exclusion.
+
+[Input] HoldComplete[ClearParameters, Null, m = mB = 0; ]
+
+[Input] HoldComplete[EcoEqns[]]
+
+[Input] HoldComplete[eq = SolveEcoEq[]]
+
+[Input] HoldComplete[Inv[Join[{P -> P}, eq[[1]]], B]*Inv[Join[{P -> P}, eq[[1]]], Y]]
+
+[Input] HoldComplete[Solve[Inv[Join[{P -> P}, eq[[1]]], B] == 0, P]*Solve[Inv[Join[{P -> P}, eq[[1]]], Y] == 0, P]]
+
+[Input] HoldComplete[Inv[Join[{P -> P}, eq[[2]]], B]*Inv[Join[{P -> P}, eq[[3]]], Y]]
+
+[Input] HoldComplete[Solve[Inv[Join[{P -> P}, eq[[2]]], B] == 0, P]*Solve[Inv[Join[{P -> P}, eq[[3]]], Y] == 0, P]]
+
+[Text] There’s a critical P where outcome changes. For P < cB∅n/(c(eY-eB)), B wins.  For P > cB∅ n/(c(eY-eB)), Y wins.  Coexistence (and founder control) is impossible.
+
+[Input] HoldComplete[SetParameters, Null, m = mB = 0; ]
+
+[Input] HoldComplete[(d*n)/(c*eY)]
+
+[Input] HoldComplete[-(((cB∅ - d)*n)/(c*eB))]
+
+[Input] HoldComplete[(cB∅*n)/(c*(eY - eB))]
+
+[Input] HoldComplete[sol = EcoSim[{Y -> 25, B -> 25, P -> 0.8}, 4000]; , Null, GraphicsRow[{PlotDynamics[sol, {B, Y}], PlotDynamics[sol, P]}], Null, FinalSlice[sol], Null, sol = EcoSim[{Y -> 25, B -> 25, P -> 1.2}, 4000]; , Null, GraphicsRow[{PlotDynamics[sol, {B, Y}], PlotDynamics[sol, P]}], Null, FinalSlice[sol]]
+
+[Subsubsection] 3.1.2) Open system (but no Y & B immigration)
+
+[Text] Now we enable the pollinator feedback by opening up pollinator dispersal.
+
+[Input] HoldComplete[ClearParameters, Null, {PYR, PBR} = {0, 0}; ]
+
+[Input] HoldComplete[EcoEqns[]]
+
+[Input] HoldComplete[SetParameters; , Null, {P∅R, PYR, PBR} = 2*n*{1, 0, 0}; , Null, eq = SelectValid[SolveEcoEq[]]; , Null, NumberedGridForm[eq, EcoEigenvalues[eq]]]
+
+[Text] Two stable equilibria: Y with large P, B with small P (#2 and #3).
+
+[Input] HoldComplete[sol = EcoSim[{Y -> 49, B -> 1, P -> 2}, 400]; , Null, GraphicsRow[{PlotDynamics[sol, {B, Y}], PlotDynamics[sol, P]}], Null, FinalSlice[sol], Null, sol = EcoSim[{Y -> 1, B -> 49, P -> 0.4}, 400]; , Null, GraphicsRow[{PlotDynamics[sol, {B, Y}], PlotDynamics[sol, P]}], Null, FinalSlice[sol]]
+
+[Text] Conclusion: pollinator feedback can lead to founder control at plant scale.
+
+[Subsubsection] 3.1.3) Open system (P, Y, B)
+
+[Text] Now we add dispersal of all species.
+
+[Input] HoldComplete[ClearParameters]
+
+[Input] HoldComplete[EcoEqns[]]
+
+[Input] HoldComplete[Peq = SolveEcoEq[{P}, QSS -> True]]
+
+[Input] HoldComplete[SetParameters; , Null, {P∅R, PYR, PBR} = 2*n*{0.9, 0.05, 0.05}; ]
+
+[Input] HoldComplete[eq = SelectValid[SolveEcoEq[]]; , Null, NumberedGridForm[eq, EcoEigenvalues[eq]]]
+
+[Text] Still two stable equilibria (#1 and #3 now).
+
+[Input] HoldComplete[SetFullTM; ]
+
+[Input] HoldComplete[(SeedRandom[12]; )*(ssol = GillespieSSA[proc, {Y -> 49, B -> 0, P -> 1}, 4000]; )*GraphicsRow[{PlotDynamics[ssol, {B, Y}, PlotPoints -> 500], PlotDynamics[ssol, P, PlotPoints -> 500]}]*Quiet[TemporalMean[ssol]]*(SeedRandom[12]; )*(ssol = GillespieSSA[proc, {Y -> 0, B -> 49, P -> 0}, 4000]; )*GraphicsRow[{PlotDynamics[ssol, {B, Y}, PlotPoints -> 500], PlotDynamics[ssol, P, PlotPoints -> 500]}]*Quiet[TemporalMean[ssol]]]
+
+[Subsection] 3.2) Invasion rate vs PR
+
+[Input] HoldComplete[SetParameters; , Null, SetFullTM; ]
+
+[Input] HoldComplete[(Clear[PR]; )*(PrintTemporary[Dynamic[PR]]; )*LogPlot[{FullInvY, FullInvB, 1}, {PR, 0.1, 3}, PlotStyle -> {Color[Y], Color[B], Directive[Gray, Dashed]}, PlotPoints -> 5]]
+
+[Input] HoldComplete[Clear[PR]*FindRoot[FullInvY == 1, {PR, 0.74}, Evaluated -> False]*FindRoot[FullInvB == 1, {PR, 2.85}, Evaluated -> False]]
+
+[Subsection] 3.3) Examples
+
+[Input] HoldComplete[SetParameters; , Null, SetFullTM; ]
+
+[Subsubsection] PR=0.6 — B wins
+
+[Input] HoldComplete[PR = 0.6; ]
+
+[Input] HoldComplete[{FullInvY, FullInvB}]
+
+[Input] HoldComplete[eq = FindRoot[FullInOutYB[{pyr, pbr}] == {pyr, pbr}, {pyr, 0.01*n*PR}, {pbr, 0.99*n*PR}]]
+
+[Input] HoldComplete[dist = FullGetPDF[{pyr, pbr} /. eq]; , Null, mean = Mean[dist]]
+
+[Input] HoldComplete[PlotDistribution[dist]]
+
+[Input] HoldComplete[decomp = DecomposeDistribution[dist]; , Null, decomp[[1]], Null, Mean /@ decomp[[2]]]
+
+[Input] HoldComplete[SeedRandom[777]; , Null, datB = dist[[2,1]]; , Null, indices = dist[[2,2]]; , Null, randB = RandomChoice[Flatten[datB] -> indices, 50]; , Null, BarChart[Transpose[Transpose[randB][[3]]], ImageSize -> 800, AspectRatio -> 0.06, Ticks -> {None, {0, 2, 4, 6, 8}}, TicksStyle -> {Opacity[0], Automatic}, ChartStyle -> Purple, BarSpacing -> 0.1, AxesOrigin -> {0, 0}, PlotRange -> {0, 8}], Null, BarChart[Transpose[Transpose[randB][[1 ;; 2]]], ChartStyle -> Color[B], ChartLayout -> "Stacked", BarSpacing -> 0.1, AxesOrigin -> {0, 0}, ImageSize -> 800, AspectRatio -> 0.2, TicksStyle -> {Opacity[0], Automatic}]]
+
+[Subsubsection] PR=1 — coex
+
+[Input] HoldComplete[PR = 1; ]
+
+[Input] HoldComplete[{FullInvY, FullInvB}]
+
+[Input] HoldComplete[eq = FindRoot[FullInOutYB[{pyr, pbr}] == {pyr, pbr}, {pyr, 18}, {pbr, 31}]]
+
+[Input] HoldComplete[dist = FullGetPDF[{pyr, pbr} /. eq]; , Null, mean = Mean[dist]]
+
+[Input] HoldComplete[PlotDistribution[dist]]
+
+[Input] HoldComplete[decomp = DecomposeDistribution[dist]; , Null, decomp[[1]], Null, Mean /@ decomp[[2]]]
+
+[Input] HoldComplete[SeedRandom[777]; , Null, {datY, datB} = decomp[[2,{1, 2},2,1]]; , Null, indices = decomp[[2,1,2,2]]; , Null, randY = RandomChoice[Flatten[datY] -> indices, Round[50*decomp[[1,1]]]]; , Null, randB = RandomChoice[Flatten[datB] -> indices, Round[50*decomp[[1,2]]]]; , Null, BarChart[Join[Transpose[Transpose[randY][[3]]], Transpose[Transpose[randB][[3]]]], ImageSize -> 800, AspectRatio -> 0.06, Ticks -> {None, {0, 2, 4, 6, 8}}, TicksStyle -> {Opacity[0], Automatic}, ChartStyle -> Color[P], BarSpacing -> 0.1, AxesOrigin -> {0, 0}, PlotRange -> {0, 8}], Null, BarChart[Join[Transpose[Transpose[randY][[1 ;; 2]]], Transpose[Transpose[randB][[1 ;; 2]]]], ChartLayout -> "Stacked", ChartStyle -> {Color[Y], Color[B]}, BarSpacing -> 0.1, AxesOrigin -> {0, 0}, ImageSize -> 800, AspectRatio -> 0.2, TicksStyle -> {Opacity[0], Automatic}]]
+
+[Subsubsection] PR=1.8 — coex
+
+[Input] HoldComplete[PR = 1.8; ]
+
+[Input] HoldComplete[{FullInvY, FullInvB}]
+
+[Input] HoldComplete[eq = FindRoot[FullInOutYB[{pyr, pbr}] == {pyr, pbr}, {pyr, 0.5*n*PR}, {pbr, 0.5*n*PR}]]
+
+[Input] HoldComplete[dist = FullGetPDF[{pyr, pbr} /. eq]; , Null, mean = Mean[dist]]
+
+[Input] HoldComplete[PlotDistribution[dist]]
+
+[Input] HoldComplete[decomp = DecomposeDistribution[dist]; , Null, decomp[[1]], Null, Mean /@ decomp[[2]]]
+
+[Input] HoldComplete[SeedRandom[777]; , Null, {datY, datB} = decomp[[2,{1, 2},2,1]]; , Null, indices = decomp[[2,1,2,2]]; , Null, randY = RandomChoice[Flatten[datY] -> indices, Round[50*decomp[[1,1]]]]; , Null, randB = RandomChoice[Flatten[datB] -> indices, Round[50*decomp[[1,2]]]]; , Null, BarChart[Join[Transpose[Transpose[randY][[3]]], Transpose[Transpose[randB][[3]]]], ImageSize -> 800, AspectRatio -> 0.06, Ticks -> {None, {0, 2, 4, 6, 8}}, TicksStyle -> {Opacity[0], Automatic}, ChartStyle -> Color[P], BarSpacing -> 0.1, AxesOrigin -> {0, 0}, PlotRange -> {0, 8}], Null, BarChart[Join[Transpose[Transpose[randY][[1 ;; 2]]], Transpose[Transpose[randB][[1 ;; 2]]]], ChartLayout -> "Stacked", ChartStyle -> {Color[Y], Color[B]}, BarSpacing -> 0.1, AxesOrigin -> {0, 0}, ImageSize -> 800, AspectRatio -> 0.2, TicksStyle -> {Opacity[0], Automatic}]]
+
+[Subsubsection] PR=2.6 — coex
+
+[Input] HoldComplete[PR = 2.6; ]
+
+[Input] HoldComplete[{FullInvY, FullInvB}]
+
+[Input] HoldComplete[eq = FindRoot[FullInOutYB[{pyr, pbr}] == {pyr, pbr}, {pyr, 0.5*n*PR}, {pbr, 0.5*n*PR}]]
+
+[Input] HoldComplete[dist = FullGetPDF[{pyr, pbr} /. eq]; , Null, mean = Mean[dist]]
+
+[Input] HoldComplete[PlotDistribution[dist]]
+
+[Input] HoldComplete[decomp = DecomposeDistribution[dist]; , Null, decomp[[1]], Null, Mean /@ decomp[[2]]]
+
+[Input] HoldComplete[SeedRandom[777]; , Null, {datY, datB} = decomp[[2,{1, 2},2,1]]; , Null, indices = decomp[[2,1,2,2]]; , Null, randY = RandomChoice[Flatten[datY] -> indices, Round[50*decomp[[1,1]]]]; , Null, randB = RandomChoice[Flatten[datB] -> indices, Round[50*decomp[[1,2]]]]; , Null, BarChart[Join[Transpose[Transpose[randY][[3]]], Transpose[Transpose[randB][[3]]]], ImageSize -> 800, AspectRatio -> 0.06, Ticks -> {None, {0, 2, 4, 6, 8}}, TicksStyle -> {Opacity[0], Automatic}, ChartStyle -> Color[P], BarSpacing -> 0.1, AxesOrigin -> {0, 0}, PlotRange -> {0, 8}], Null, BarChart[Join[Transpose[Transpose[randY][[1 ;; 2]]], Transpose[Transpose[randB][[1 ;; 2]]]], ChartLayout -> "Stacked", ChartStyle -> {Color[Y], Color[B]}, BarSpacing -> 0.1, AxesOrigin -> {0, 0}, ImageSize -> 800, AspectRatio -> 0.2, TicksStyle -> {Opacity[0], Automatic}]]
+
+[Subsubsection] PR=3 — Y wins
+
+[Input] HoldComplete[PR = 3; ]
+
+[Input] HoldComplete[{FullInvY, FullInvB}]
+
+[Input] HoldComplete[eq = FindRoot[FullInOutYB[{pyr, pbr}] == {pyr, pbr}, {pyr, 0.99*n*PR}, {pbr, 0.01*n*PR}]]
+
+[Input] HoldComplete[dist = FullGetPDF[{pyr, pbr} /. eq]; , Null, mean = Mean[dist]]
+
+[Input] HoldComplete[PlotDistribution[dist]]
+
+[Input] HoldComplete[decomp = DecomposeDistribution[dist]; , Null, decomp[[1]], Null, Mean /@ decomp[[2]]]
+
+[Input] HoldComplete[SeedRandom[777]; , Null, datY = dist[[2,1]]; , Null, indices = dist[[2,2]]; , Null, randY = RandomChoice[Flatten[datY] -> indices, 50]; , Null, BarChart[Transpose[Transpose[randY][[3]]], ImageSize -> 800, AspectRatio -> 0.06, Ticks -> {None, {0, 2, 4, 6, 8}}, TicksStyle -> {Opacity[0], Automatic}, ChartStyle -> Purple, BarSpacing -> 0.1, AxesOrigin -> {0, 0}, PlotRange -> {0, 8}], Null, BarChart[Transpose[Transpose[randY][[1 ;; 2]]], ChartStyle -> Color[Y], ChartLayout -> "Stacked", BarSpacing -> 0.1, AxesOrigin -> {0, 0}, ImageSize -> 800, AspectRatio -> 0.2, TicksStyle -> {Opacity[0], Automatic}]]
+
+[Subsection] 3.4) Bifurcation diagram
+
+[Input] HoldComplete[SetParameters; , Null, SetFullTM; ]
+
+[Input] HoldComplete[(PR = 1; )*(eq0 = FindRoot[FullInOutYB[{pyr, pbr}] == {pyr, pbr}, {pyr, 18}, {pbr, 31}])]
+
+[Input] HoldComplete[(Clear[PR]; )*({pyr0, pbr0} = {pyr, pbr} /. eq0; )*(PrintTemporary[Dynamic[PR], " ", Dynamic[{pyr0, pbr0}], " ", Dynamic[{yprop, bprop}]]; )*(resUp = Table[eq = FindRoot[FullInOutYB[{pyr, pbr}] == {pyr, pbr}, {pyr, pyr0}, {pbr, pbr0}]; {pyr0, pbr0} = {pyr, pbr} /. eq; dist = FullGetPDF[{pyr, pbr} /. eq]; md = DecomposeDistribution[dist]; {PR, eq, Mean[dist], {yprop, bprop} = md[[1]], Mean /@ md[[2]], {FullInvY, FullInvB}}, {PR, 2., 2.86, 0.02}]; )]
+
+[Input] HoldComplete[{pyr0, pbr0} = {pyr, pbr} /. eq0; , Null, PrintTemporary[Dynamic[PR], " ", Dynamic[{pyr0, pbr0}], " ", Dynamic[{yprop, bprop}]]; , Null, resDown = Table[eq = FindRoot[FullInOutYB[{pyr, pbr}] == {pyr, pbr}, {pyr, pyr0}, {pbr, pbr0}]; {pyr0, pbr0} = {pyr, pbr} /. eq; dist = FullGetPDF[{pyr, pbr} /. eq]; md = DecomposeDistribution[dist]; {PR, eq, Mean[dist], {yprop, bprop} = md[[1]], Mean /@ md[[2]], {FullInvY, FullInvB}}, {PR, 1.98, 0.74, -0.02}]; ]
+
+[Input] HoldComplete[res = Sort[Join[resUp, resDown]]; ]
+
+[Input] HoldComplete[DumpSave["~/Projects/lucas-codex/resFull_10x.mx", res]; ]
+
+[Input] HoldComplete[DumpGet["~/Projects/lucas-codex/resFull_10x.mx"]; ]
+
+[Input] HoldComplete[ListPlot[{Transpose[{res[[All,1]], res[[All,3,1]]}], Transpose[{res[[All,1]], res[[All,3,2]]}]}, Joined -> True, PlotStyle -> {Color[Y], Color[B]}, AxesLabel -> {"PR", "\!\(\*OverscriptBox[\(Y\), \(_\)]\),\!\(\*OverscriptBox[\(B\), \(_\)]\)"}]]
+
+[Input] HoldComplete[ListPlot[{Transpose[{res[[All,1]], res[[All,4,1]]}], Transpose[{res[[All,1]], res[[All,4,2]]}]}, Joined -> True, PlotStyle -> {Color[Y], Color[B]}, AxesLabel -> {"PR", "p(Y),p(B)"}]]
+
+[Input] HoldComplete[GraphicsRow[{ListPlot[{Transpose[{res[[All,1]], res[[All,5,1,1]]}], Transpose[{res[[All,1]], res[[All,5,1,2]]}], Transpose[{res[[All,1]], res[[All,5,1,3]]}]}, Joined -> True, PlotStyle -> {Color[Y], Color[B], Color[P]}, PlotRange -> {0, n}, AxesLabel -> {"PR", "\!\(\*OverscriptBox[\(Y\), \(_\)]\),\!\(\*OverscriptBox[\(B\), \(_\)]\),\!\(\*OverscriptBox[\(P\), \(_\)]\) (Y)"}], ListPlot[{Transpose[{res[[All,1]], res[[All,5,2,1]]}], Transpose[{res[[All,1]], res[[All,5,2,2]]}], Transpose[{res[[All,1]], res[[All,5,2,3]]}]}, Joined -> True, PlotStyle -> {Color[Y], Color[B], Color[P]}, PlotRange -> {0, n}, AxesLabel -> {"PR", "\!\(\*OverscriptBox[\(Y\), \(_\)]\),\!\(\*OverscriptBox[\(B\), \(_\)]\),\!\(\*OverscriptBox[\(P\), \(_\)]\) (B)"}]}]]
+
+[Subsection] 3.5) Coexistence region vs mB & PR
+
+[Input] HoldComplete[ClearParameters; , Null, SetFullEcoEvoModel, Null, SetParameters; ]
+
+[Input] HoldComplete[Clear[mB, PR]]
+
+[Input] HoldComplete[Clear[invY′, invB′]; , Null, invY′[(mBin_)?NumericQ, (PRin_)?NumericQ] := invY′[mBin, PRin] = Block[{mB = mBin, PR = PRin}, SetFullTM; FullInvY]; , Null, invB′[(mBin_)?NumericQ, (PRin_)?NumericQ] := invB′[mBin, PRin] = Block[{mB = mBin, PR = PRin}, SetFullTM; FullInvB]; , Null]
+
+[Input] HoldComplete[(PrintTemporary[Dynamic[{Pp, mB}]]; yinvplot = ContourPlot[invY′[mB, 10^Pp] == 1, {Pp, -1, 1}, {mB, 0.002, 0.1}, ContourStyle -> Gray])*(binvplot = ContourPlot[invB′[mB, 10^Pp] == 1, {Pp, -1, 1}, {mB, 0.002, 0.1}, ContourStyle -> Gray])]
+
+[Input] HoldComplete[Show[yinvplot, binvplot]]
+
+[Section] A1) Mean-field stochastic closure
+
+[Text] TextData[{"This closure evaluates Y-transition hazards at ", Cell[BoxData[RowBox[{"E", "[", RowBox[{"P", "|", "Y"}], "]"}]], "InlineWL", "Input", ShowAutoStyles -> True, ShowSyntaxStyles -> True, LanguageCategory -> "Input", ShowStringCharacters -> True, ExpressionUUID -> "9ac15f20-8a59-4be8-8caf-0e94f48f1d90"], " (i.e. fast pollinators make a Poisson cloud)."}]
+
+[Input] HoldComplete[ClearParameters; , Null, SetParameters, Null, SetMeanFieldClosureTM; ]
+
+[Subsection] PR=1
+
+[Input] HoldComplete[PR = 1; ]
+
+[Input] HoldComplete[{InvY, InvB}]
+
+[Input] HoldComplete[eq = FindRoot[InOutPY[pyr] == pyr, {pyr, 25}]]
+
+[Input] HoldComplete[dist = GetPDF[pyr /. eq]; , Null, mean = Mean[dist], Null, DecomposeDistribution[dist]]
+
+[Input] HoldComplete[PlotDistribution[dist]]
+
+[Subsection] PR=2
+
+[Input] HoldComplete[PR = 2; ]
+
+[Input] HoldComplete[{InvY, InvB}]
+
+[Input] HoldComplete[eq = FindRoot[InOutPY[pyr] == pyr, {pyr, 90}]]
+
+[Input] HoldComplete[dist = GetPDF[pyr /. eq]; , Null, mean = Mean[dist], Null, DecomposeDistribution[dist]]
+
+[Input] HoldComplete[PlotDistribution[dist]]
+
+[Subsection] Bifurcation diagram
+
+[Input] HoldComplete[(Clear[PR]; )*LogPlot[{InvY, InvB, 1}, {PR, 0.1, 2.5}, PlotStyle -> {Color[Y], Color[B], Directive[Gray, Dashed]}]]
+
+[Input] HoldComplete[FindRoot[InvY == 1, {PR, 0.5}]*FindRoot[InvB == 1, {PR, 2.2}]]
+
+[Input] HoldComplete[(PR = 1; )*(eq0 = FindRoot[InOutPY[pyr] == pyr, {pyr, 25}])]
+
+[Input] HoldComplete[Clear[PR]; , Null, pyr0 = pyr /. eq0; , Null, PrintTemporary[Dynamic[PR], " ", Dynamic[pyr0], " ", Dynamic[{yprop, bprop}]]; , Null, resUp = Table[eq = FindRoot[InOutPY[pyr] == pyr, {pyr, pyr0}]; pyr0 = pyr /. eq; dist = GetPDF[pyr /. eq]; md = DecomposeDistribution[dist]; {PR, eq, {yav, Pav} = Mean[dist], {yprop, bprop} = md[[1]], Mean /@ md[[2]], {InvY, InvB}}, {PR, 1., 2.22, 0.01}]; ]
+
+[Input] HoldComplete[pyr0 = pyr /. eq0; , Null, PrintTemporary[Dynamic[PR], " ", Dynamic[pyr0], " ", Dynamic[{yprop, bprop}]]; , Null, resDown = Table[eq = FindRoot[InOutPY[pyr] == pyr, {pyr, pyr0}]; pyr0 = pyr /. eq; dist = GetPDF[pyr /. eq]; md = DecomposeDistribution[dist]; {PR, eq, {yav, Pav} = Mean[dist], {yprop, bprop} = md[[1]], Mean /@ md[[2]], {InvY, InvB}}, {PR, 0.99, 0.56, -0.01}]; ]
+
+[Input] HoldComplete[res = Sort[Join[resUp, resDown]]; ]
+
+[Input] HoldComplete[DumpSave["~/Projects/lucas-codex/resMF.mx", res]; ]
+
+[Input] HoldComplete[ListPlot[{Transpose[{res[[All,1]], res[[All,3,1]]}], Transpose[{res[[All,1]], n - res[[All,3,1]]}]}, Joined -> True, PlotStyle -> {Color[Y], Color[B]}, AxesLabel -> {"PR", "\!\(\*OverscriptBox[\(Y\), \(_\)]\),\!\(\*OverscriptBox[\(B\), \(_\)]\)"}]]
+
+[Input] HoldComplete[ListPlot[{Transpose[{res[[All,1]], res[[All,4,1]]}], Transpose[{res[[All,1]], res[[All,4,2]]}]}, Joined -> True, PlotStyle -> {Color[Y], Color[B]}, AxesLabel -> {"PR", "p(Y),p(B)"}]]
+
+[Input] HoldComplete[GraphicsRow[{ListPlot[{Transpose[{res[[All,1]], res[[All,5,1,1]]}], Transpose[{res[[All,1]], n - res[[All,5,1,1]]}], Transpose[{res[[All,1]], res[[All,5,1,2]]}]}, Joined -> True, PlotStyle -> {Color[Y], Color[B], Color[P]}, PlotRange -> {0, n}, AxesLabel -> {"PR", "\!\(\*OverscriptBox[\(Y\), \(_\)]\),\!\(\*OverscriptBox[\(B\), \(_\)]\),\!\(\*OverscriptBox[\(P\), \(_\)]\) (Y)"}], ListPlot[{Transpose[{res[[All,1]], res[[All,5,2,1]]}], Transpose[{res[[All,1]], n - res[[All,5,2,1]]}], Transpose[{res[[All,1]], res[[All,5,2,2]]}]}, Joined -> True, PlotStyle -> {Color[Y], Color[B], Color[P]}, PlotRange -> {0, n}, AxesLabel -> {"PR", "\!\(\*OverscriptBox[\(Y\), \(_\)]\),\!\(\*OverscriptBox[\(B\), \(_\)]\),\!\(\*OverscriptBox[\(P\), \(_\)]\) (B)"}]}]]
+
+[Section] A2) Poisson-hazard stochastic closure
+
+[Text] TextData[{"This closure averages the Y-transition hazards over the conditional Poisson pollinator cloud, ", Cell[BoxData[Cell["P | Y ~ Poisson[E[P | Y]]", Background -> None, ExpressionUUID -> "63fbbbe6-b2c1-4221-ba19-81507d9775b8"]], "InlineCode", ExpressionUUID -> "bb44c839-883d-442b-9ffa-27916dc6e60e"], " (slow pollinators)."}]
+
+[Input] HoldComplete[ClearParameters; , Null, SetParameters; , Null, SetPoissonHazardClosureTM; ]
+
+[Subsection] PR=1
+
+[Input] HoldComplete[PR = 1; ]
+
+[Input] HoldComplete[{InvY, InvB}]
+
+[Input] HoldComplete[eq = FindRoot[InOutPY[pyr] == pyr, {pyr, 25}]]
+
+[Input] HoldComplete[dist = GetPDF[pyr /. eq]; , Null, mean = Mean[dist], Null, DecomposeDistribution[dist]]
+
+[Input] HoldComplete[PlotDistribution[dist]]
+
+[Subsection] PR=2
+
+[Input] HoldComplete[PR = 2; ]
+
+[Input] HoldComplete[{InvY, InvB}]
+
+[Input] HoldComplete[eq = FindRoot[InOutPY[pyr] == pyr, {pyr, 25}]]
+
+[Input] HoldComplete[dist = GetPDF[pyr /. eq]; , Null, mean = Mean[dist], Null, DecomposeDistribution[dist]]
+
+[Input] HoldComplete[PlotDistribution[dist]]
+
+[Subsection] Bifurcation diagram
+
+[Input] HoldComplete[(Clear[PR]; )*LogPlot[{InvY, InvB, 1}, {PR, 0.1, 5}, PlotStyle -> {Color[Y], Color[B], Directive[Gray, Dashed]}]]
+
+[Input] HoldComplete[FindRoot[InvY == 1, {PR, 1}]*FindRoot[InvB == 1, {PR, 4.6}]]
+
+[Input] HoldComplete[(PR = 2; )*(eq0 = FindRoot[InOutPY[pyr] == pyr, {pyr, 50}])]
+
+[Input] HoldComplete[Clear[PR]; , Null, pyr0 = pyr /. eq0; , Null, PrintTemporary[Dynamic[PR], " ", Dynamic[pyr0], " ", Dynamic[{yprop, bprop}]]; , Null, resUp = Table[eq = FindRoot[InOutPY[pyr] == pyr, {pyr, pyr0}]; pyr0 = pyr /. eq; dist = GetPDF[pyr /. eq]; md = DecomposeDistribution[dist]; {PR, eq, {yav, Pav} = Mean[dist], {yprop, bprop} = md[[1]], Mean /@ md[[2]], {InvY, InvB}}, {PR, 2., 4.6, 0.01}]; ]
+
+[Input] HoldComplete[pyr0 = pyr /. eq0; , Null, PrintTemporary[Dynamic[PR], " ", Dynamic[pyr0], " ", Dynamic[{yprop, bprop}]]; , Null, resDown = Table[eq = FindRoot[InOutPY[pyr] == pyr, {pyr, pyr0}]; pyr0 = pyr /. eq; dist = GetPDF[pyr /. eq]; md = DecomposeDistribution[dist]; {PR, eq, {yav, Pav} = Mean[dist], {yprop, bprop} = md[[1]], Mean /@ md[[2]], {InvY, InvB}}, {PR, 1.99, 1.19, -0.01}]; ]
+
+[Input] HoldComplete[res = Sort[Join[resUp, resDown]]; ]
+
+[Input] HoldComplete[DumpSave["~/Projects/lucas-codex/resPH.mx", res]; ]
+
+[Input] HoldComplete[ListPlot[{Transpose[{res[[All,1]], res[[All,3,1]]}], Transpose[{res[[All,1]], n - res[[All,3,1]]}]}, Joined -> True, PlotStyle -> {Color[Y], Color[B]}, AxesLabel -> {"PR", "\!\(\*OverscriptBox[\(Y\), \(_\)]\),\!\(\*OverscriptBox[\(B\), \(_\)]\)"}]]
+
+[Input] HoldComplete[ListPlot[{Transpose[{res[[All,1]], res[[All,4,1]]}], Transpose[{res[[All,1]], res[[All,4,2]]}]}, Joined -> True, PlotStyle -> {Color[Y], Color[B]}, AxesLabel -> {"PR", "p(Y),p(B)"}]]
+
+[Input] HoldComplete[GraphicsRow[{ListPlot[{Transpose[{res[[All,1]], res[[All,5,1,1]]}], Transpose[{res[[All,1]], n - res[[All,5,1,1]]}], Transpose[{res[[All,1]], res[[All,5,1,2]]}]}, Joined -> True, PlotStyle -> {Color[Y], Color[B], Color[P]}, PlotRange -> {0, n}, AxesLabel -> {"PR", "\!\(\*OverscriptBox[\(Y\), \(_\)]\),\!\(\*OverscriptBox[\(B\), \(_\)]\),\!\(\*OverscriptBox[\(P\), \(_\)]\) (Y)"}], ListPlot[{Transpose[{res[[All,1]], res[[All,5,2,1]]}], Transpose[{res[[All,1]], n - res[[All,5,2,1]]}], Transpose[{res[[All,1]], res[[All,5,2,2]]}]}, Joined -> True, PlotStyle -> {Color[Y], Color[B], Color[P]}, PlotRange -> {0, n}, AxesLabel -> {"PR", "\!\(\*OverscriptBox[\(Y\), \(_\)]\),\!\(\*OverscriptBox[\(B\), \(_\)]\),\!\(\*OverscriptBox[\(P\), \(_\)]\) (B)"}]}]]
+
+[Section] A3) CTMC closure note figures
+
+[Text] These cells regenerate the fixed-timescale CTMC closure figures used in vacancy_ctmc_closure_note.tex. They assume the setup section has been run so definitions_unified.wl, SetParameters, and the shared graphics options are available.
+
+[Input] HoldComplete[SetParameters; , Null, PR = 1; , Null, PYR = 0.5*n*PR; , Null, PBR = n*PR - PYR; , Null, ctmcNotePool = {PYR, PBR}; , Null, ctmcNoteY = 25; , Null, ctmcNoteB = n - ctmcNoteY - 1; , Null, ctmcNoteBirthPMax = 8; , Null, ctmcNoteP0s = {0, 3, 5}; ]
+
+[Text] The shared CTMC vacancy calculations used below are defined in definitions_unified.wl.
+
+[Input] HoldComplete[ctmcBirthPDistribution = CTMCClosureBirthPDistribution[ctmcNoteY, ctmcNoteB, ctmcNotePool]; , Null, ctmcNotePoissonPDistribution = CTMCClosurePoissonWeights[ctmcNoteY, ctmcNotePool]["Weights"][[1 ;; ctmcNoteBirthPMax + 1]]; , Null, ClearAll[ctmcNoteFixedPDistribution, ctmcNoteBirthPPanel]; , Null, ctmcNoteFixedPDistribution[p0_Integer] := UnitVector[ctmcNoteBirthPMax + 1, p0 + 1]; , Null, ctmcNoteBirthPPanel[data_, color_, yLabel_:False, columnLabel_:None] := BarChart[data, ChartStyle -> color, ChartLabels -> Placed[Range[0, ctmcNoteBirthPMax], Below], BarSpacing -> 0.08, Frame -> True, Axes -> False, PlotRange -> {0, 1}, FrameLabel -> {None, If[TrueQ[yLabel], "probability", None]}, FrameTicks -> {{Automatic, None}, {None, None}}, PlotLabel -> If[columnLabel === None, None, Style[columnLabel, 14, Bold, FontFamily -> "Helvetica"]], ImagePadding -> {{50, 8}, {38, 28}}, ImageSize -> 305, BaseStyle -> {FontFamily -> "Helvetica", FontSize -> 12}, PerformanceGoal -> "Speed"]; , Null, ctmcNoteColumnLabels = {"fixed pollinator", "CTMC", "Poisson distribution"}; , Null, ctmcNoteBirthPGridRows = Table[With[{fixed = ctmcNoteFixedPDistribution[p0], ctmc = ctmcBirthPDistribution[[p0 + 1,1 ;; ctmcNoteBirthPMax + 1]], pois = ctmcNotePoissonPDistribution, labels = If[p0 == First[ctmcNoteP0s], ctmcNoteColumnLabels, ConstantArray[None, 3]]}, MapThread[ctmcNoteBirthPPanel[#1, #2, #3, #4] & , {{fixed, ctmc, pois}, {GrayLevel[0.55], RGBColor[0.2, 0.35, 0.8], RGBColor[0.2, 0.55, 0.25]}, {True, False, False}, labels}]], {p0, ctmcNoteP0s}]; , Null, ctmcBirthPDistributionPlot = Grid[ctmcNoteBirthPGridRows, Alignment -> Center, Spacings -> {0.25, 0.15}, ItemSize -> All]; , Null, Export["vacancy_birth_p_total_pmf_closure_barchart_p0_0_3_5_p8_grid.pdf", ctmcBirthPDistributionPlot]; , Null, Export["vacancy_birth_p_total_pmf_closure_barchart_p0_0_3_5_p8_grid.png", ctmcBirthPDistributionPlot, ImageResolution -> 300]; , Null, ctmcBirthPDistributionPlot]
+
+[Input] HoldComplete[ctmcOpeningBecomesYPlot = ListLinePlot[Table[{y, CTMCClosureOpeningBecomesYProbability[y, ctmcNotePool]}, {y, 0, n}], Frame -> True, PlotRange -> {{0, n}, {0, 1}}, PlotRangePadding -> Scaled[0.04], PlotStyle -> Directive[RGBColor[0.2, 0.35, 0.8], AbsoluteThickness[2]], FrameLabel -> {"Y", "Pr(opening becomes Y)"}, ImageSize -> 520]; , Null, Export["vacancy_opening_becomes_y_vs_y_ctmc.pdf", ctmcOpeningBecomesYPlot]; , Null, Export["vacancy_opening_becomes_y_vs_y_ctmc.png", ctmcOpeningBecomesYPlot, ImageResolution -> 300]; , Null, ctmcOpeningBecomesYPlot]

@@ -8,3 +8,9 @@
 ^_mathematica$
 ^_scripts$
 ^claude-checks$
+^README\.md$
+^CLAUDE\.md$
+^PROJECT_INDEX\.md$
+^TODO\.md$
+^handoff\.md$
+^\.ms$
