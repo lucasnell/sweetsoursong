@@ -1,6 +1,6 @@
 # sweetsoursong — index
 
-**Status as of 2026-10-05:** The manuscript has been rewritten for the new pollinator-pool metacommunity model (Figs 1–6), with every edit tracked; the user is editing it on Overleaf. The next milestone is a full read-through with co-authors, then accepting the changes. Code archiving for the new model is not started, which blocks the data and code statement.
+**Status as of 2026-10-05:** The manuscript has been rewritten for the new pollinator-pool metacommunity model (Figs 1–6), with every edit tracked; the user is editing it on Overleaf. The model is now implemented in R (branch `new-model`, package 2.0.0) and reproduces Chris's Mathematica results and the manuscript numbers. Next milestones: co-author read-through; review, merge, and archive the R code, which unblocks the data and code statement.
 
 ## The question
 
@@ -15,9 +15,9 @@ A continuous-time Markov chain for one plant with N flowers (uncolonized, yeast-
 | Workstream | State | Next |
 |---|---|---|
 | Manuscript | Rewritten with tracked changes; Significance Statement revised; Lerch et al. citations and founder-control sentence added (2026-10-05); word count works on Overleaf | Co-author read-through; accept changes |
-| New-model code | Chris's Mathematica files; not in a public repo | Archive with the manuscript; fix `Chop` and the hard-coded `DumpSave` paths |
+| New-model code | R port on branch `new-model` (local, not pushed): 346 tests against Mathematica pass; `R CMD check` 0 errors, 0 warnings; scripts reproduce Figs 2–6 (computed panels) and Table S1 | Review; merge to `main`; push, tag `v2.0.0`, Zenodo release; tell Chris |
 | Numerical checks | Done (`claude-checks/`), including founder control (none for m_B ≥ m) | Decide whether to send `note_for_chris.md`; whether to scan founder control at other e_B, c_B∅ |
-| Old R package | Implements the first-submission model | Decide whether to keep it, archive it, or drop it |
+| Old R package | Replaced on `new-model`; preserved at tag `v1.0.0` (Zenodo 10.5281/zenodo.15113988) | None |
 
 ## Key links
 
@@ -37,4 +37,6 @@ A continuous-time Markov chain for one plant with N flowers (uncolonized, yeast-
 | 2026-10-02 | Track manuscript edits with the `changes` package, in red | User can see every change on Overleaf |
 | 2026-10-02 | Word count removed from the title page | Stale after the rewrite |
 | 2026-10-02 | Never rewrite `sweetsoursong-ms` history; keep figures tracked | The Overleaf project can't be unlinked, and its sync ignores `.gitignore` |
+| 2026-10-05 | Implement the new model in pure R, replacing the old package in this repo (old one at tag `v1.0.0`) | Open-source and reproducible without a Wolfram licence; the numerics are small enough for R |
+| 2026-10-05 | R port defaults: no `Chop`; R_B = E[BP]/ε; truncated Poisson weights in log space; with P_BR exactly 0, all mass at y = N | Chop and Chris's InvB lose precision; Figs 2–6 and thresholds are unchanged (`claude-checks/r-port/compare_*_output.txt`) |
 | 2026-10-04 | TeXcount skips the hidden Mathematica block and the text in `\deleted`, old `\replaced`, and `\comment` (`%TC:` lines in `__ms.tex`, `02-methods.tex`) | Overleaf's word count errored on `\[EmptySet]` and counted deleted text |

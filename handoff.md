@@ -2,37 +2,38 @@
 
 ## Session topic
 
-Manuscript upkeep while the user edits on Overleaf (2026-10-04 to 10-05). Fixed the Overleaf word count, which TeXcount broke on the hidden Mathematica block in `02-methods.tex` (commit `1937795` in `sweetsoursong-ms`). Worked out where to cite Lerch et al. (2023), `Lerch2023` in `refs.bib`, in Methods. Checked whether regional founder control (neither species can invade) occurs, since the Methods classify only three outcomes and Fig 6 colours only three. Retrieved the first, narrower Significance Statement draft from git history.
+Manuscript upkeep while the user edits on Overleaf (2026-10-04 to 10-05), then a port of Chris Klausmeier's Mathematica model to R. Earlier in the session: fixed the Overleaf word count (`sweetsoursong-ms` commit `1937795`), placed the Lerch et al. (2023) citations, checked for regional founder control, drafted an intro paragraph replacing commented-out old text, and reorganized the project notes to the agentic-starter templates. The user has since pasted the Lerch et al. text, the founder-control sentence, and a revised Significance Statement into Overleaf.
+
+The R port is on local branch `new-model` of this repo (not pushed). Package `sweetsoursong` 2.0.0 replaces the old package; the old one stays at tag `v1.0.0`. Plan: `~/.claude/plans/what-ways-could-we-polymorphic-pretzel.md`. User choices: pure R, R package with testthat, replace in this repo, reproduce Chris's code exactly first and then fix known issues.
 
 ## Key decisions
 
-- TeXcount skips the hidden Mathematica block and the text in `\deleted`, the old argument of `\replaced`, and `\comment`. Recorded in `CLAUDE.md` and the decision log.
-- The user edits in Overleaf and pastes suggested text there; nothing in `sweetsoursong-ms` was edited locally after `1937795`. A local update to the title-page word-count note was undone at the user's request.
-- No regional founder control for m_B ≥ m at default parameters (`claude-checks/founder_control_scan.wl` → `founder_control_scan_output.m`, `founder_control_tip.wl` → `founder_control_tip_output.m`, 2026-10-05). The R_Y = 1 and R_B = 1 curves cross at m_B = 0.00908, P_R = 1.528; both R < 1 occurs only below that, for m_B ≤ 0.0089 and 1.12 ≤ P_R ≤ 4.82 on the grid. Each R crosses 1 at most once along P_R. Not varied: e_Y, e_B, c_B∅, N.
+- R port defaults differ from Chris's code in two ways, each in its own commit: no `Chop` (`23dbe04`) and R_B = E[BP]/ε (`fa5e098`). Neither changes Figs 2–6 or any threshold: `claude-checks/r-port/compare_chop_output.txt`, `compare_invb_output.txt`. `options(sweetsoursong.chop = TRUE)` and `inv_b(method = "chris")` reproduce his code.
+- Two numerical fixes not in Chris's code: truncated Poisson weights in log space (`2d7eaa8`; Mathematica switches to extended precision on underflow, R did not, which put R_Y off by ~3× at m_B ≥ 0.79, P_R ≥ 7.9), and with P_BR exactly 0 all mass at y = N (`503417e`; his product formula zeroes that absorbing state, but his `FindRoot` never lands exactly on the bound).
+- Closed-metacommunity roots: Newton from the start value (as `FindRoot`), accepted if interior; otherwise the nearest candidate among sign changes and the bounds. This reproduces all of Chris's roots, including starts on the bound (P_R = 2.6, start 130).
+- Watershed: Mathematica's `WatershedComponents[..., Method -> "Basins"]` here equals steepest descent over 8 neighbours with raw differences; R reproduces its labels cell for cell.
+- Founder control (both R < 1) does not occur for m_B ≥ m at default parameters; it starts at m_B = 0.00908, P_R = 1.528 (`claude-checks/founder_control_*`).
 
 ## Open follow-ups
 
-- [x] User: add the Lerch et al. citations and the founder-control sentence to the "Closed metacommunity" subsection, and revise the Significance Statement (done on Overleaf, 2026-10-05)
-- [ ] If the ergodicity clause was added, confirm with Chris that the closed metacommunity assumes effectively infinitely many plants
-- [ ] Decide whether to repeat the founder-control scan at other e_B and c_B∅ values
-- [ ] Update the title-page word-count note in `__ms.tex` (still 3870 / 149). Recount first: the 2026-10-04 counts (main text 3065, abstract 157, Significance Statement 104) predate the 2026-10-05 Overleaf edits
+- [ ] User: review the R port (`R/`, `_scripts/`, figures in `_figures/`)
+- [ ] Merge `new-model` into `main`, push, tag `v2.0.0`, Zenodo release — each needs the user's say-so
+- [ ] Tell Chris about the port before archiving
+- [ ] Decide whether manuscript figure panels come from the R scripts or stay as the Mathematica exports
+- [ ] Update the data and code statement once the release has a DOI
+- [ ] Update the title-page word-count note in `__ms.tex` (user said they will do this)
 
 ## Context for the next session
 
-- The 2026-10-05 Overleaf edits (Lerch et al. citations, founder-control sentence, revised Significance Statement) had not been pushed to GitHub when these notes were written, so their exact wording, whether the optional ergodicity clause went in, and the new Significance Statement word count are unverified. Check after the next pull.
-- Overleaf is likely ahead of GitHub. Before any local edit to `sweetsoursong-ms`, ask the user to push from Overleaf (Menu → GitHub), then `git fetch` and fast-forward. Push only with the user's say-so.
-- Suggested text as given to the user (now added on Overleaf, possibly edited):
-  - First sentence of "Closed metacommunity": "We model many plants coupled only through the regional pollinator pool, following the closed-metacommunity model of Lerch et al.~\cite{Lerch2023}." Their eq. 4 sets regional abundance to the mean of the local stationary distribution (our P_YR = E[YP]), solved by root-finding.
-  - Optional, after "expectations are over the stationary distribution of one plant given the pool": "which for many plants is also the distribution of plant states across the metacommunity~\cite{Lerch2023}" (their ergodicity argument; pending the check with Chris).
-  - After "$R_Y = {\rm E}[Y P] / \varepsilon > 1$": `~\cite{Lerch2023}`. Their criterion λ = log(N̄_j / ε) is log R.
-  - After "or yeast win ($R_B < 1 < R_Y$)." (search Overleaf for "classified outcomes"):
-    ```latex
-    With $m_B \ge m$, there were no parameter values at which neither species
-    could invade, the regional founder control of ref.~\cite{Lerch2023};
-    this outcome requires $m_B < 0.0091$
-    (scan over $0.1 \le P_R \le 10$).
-    ```
-- The founder-control margin is narrow: the crossing at m_B = 0.00908 is about 9% below m = 0.01, consistent with the narrow no-preference coexistence window (1.46 < P_R < 1.57).
-- The first Significance Statement draft (118 words, ends "dispersal--community feedback may be an overlooked mechanism of species coexistence") is in `sweetsoursong-ms` commit `dd877ed`. The broader reframe is `b97dfdc`. The user revised the Overleaf version on 2026-10-05; which draft it builds on is not recorded here.
-- `wolframscript` needs `WolframKernel=/Applications/Wolfram.app/Contents/MacOS/WolframKernel` and the binary at `/Applications/Wolfram.app/Contents/MacOS/wolframscript`. `NotebookImport` with `"InputText"` fails without a front end; read input cells with `Get` on the `.nb` and `ToExpression[boxes, StandardForm, HoldComplete]`.
-- Earlier handoffs (2026-10-02, 2026-10-04) are in git history (`git log -p handoff.md`).
+- Verification, all saved in `claude-checks/r-port/`:
+  - 346 testthat checks against Mathematica fixtures (`tests/testthat/fixtures/ref_chop.json`, `ref_nochop.json`, from `r_port_reference.wl`) pass; about 2 minutes with `devtools::test()`. Full-model tests compare at 1e-6 because `FindRoot` stops at about 8 digits on the resident equilibrium.
+  - `check_founder_grid_output.txt`: R_Y matches Mathematica at all 7381 founder-control grid points to 5e-14; outcomes identical.
+  - `verify_manuscript_numbers_output.txt`: SI Table S1, Fig 3 caption pools, Fig 5 coexistence range, and the m_B = m window all match the manuscript to printed digits.
+  - `R CMD check --as-cran --no-manual`: 0 errors, 0 warnings, 1 note ("New submission").
+- Figure scripts make the computed panels only; Fig 2A and Fig 5A are schematics, and Illustrator annotations are not reproduced.
+- Without Chop, the full model's 3-D watershed found 363 spurious modes in Mathematica (round-off noise ~1e-19 in tails); in R, clipping negative round-off to 0 removes them. `decompose_distribution(floor =)` is a further safeguard.
+- `wolframscript`: set `WolframKernel=/Applications/Wolfram.app/Contents/MacOS/WolframKernel`; run one heavy script at a time (two in parallel crashed once); `Print` output appears only when the script exits; `log` is protected in that context.
+- Sparse stationary solves: replacing a row with ones makes `Matrix::lu` ~100× slower (dense row); the code fixes one state instead, chosen by inflow/outflow ratio, then re-solves at the most probable state.
+- Notebook input cells, readable without a front end: `claude-checks/r-port/notebook_inputs.txt` (`extract_notebook_inputs.wl`).
+- Overleaf is likely ahead of GitHub for `sweetsoursong-ms`; ask the user to push from Overleaf before any local edit there.
+- Earlier handoffs are in git history (`git log -p handoff.md`).

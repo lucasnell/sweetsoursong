@@ -22,7 +22,7 @@
 
 ### Blocked
 
-- [ ] Update the data and code statement (Zenodo DOI) — **blocked on:** new-model code being archived (since 2026-10-02)
+- [ ] Update the data and code statement (Zenodo DOI) — **blocked on:** merging, pushing, and releasing `sweetsoursong` 2.0.0 (since 2026-10-02)
 
 ### Done
 
@@ -38,13 +38,17 @@
 
 ## New-model code
 
+### In progress
+
+- [ ] Review the R port on branch `new-model` (package code in `R/`, figure scripts in `_scripts/`, figures in `_figures/`)
+
 ### Next
 
+- [ ] Merge `new-model` into `main`, push, tag `v2.0.0`, and make the Zenodo release (each step needs your say-so)
+- [ ] Tell Chris about the R port before archiving; it is a port of his code
+- [ ] Decide whether to also archive Chris's Mathematica files; if so, get final versions of `definitions_unified.wl` and `exploration_unified_10x.nb` and replace the hard-coded `~/Projects/lucas-codex/*.mx` paths
+- [ ] Decide whether the figure panels for the manuscript come from the R scripts or stay as the Mathematica exports
 - [ ] Delete `~/GitHub/Stanford/sweetsoursong-ms-backup.bundle` (79 MB, pre-rewrite backup from 2026-10-02; no longer needed)
-- [ ] Get the final versions of `definitions_unified.wl` and `exploration_unified_10x.nb` from Chris and add them to a public repo or archive
-- [ ] Remove `Chop` from the stationary-distribution helpers (see `claude-checks/note_for_chris.md`, change 1)
-- [ ] Replace the hard-coded `~/Projects/lucas-codex/*.mx` paths with paths relative to `NotebookDirectory[]`
-- [ ] Decide what happens to the old R package and `_scripts/`, which reproduce none of the current figures
 
 ### Blocked
 
@@ -52,3 +56,6 @@
 
 ### Done
 
+- [x] Port the new model to R on branch `new-model` (package 2.0.0): 346 tests against Mathematica pass; scripts reproduce Figs 2-6 and Table S1 (`claude-checks/r-port/verify_manuscript_numbers_output.txt`); old package replaced, kept at tag `v1.0.0` (2026-10-05)
+- [x] Remove `Chop` (R port default; `options(sweetsoursong.chop = TRUE)` reproduces Chris's code) (2026-10-05)
+- [x] Decide what happens to the old R package: replaced on `new-model`, kept at tag `v1.0.0` (2026-10-05)
