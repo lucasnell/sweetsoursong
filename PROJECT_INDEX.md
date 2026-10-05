@@ -14,7 +14,7 @@ A continuous-time Markov chain for one plant with N flowers (uncolonized, yeast-
 
 | Workstream | State | Next |
 |---|---|---|
-| Manuscript | Rewritten with tracked changes; Significance Statement drafted; word count works on Overleaf (main text 3065 on 2026-10-04) | Add Lerch et al. citations and the founder-control sentence (`handoff.md`); co-author read-through; accept changes |
+| Manuscript | Rewritten with tracked changes; Significance Statement revised; Lerch et al. citations and founder-control sentence added (2026-10-05); word count works on Overleaf | Co-author read-through; accept changes |
 | New-model code | Chris's Mathematica files; not in a public repo | Archive with the manuscript; fix `Chop` and the hard-coded `DumpSave` paths |
 | Numerical checks | Done (`claude-checks/`), including founder control (none for m_B ≥ m) | Decide whether to send `note_for_chris.md`; whether to scan founder control at other e_B, c_B∅ |
 | Old R package | Implements the first-submission model | Decide whether to keep it, archive it, or drop it |

@@ -12,14 +12,13 @@
 
 ### Next
 
-- [ ] In Overleaf, add the Lerch et al. citations and the founder-control sentence to the Methods "Closed metacommunity" subsection (text in `handoff.md`, 2026-10-05)
 - [ ] Decide whether to repeat the founder-control scan at other e_B, c_B∅ values
-- [ ] Ask Chris whether the closed metacommunity assumes effectively infinitely many plants (needed for the optional Lerch et al. ergodicity clause)
+- [ ] Ask Chris whether the closed metacommunity assumes effectively infinitely many plants (needed for the optional Lerch et al. ergodicity clause, if it was added)
 - [ ] Check PNAS Research Report limits: 4 medium graphical elements (the main text has 6 figures and 1 table), 4,000 words, 50 references
 - [ ] Revise the Discussion beyond its figure and wording swaps; its argument still follows the old multi-plant model
-- [ ] Review the draft Significance Statement (104 words on 2026-10-04) with co-authors
+- [ ] Review the Significance Statement (revised on Overleaf 2026-10-05) with co-authors
 - [ ] Accept all tracked changes (`\usepackage[final]{changes}`) once co-authors have reviewed
-- [ ] Update the title-page word-count note in `__ms.tex` (still 3870 / 149; on 2026-10-04 the counts were main text 3065, abstract 157, significance 104). Recount with `texcount -inc -total __ms.tex` after accepting the changes
+- [ ] Update the title-page word-count note in `__ms.tex` (still 3870 / 149). Recount: the Methods and Significance Statement changed on 2026-10-05. Recount with `texcount -inc -total __ms.tex` after accepting the changes
 
 ### Blocked
 
@@ -27,6 +26,7 @@
 
 ### Done
 
+- [x] Add the Lerch et al. citations and the founder-control sentence to Methods; revise the Significance Statement (user, on Overleaf, 2026-10-05)
 - [x] Check for regional founder control (both R < 1): none for m_B ≥ m; region starts at m_B = 0.00908 (`claude-checks/founder_control_*`, 2026-10-05)
 - [x] Fix the Overleaf word count (TeXcount errors from the hidden Mathematica block; skip deleted and replaced text), commit `1937795` (2026-10-04)
 - [x] Numerical checks of the invasion criteria: ε, Pmax, `Chop`, R_B definition (2026-10-02)

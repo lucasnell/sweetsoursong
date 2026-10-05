@@ -12,15 +12,16 @@ Manuscript upkeep while the user edits on Overleaf (2026-10-04 to 10-05). Fixed 
 
 ## Open follow-ups
 
-- [ ] User: paste into the "Closed metacommunity" subsection of `02-methods.tex` on Overleaf (text below): the Lerch et al. citations and the founder-control sentence
-- [ ] Confirm with Chris that the closed metacommunity assumes effectively infinitely many plants, before adding the ergodicity clause
+- [x] User: add the Lerch et al. citations and the founder-control sentence to the "Closed metacommunity" subsection, and revise the Significance Statement (done on Overleaf, 2026-10-05)
+- [ ] If the ergodicity clause was added, confirm with Chris that the closed metacommunity assumes effectively infinitely many plants
 - [ ] Decide whether to repeat the founder-control scan at other e_B and c_B∅ values
-- [ ] Update the title-page word-count note in `__ms.tex` (still 3870 / 149). On 2026-10-04: main text 3065, abstract 157, Significance Statement 104
+- [ ] Update the title-page word-count note in `__ms.tex` (still 3870 / 149). Recount first: the 2026-10-04 counts (main text 3065, abstract 157, Significance Statement 104) predate the 2026-10-05 Overleaf edits
 
 ## Context for the next session
 
+- The 2026-10-05 Overleaf edits (Lerch et al. citations, founder-control sentence, revised Significance Statement) had not been pushed to GitHub when these notes were written, so their exact wording, whether the optional ergodicity clause went in, and the new Significance Statement word count are unverified. Check after the next pull.
 - Overleaf is likely ahead of GitHub. Before any local edit to `sweetsoursong-ms`, ask the user to push from Overleaf (Menu → GitHub), then `git fetch` and fast-forward. Push only with the user's say-so.
-- Suggested text, all inside existing `\added{}` blocks so no new markup is needed:
+- Suggested text as given to the user (now added on Overleaf, possibly edited):
   - First sentence of "Closed metacommunity": "We model many plants coupled only through the regional pollinator pool, following the closed-metacommunity model of Lerch et al.~\cite{Lerch2023}." Their eq. 4 sets regional abundance to the mean of the local stationary distribution (our P_YR = E[YP]), solved by root-finding.
   - Optional, after "expectations are over the stationary distribution of one plant given the pool": "which for many plants is also the distribution of plant states across the metacommunity~\cite{Lerch2023}" (their ergodicity argument; pending the check with Chris).
   - After "$R_Y = {\rm E}[Y P] / \varepsilon > 1$": `~\cite{Lerch2023}`. Their criterion λ = log(N̄_j / ε) is log R.
@@ -32,6 +33,6 @@ Manuscript upkeep while the user edits on Overleaf (2026-10-04 to 10-05). Fixed 
     (scan over $0.1 \le P_R \le 10$).
     ```
 - The founder-control margin is narrow: the crossing at m_B = 0.00908 is about 9% below m = 0.01, consistent with the narrow no-preference coexistence window (1.46 < P_R < 1.57).
-- The first Significance Statement draft (118 words, ends "dispersal--community feedback may be an overlooked mechanism of species coexistence") is in `sweetsoursong-ms` commit `dd877ed`. The broader reframe is `b97dfdc`; the current Overleaf version descends from it.
+- The first Significance Statement draft (118 words, ends "dispersal--community feedback may be an overlooked mechanism of species coexistence") is in `sweetsoursong-ms` commit `dd877ed`. The broader reframe is `b97dfdc`. The user revised the Overleaf version on 2026-10-05; which draft it builds on is not recorded here.
 - `wolframscript` needs `WolframKernel=/Applications/Wolfram.app/Contents/MacOS/WolframKernel` and the binary at `/Applications/Wolfram.app/Contents/MacOS/wolframscript`. `NotebookImport` with `"InputText"` fails without a front end; read input cells with `Get` on the `.nb` and `ToExpression[boxes, StandardForm, HoldComplete]`.
 - Earlier handoffs (2026-10-02, 2026-10-04) are in git history (`git log -p handoff.md`).
