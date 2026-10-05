@@ -4,7 +4,7 @@
 
 Manuscript upkeep while the user edits on Overleaf (2026-10-04 to 10-05), then a port of Chris Klausmeier's Mathematica model to R. Earlier in the session: fixed the Overleaf word count (`sweetsoursong-ms` commit `1937795`), placed the Lerch et al. (2023) citations, checked for regional founder control, drafted an intro paragraph replacing commented-out old text, and reorganized the project notes to the agentic-starter templates. The user has since pasted the Lerch et al. text, the founder-control sentence, and a revised Significance Statement into Overleaf.
 
-The R port is on local branch `new-model` of this repo (not pushed). Package `sweetsoursong` 2.0.0 replaces the old package; the old one stays at tag `v1.0.0`. Plan: `~/.claude/plans/what-ways-could-we-polymorphic-pretzel.md`. User choices: pure R, R package with testthat, replace in this repo, reproduce Chris's code exactly first and then fix known issues.
+The R port was developed on branch `new-model` and merged into `main` (pushed 2026-10-05). Package `sweetsoursong` 2.0.0 replaces the old package; the old one stays at tag `v1.0.0`. Plan: `~/.claude/plans/what-ways-could-we-polymorphic-pretzel.md`. User choices: pure R, R package with testthat, replace in this repo, reproduce Chris's code exactly first and then fix known issues.
 
 ## Key decisions
 
@@ -16,10 +16,10 @@ The R port is on local branch `new-model` of this repo (not pushed). Package `sw
 
 ## Open follow-ups
 
-- [ ] User: review the R port (`R/`, `_scripts/`, figures in `_figures/`)
-- [ ] Merge `new-model` into `main`, push, tag `v2.0.0`, Zenodo release — each needs the user's say-so
-- [ ] Tell Chris about the port before archiving
-- [ ] Decide whether manuscript figure panels come from the R scripts or stay as the Mathematica exports
+- [x] User reviewed the R port; merged into `main` and pushed (2026-10-05)
+- [x] Chris approved the port
+- [x] Manuscript figure panels stay as the Mathematica exports for now
+- [ ] User: GitHub release `v2.0.0` and Zenodo archive (user handles these)
 - [ ] Update the data and code statement once the release has a DOI
 - [ ] Update the title-page word-count note in `__ms.tex` (user said they will do this)
 

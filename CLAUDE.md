@@ -20,14 +20,14 @@
 - **Manuscript:** `~/GitHub/Stanford/sweetsoursong-ms`, symlinked here as `.ms` (git-ignored). Remote `github.com/lucasnell/sweetsoursong-ms`, linked to an Overleaf project by GitHub sync. Target: *PNAS* Research Report.
 - **Manuscript figures:** `~/Box/_sweetandsour/_figures/` (`.ai` sources and `.pdf` exports), copied into `sweetsoursong-ms/figures/` (Box `nectar-model-diagram.pdf` → `fig1-model-diagram.pdf`).
 - **New-model code (Chris):** originals in `~/Box/_sweetandsour/ChrisK-nb/`; working copies in `claude-checks/chris-files/`. The 12 MB notebook is git-ignored.
-- **This repo:** on branch `new-model` (not yet merged), R package `sweetsoursong` 2.0.0, a pure-R port of Chris's model (`R/`, `tests/`), and `_scripts/`, which make the computed panels of Figs 2–6 and SI Table S1 (outputs in `_data/`, `_figures/`, git-ignored). On `main` and at tag `v1.0.0`: the **old** package (ODE/SDE model of the first submission), which produces none of the current figures.
+- **This repo:** on `main`, R package `sweetsoursong` 2.0.0, a pure-R port of Chris's model (`R/`, `tests/`), and `_scripts/`, which make the computed panels of Figs 2–6 and SI Table S1 (outputs in `_data/`, `_figures/`, git-ignored). At tag `v1.0.0`: the **old** package (ODE/SDE model of the first submission), which produces none of the current figures.
 - **Numerical checks:** `claude-checks/` (scripts with matching `*_output.*` files; summary in `note_for_chris.md`). R-port checks in `claude-checks/r-port/`: Mathematica reference script, comparisons of R with Mathematica and with the manuscript.
 - **Drafts and background:** `~/Box/_sweetandsour/_drafts/`, `zzz-background/`, `zzz-outdated/`.
 
 ## How this project works
 
 - Model hierarchy in the current manuscript: the full per-plant CTMC (Y, B, P; Table 1); the reduced model with no empty flowers plus a vacancy (CTMC) closure for the filling probabilities; the closed metacommunity, where regional pools satisfy P_YR = E[YP] at fixed P_R.
-- Figure provenance in `exploration_unified_10x.nb`: Fig 2 = section 1.4 (deterministic one-plant model). Figs 3–4 = 2.2, Fig 5 = 2.3, Fig 6 = 2.4 (reduced model, vacancy closure). Section 3 (full model) is used only for the SI check.
+- Manuscript figure panels are the Mathematica exports (decided 2026-10-05); `_scripts/` reproduces their computed content in R. Figure provenance in `exploration_unified_10x.nb`: Fig 2 = section 1.4 (deterministic one-plant model). Figs 3–4 = 2.2, Fig 5 = 2.3, Fig 6 = 2.4 (reduced model, vacancy closure). Section 3 (full model) is used only for the SI check.
 - Parameters come from `SetParameters` in the notebook: N = 50, Pmax = 12, c = 500, d = 0.1, m = 0.01, m_B = 0.05, e_Y = 1, e_B = 0.5, c_B∅ = 5, ε = 1e-5, giving P_crit = 1.
 - Software: Wolfram 15.0.1 with EcoEvo 1.7.2; R 4.6.1 with `renv`. `wolframscript` needs `WolframKernel=/Applications/Wolfram.app/Contents/MacOS/WolframKernel`; run one kernel-heavy script at a time (two in parallel crashed).
 - R port: tests compare with Mathematica fixtures (`tests/testthat/fixtures/ref_chop.json`, `ref_nochop.json`) made by `claude-checks/r-port/r_port_reference.wl`. `options(sweetsoursong.chop = TRUE)` and `inv_b(method = "chris")` reproduce Chris's code exactly.
