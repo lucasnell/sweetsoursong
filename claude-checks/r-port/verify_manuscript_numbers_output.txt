@@ -1,0 +1,38 @@
+verify_manuscript_numbers.R, 2026-10-05 14:34, sweetsoursong 2.0.0
+
+== SI Table S1 ==
+reduced, eps 1e-05, Pmax 12 R_Y = 1                     R 0.7308551429 MS 0.730855   match
+reduced, eps 1e-05, Pmax 12 R_B = 1                     R 2.895810394  MS 2.89581    match
+reduced, eps 1e-07, Pmax 12 R_Y = 1                     R 0.7308549972 MS 0.730855   match
+reduced, eps 1e-07, Pmax 12 R_B = 1                     R 2.895810997  MS 2.895811   match
+reduced, eps 1e-09, Pmax 12 R_Y = 1                     R 0.7308549957 MS 0.730855   match
+reduced, eps 1e-09, Pmax 12 R_B = 1                     R 2.895811003  MS 2.89581    match
+full, eps 1e-05, Pmax 12 R_Y = 1                        R 0.7296767818 MS 0.729677   match
+full, eps 1e-05, Pmax 12 R_B = 1                        R 2.8674887    MS 2.867489   match
+full, eps 1e-05, Pmax 18 R_Y = 1                        R 0.7296702385 MS 0.72967    match
+full, eps 1e-05, Pmax 18 R_B = 1                        R 2.867472716  MS 2.867473   match
+full model at eps 1e-7 (Table S1 row 'eps 1e-5 to 1e-7'): 0.7296768, 0.7296702, 2.8674893, 2.8674733
+
+== Fig 3 caption ==
+P_YR at P_R = 1.8                                       R 71.87328016  MS 71.87      match
+P_BR at P_R = 1.8                                       R 18.12671984  MS 18.13      match
+
+== Fig 4 panels ==
+P_R = 0.6: R_Y < 1, R_B > 1, modes 1, weights 1
+P_R = 1.0: R_Y > 1, R_B > 1, modes 2, weights 0.1104 / 0.8896
+P_R = 1.8: R_Y > 1, R_B > 1, modes 2, weights 0.4666 / 0.5334
+P_R = 2.6: R_Y > 1, R_B > 1, modes 2, weights 0.8532 / 0.1468
+P_R = 3.0: R_Y > 1, R_B < 1, modes 1, weights 1
+
+== Fig 5 caption (coexistence for 0.73 < P_R < 2.90) ==
+R_Y = 1 at P_R                                          R 0.7308551429 MS 0.73       match
+R_B = 1 at P_R                                          R 2.895810394  MS 2.9        match
+continuation: two modes for P_R in 0.74 to 2.89; R_Y > 1 and R_B > 1 at all 216 points: TRUE
+
+== Fig 6 ==
+panel A: bacteria 2460, coexist 1582, yeast 1524, neither 0
+panel B: bacteria 4183, coexist 6826, yeast 1091, neither 0
+
+== No pollinator preference (m_B = m) ==
+R_Y = 1 at P_R                                          R 1.462006021  MS 1.462006   match
+R_B = 1 at P_R                                          R 1.566833665  MS 1.566834   match

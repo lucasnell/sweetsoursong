@@ -21,7 +21,6 @@ Imports:
     Matrix,
     methods,
     parallel,
-    rootSolve,
     stats
 Suggests:
     ggplot2,

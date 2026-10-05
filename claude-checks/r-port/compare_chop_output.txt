@@ -1,4 +1,4 @@
-compare_chop.R, 2026-10-05 14:08, R version 4.6.1 (2026-06-24), sweetsoursong 2.0.0
+compare_chop.R, 2026-10-05 14:30, R version 4.6.1 (2026-06-24), sweetsoursong 2.0.0
 
 == Figs 3-4: equilibrium P_YR and mode weights ==
    pr          pyr           w1           w2   nochop_pyr    nochop_w1
