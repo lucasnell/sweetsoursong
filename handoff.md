@@ -1,3 +1,31 @@
+# Handoff — 2026-10-05
+
+## Session topic
+
+Where to cite Lerch et al. (2023), `Lerch2023` in `refs.bib`, in Methods, and whether regional founder control (neither species can invade) occurs. Nothing was edited in `sweetsoursong-ms`; the user is editing on Overleaf and pastes suggested text there.
+
+## Lerch et al. citations (suggested, for the "Closed metacommunity" subsection of `02-methods.tex`)
+
+- First sentence: "…coupled only through the regional pollinator pool, following the closed-metacommunity model of Lerch et al.~\cite{Lerch2023}." Their eq. 4 sets regional abundance to the mean of the local stationary distribution, which is our P_YR = E[YP], and they solve it by root-finding.
+- Optional, after "expectations are over the stationary distribution of one plant given the pool": "which for many plants is also the distribution of plant states across the metacommunity~\cite{Lerch2023}" (their ergodicity argument). Confirm with Chris that the formulation assumes effectively infinitely many plants.
+- Invasion criteria: cite after $R_Y = {\rm E}[Y P] / \varepsilon > 1$. Their λ = log(N̄_j / ε), so λ = log R.
+
+## Founder-control check
+
+- Fig 6 (notebook section 2.4) colours only three outcomes; a both-R < 1 region would be left blank.
+- `claude-checks/founder_control_scan.wl` → `founder_control_scan_output.m`: P_R in [0.1, 10] × m_B in [0.001, 1], reduced model, vacancy closure, default parameters. For m_B ≥ m = 0.01 no point has both R < 1. Both R < 1 occurs for m_B ≤ 0.0089 and 1.12 ≤ P_R ≤ 4.82. Each R crosses 1 at most once along P_R in every m_B row.
+- `claude-checks/founder_control_tip.wl` → `founder_control_tip_output.m`: the R_Y = 1 and R_B = 1 curves cross at m_B = 0.00908, P_R = 1.528, the tip of that region (about 9% below m). The m_B = m row reproduces the 1.46–1.57 coexistence window.
+- Not varied: e_Y, e_B, c_B∅, N.
+- Suggested sentence, after "or yeast win ($R_B < 1 < R_Y$)." in the "Closed metacommunity" subsection:
+  ```latex
+  With $m_B \ge m$, there were no parameter values at which neither species
+  could invade, the regional founder control of ref.~\cite{Lerch2023};
+  this outcome requires $m_B < 0.0091$
+  (scan over $0.1 \le P_R \le 10$).
+  ```
+
+---
+
 # Handoff — 2026-10-04
 
 ## Session topic

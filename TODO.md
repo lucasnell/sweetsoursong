@@ -12,6 +12,8 @@
 
 ### Next
 
+- [ ] In Overleaf, add the Lerch et al. citations and the founder-control sentence to the Methods "Closed metacommunity" subsection (text in `handoff.md`, 2026-10-05)
+- [ ] Decide whether to repeat the founder-control scan at other e_B, c_B∅ values
 - [ ] Check PNAS Research Report limits: 4 medium graphical elements (the main text has 6 figures and 1 table), 4,000 words, 50 references
 - [ ] Revise the Discussion beyond its figure and wording swaps; its argument still follows the old multi-plant model
 - [ ] Review the draft Significance Statement (104 words on 2026-10-04) with co-authors
@@ -24,6 +26,7 @@
 
 ### Done
 
+- [x] Check for regional founder control (both R < 1): none for m_B ≥ m; region starts at m_B = 0.00908 (`claude-checks/founder_control_*`, 2026-10-05)
 - [x] Fix the Overleaf word count (TeXcount errors from the hidden Mathematica block; skip deleted and replaced text), commit `1937795` (2026-10-04)
 - [x] Numerical checks of the invasion criteria: ε, Pmax, `Chop`, R_B definition (2026-10-02)
 - [x] Rewrite Methods, Results, captions, and SI for the new model, with tracked changes (2026-10-02)
