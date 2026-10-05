@@ -19,8 +19,8 @@ The R port was developed on branch `new-model` and merged into `main` (pushed 20
 - [x] User reviewed the R port; merged into `main` and pushed (2026-10-05)
 - [x] Chris approved the port
 - [x] Manuscript figure panels stay as the Mathematica exports for now
-- [ ] User: GitHub release `v2.0.0` and Zenodo archive (user handles these)
-- [ ] Update the data and code statement once the release has a DOI
+- [x] User: GitHub release `v2.0.0` and Zenodo archive; the README badge carries the DOI
+- [ ] Update the manuscript's data and code statement for the `v2.0.0` release
 - [ ] Update the title-page word-count note in `__ms.tex` (user said they will do this)
 
 ## Context for the next session

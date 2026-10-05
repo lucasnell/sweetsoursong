@@ -12,6 +12,7 @@
 
 ### Next
 
+- [ ] Update the data and code statement in the manuscript for the `sweetsoursong` `v2.0.0` release on Zenodo
 - [ ] Decide whether to repeat the founder-control scan at other e_B, c_B∅ values
 - [ ] Ask Chris whether the closed metacommunity assumes effectively infinitely many plants (needed for the optional Lerch et al. ergodicity clause, if it was added)
 - [ ] Check PNAS Research Report limits: 4 medium graphical elements (the main text has 6 figures and 1 table), 4,000 words, 50 references
@@ -21,8 +22,6 @@
 - [ ] Update the title-page word-count note in `__ms.tex` (still 3870 / 149). Recount: the Methods and Significance Statement changed on 2026-10-05. Recount with `texcount -inc -total __ms.tex` after accepting the changes
 
 ### Blocked
-
-- [ ] Update the data and code statement (Zenodo DOI) — **blocked on:** the `sweetsoursong` 2.0.0 GitHub and Zenodo release, which the user is doing (since 2026-10-02)
 
 ### Done
 
@@ -40,7 +39,6 @@
 
 ### Next
 
-- [ ] User: GitHub release `v2.0.0` and Zenodo archive of `sweetsoursong` (user handles these)
 - [ ] Decide whether to also archive Chris's Mathematica files; if so, get final versions of `definitions_unified.wl` and `exploration_unified_10x.nb` and replace the hard-coded `~/Projects/lucas-codex/*.mx` paths
 - [ ] Delete `~/GitHub/Stanford/sweetsoursong-ms-backup.bundle` (79 MB, pre-rewrite backup from 2026-10-02; no longer needed)
 
@@ -50,6 +48,7 @@
 
 ### Done
 
+- [x] GitHub release `v2.0.0` and Zenodo archive; the README badge carries the DOI (user, 2026-10-05)
 - [x] Review the R port, merge `new-model` into `main`, and push (2026-10-05)
 - [x] Chris approved the R port (2026-10-05)
 - [x] Manuscript figure panels stay as the Mathematica exports for now; the R scripts reproduce them (2026-10-05)
