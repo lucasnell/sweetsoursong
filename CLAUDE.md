@@ -31,6 +31,9 @@
 - Parameters come from `SetParameters` in the notebook: N = 50, Pmax = 12, c = 500, d = 0.1, m = 0.01, m_B = 0.05, e_Y = 1, e_B = 0.5, c_B∅ = 5, ε = 1e-5, giving P_crit = 1.
 - Software: Wolfram 15.0.1 with EcoEvo 1.7.2; R 4.4.3 with `renv`.
 - Manuscript edits are tracked with the LaTeX `changes` package (`\added`, `\deleted`, `\replaced`, `\comment`). New display equations and tables use `addedblock` / `\addedcolor`. Use `defaultcolor=red`. Accept all edits with `\usepackage[final]{changes}`.
+- Old equations and figures are hidden in `\iffalse` behind visible markers, with label shims that print "old N". Leave them until all changes are accepted.
+- Overleaf word count runs TeXcount, which ignores `\iffalse`. Wrap hidden code in `%TC:ignore` / `%TC:endignore`. The `%TC:macro` lines at the top of `__ms.tex` skip `\deleted`, the old argument of `\replaced`, and `\comment`. Check locally with `texcount -inc -total __ms.tex`.
+- Overleaf sync order: the user pushes from Overleaf → `git fetch` and fast-forward locally → commit → check `origin/main` is an ancestor of `HEAD` → push (with the user's say-so) → the user pulls in Overleaf. The user often edits on Overleaf, so do not edit `sweetsoursong-ms` locally without asking.
 
 ## Decisions that are settled
 

@@ -14,6 +14,7 @@
 
 - [ ] In Overleaf, add the Lerch et al. citations and the founder-control sentence to the Methods "Closed metacommunity" subsection (text in `handoff.md`, 2026-10-05)
 - [ ] Decide whether to repeat the founder-control scan at other e_B, c_B∅ values
+- [ ] Ask Chris whether the closed metacommunity assumes effectively infinitely many plants (needed for the optional Lerch et al. ergodicity clause)
 - [ ] Check PNAS Research Report limits: 4 medium graphical elements (the main text has 6 figures and 1 table), 4,000 words, 50 references
 - [ ] Revise the Discussion beyond its figure and wording swaps; its argument still follows the old multi-plant model
 - [ ] Review the draft Significance Statement (104 words on 2026-10-04) with co-authors
@@ -39,6 +40,7 @@
 
 ### Next
 
+- [ ] Delete `~/GitHub/Stanford/sweetsoursong-ms-backup.bundle` (79 MB, pre-rewrite backup from 2026-10-02; no longer needed)
 - [ ] Get the final versions of `definitions_unified.wl` and `exploration_unified_10x.nb` from Chris and add them to a public repo or archive
 - [ ] Remove `Chop` from the stationary-distribution helpers (see `claude-checks/note_for_chris.md`, change 1)
 - [ ] Replace the hard-coded `~/Projects/lucas-codex/*.mx` paths with paths relative to `NotebookDirectory[]`

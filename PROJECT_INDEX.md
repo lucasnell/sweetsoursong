@@ -1,6 +1,6 @@
 # sweetsoursong — index
 
-**Status as of 2026-10-02:** The manuscript has been rewritten for the new pollinator-pool metacommunity model (Figs 1–6), with every edit tracked; it is synced to Overleaf. The next milestone is a full read-through with co-authors, then accepting the changes. Code archiving for the new model is not started.
+**Status as of 2026-10-05:** The manuscript has been rewritten for the new pollinator-pool metacommunity model (Figs 1–6), with every edit tracked; the user is editing it on Overleaf. The next milestone is a full read-through with co-authors, then accepting the changes. Code archiving for the new model is not started, which blocks the data and code statement.
 
 ## The question
 
@@ -14,9 +14,9 @@ A continuous-time Markov chain for one plant with N flowers (uncolonized, yeast-
 
 | Workstream | State | Next |
 |---|---|---|
-| Manuscript | Rewritten with tracked changes; Significance Statement drafted | Co-author read-through; accept changes |
+| Manuscript | Rewritten with tracked changes; Significance Statement drafted; word count works on Overleaf (main text 3065 on 2026-10-04) | Add Lerch et al. citations and the founder-control sentence (`handoff.md`); co-author read-through; accept changes |
 | New-model code | Chris's Mathematica files; not in a public repo | Archive with the manuscript; fix `Chop` and the hard-coded `DumpSave` paths |
-| Numerical checks | Done (`claude-checks/`) | Decide whether to send `note_for_chris.md` |
+| Numerical checks | Done (`claude-checks/`), including founder control (none for m_B ≥ m) | Decide whether to send `note_for_chris.md`; whether to scan founder control at other e_B, c_B∅ |
 | Old R package | Implements the first-submission model | Decide whether to keep it, archive it, or drop it |
 
 ## Key links
