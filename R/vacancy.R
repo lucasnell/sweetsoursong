@@ -68,7 +68,14 @@ poisson_weights <- function(y, pyr, pbr, pars = ss_params(), normalize = TRUE) {
     lambda <- p_mean_given_y(y, pyr, pbr, pars)
     w <- stats::dpois(0:pars$pmax, lambda)
     mass <- sum(w)
-    if (normalize && mass > 0) w <- w / mass
+    if (normalize) {
+        # in log space: for large lambda the truncated probabilities underflow
+        # to 0 in double precision (Mathematica switches to extended
+        # precision there instead)
+        lw <- stats::dpois(0:pars$pmax, lambda, log = TRUE)
+        w <- exp(lw - max(lw))
+        w <- w / sum(w)
+    }
     attr(w, "lambda") <- lambda
     attr(w, "tail_mass") <- max(0, 1 - mass)
     w

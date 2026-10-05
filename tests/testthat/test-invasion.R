@@ -53,3 +53,13 @@ test_that("classify_outcome labels all four outcomes", {
     out <- classify_outcome(c(0.5, 2, 2, 0.5), c(2, 2, 0.5, 0.5))
     expect_equal(as.character(out), c("bacteria", "coexist", "yeast", "neither"))
 })
+
+test_that("inv_y is accurate when truncated Poisson weights underflow", {
+    # PR = 10, m_B = 1: E[P | y] reaches ~1000, so P(P <= pmax) underflows.
+    # Mathematica value (Chop off) from claude-checks/founder_control_scan.wl,
+    # grid point 7381 (claude-checks/r-port/founder_control_grid.csv).
+    old <- options(sweetsoursong.chop = FALSE)
+    on.exit(options(old))
+    p <- update_params(ss_params(), m_b = 1)
+    expect_equal(inv_y(10, p), 3827135578.8848944, tolerance = 1e-12)
+})

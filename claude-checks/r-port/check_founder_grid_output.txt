@@ -1,0 +1,11 @@
+check_founder_grid.R, 2026-10-05 14:22, sweetsoursong 2.0.0
+points: 7381
+max relative difference, R_Y: 4.56e-14
+max relative difference, R_B (Chris's form): 1.71e-08
+outcome differs (R direct R_B vs Mathematica): 0
+           r
+mathematica bacteria coexist yeast neither
+   bacteria     3373       0     0       0
+   coexist         0    1899     0       0
+   yeast           0       0  1732       0
+   neither         0       0     0     377
