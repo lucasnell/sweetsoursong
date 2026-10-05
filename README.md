@@ -59,7 +59,8 @@ of the first submission.
 └── tests
 ```
 
-Run the scripts from the project root, in order:
+Install the package and its dependencies (see below), then run the scripts
+from the project root, in order:
 
 ```bash
 Rscript _scripts/01-fig2.R
@@ -69,26 +70,39 @@ Rscript _scripts/04-fig6.R
 Rscript _scripts/05-si-table-s1.R
 ```
 
-They make the computed panels of Figs 2–6. Panels 2A and 5A are schematics.
+They make the computed panels of Figs 2–6 and SI Table S1. Panels 2A and 5A
+are schematics. The tests run with `devtools::test()` (about 2 minutes).
 
 
 # Replicating the R environment
 
-I used R 4.6.1 (platform: aarch64-apple-darwin23).
+I used R 4.6.1 (platform: aarch64-apple-darwin23). Package versions are
+recorded in `renv.lock`. There are two ways to install them.
 
-This project uses `renv`. From the project directory:
+**With `renv`** (exact versions from `renv.lock`), from the project directory:
 
 ```r
 install.packages("renv")
 renv::restore()
+install.packages(".", repos = NULL, type = "source")  # sweetsoursong itself
 ```
 
-Without `renv`:
+**Without `renv`**, from a dated CRAN snapshot. Posit Package Manager serves
+CRAN as it was on a given date, so dependencies of dependencies are pinned as
+well. On 2026-10-05, the release date of v2.0.0, the snapshot has every
+package in `renv.lock` at the recorded version. Use R 4.6.1 (for example,
+installed with [rig](https://github.com/r-lib/rig)), then:
 
 ```r
-pkgs <- c("deSolve@1.42", "Matrix@1.7-6", "ggplot2@4.0.3",
-          "patchwork@1.3.2", "jsonlite@2.0.0", "testthat@3.3.2")
-install.packages("remotes")
-for (p in pkgs) remotes::install_version(sub("@.*", "", p), sub(".*@", "", p))
-remotes::install_github("lucasnell/sweetsoursong")
+options(repos = c(CRAN = "https://packagemanager.posit.co/cran/2026-10-05"))
+install.packages(c("remotes", "Matrix"))
+remotes::install_github("lucasnell/sweetsoursong@v2.0.0",
+                        dependencies = TRUE, upgrade = "always")
 ```
+
+`dependencies = TRUE` also installs the packages used by the scripts
+(ggplot2, patchwork) and tests (jsonlite, testthat). `upgrade = "always"`
+replaces older copies already in your library with the snapshot's versions;
+`Matrix` is installed explicitly because `remotes` does not upgrade the copy
+that ships with R. Tested on macOS on 2026-10-05: all packages in `renv.lock`
+except `renv` itself were installed at the recorded versions.
