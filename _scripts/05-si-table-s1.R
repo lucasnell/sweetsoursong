@@ -1,10 +1,9 @@
 # SI Table S1: values of P_R at which each invasion criterion equals 1, for
 # the reduced model (vacancy closure) and the full model, across epsilon and
-# Pmax. Table S1 was computed without Chop (Chop sets InvY to 0 in the
-# reduced model when epsilon <= 1e-7), so this script turns it off.
+# Pmax. Without Chop (the default set in 00-preamble.R): Chop sets InvY to
+# 0 in the reduced model when epsilon <= 1e-7.
 
 source("_scripts/00-preamble.R")
-options(sweetsoursong.chop = FALSE)
 
 thr_reduced <- function(eps) {
     p <- update_params(pars, eps = eps)

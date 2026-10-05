@@ -4,12 +4,18 @@
 \alias{decompose_distribution}
 \title{Split a bimodal distribution into its modes}
 \usage{
-decompose_distribution(joint)
+decompose_distribution(joint, floor = 0)
 }
 \arguments{
 \item{joint}{Matrix from \code{\link[=joint_distribution]{joint_distribution()}} (rows y, columns p) or a
 3-D array from \code{\link[=full_distribution]{full_distribution()}} (y, b, p). Dimnames give the state
 values.}
+
+\item{floor}{Probabilities below \code{floor} are treated as 0 when locating
+modes (weights and means still use the full distribution). Without
+Chop, round-off of order 1e-17 in the near-empty tails of the full
+model creates spurious minima; \code{floor = 1e-10} removes them, matching
+the effect of Chop in Chris's code. Default 0 (no floor).}
 }
 \value{
 A list with \code{weights} (mass of each mode), \code{means} (one row per

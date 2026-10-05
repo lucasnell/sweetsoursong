@@ -19,3 +19,11 @@ hazards from \code{\link[=vacancy_hazards]{vacancy_hazards()}} as attribute \cod
 Reduced model with the vacancy closure, for fixed regional pools
 (Chris Klausmeier's \code{GetYDistribution} with \code{SetCTMCClosureTM}).
 }
+\details{
+One difference from Chris's code: with \code{pbr == 0} exactly, bacteria
+cannot arrive and y = n is absorbing, so all probability is at y = n.
+Chris's product formula gives y = n probability 0 there (its down rate is
+0), which spreads the mass over a spurious mode. This is the limit as
+\code{pbr} goes to 0; his notebook never evaluates \code{pbr == 0} exactly because
+\code{FindRoot} stops just short of the yeast-only root.
+}

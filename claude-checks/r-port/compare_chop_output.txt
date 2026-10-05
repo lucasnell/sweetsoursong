@@ -1,0 +1,35 @@
+compare_chop.R, 2026-10-05 14:08, R version 4.6.1 (2026-06-24), sweetsoursong 2.0.0
+
+== Figs 3-4: equilibrium P_YR and mode weights ==
+   pr          pyr           w1           w2   nochop_pyr    nochop_w1
+1 0.6   0.00000000 1.0000000000           NA   0.00000000 1.0000000000
+2 1.0  18.21938930 0.1104316720 0.8895683280  18.21938930 0.1104316720
+3 1.8  71.87328016 0.4666060277 0.5333939723  71.87328016 0.4666060277
+4 2.6 125.13986802 0.8531740420 0.1468259580 125.13986802 0.8531740420
+5 3.0 150.00000000 1.0000000000           NA 150.00000000 1.0000000000
+max |diff P_YR| = 0; max |diff weight| = 0
+
+== Fig 5: continuation, 216 values of P_R from 0.74 to 2.89 ==
+max |diff P_YR| = 0 (max P_YR 144.4)
+
+== Reduced-model thresholds (eps = 1e-5) ==
+chop:   R_Y = 1 at 0.7308551429, R_B = 1 at 2.895810394
+nochop: R_Y = 1 at 0.7308551429, R_B = 1 at 2.895810394
+
+== Fig 6A: 5566 grid points ==
+outcome differs at 0 points
+          nochop
+chop       bacteria coexist yeast neither
+  bacteria     2460       0     0       0
+  coexist         0    1582     0       0
+  yeast           0       0  1524       0
+  neither         0       0     0       0
+
+== Fig 6B: 12100 grid points ==
+outcome differs at 0 points
+          nochop
+chop       bacteria coexist yeast neither
+  bacteria     4183       0     0       0
+  coexist         0    6826     0       0
+  yeast           0       0  1091       0
+  neither         0       0     0       0

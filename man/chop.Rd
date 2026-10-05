@@ -17,7 +17,10 @@ chop(x, tol = 1e-10)
 \description{
 Equivalent to Wolfram Language \code{Chop}: values with absolute value below
 \code{tol} become 0. Chris Klausmeier's Mathematica code applies \code{Chop} at
-several steps; whether this package does the same is controlled by the
-option \code{sweetsoursong.chop} (default \code{TRUE}, which reproduces the
-Mathematica results).
+several steps. Set the option \code{sweetsoursong.chop = TRUE} to do the same
+and reproduce his results exactly. The default, \code{FALSE}, does not, because
+Chop zeroes small probabilities that matter for invasion criteria: in the
+reduced model with \code{eps <= 1e-7} it sets the yeast invasion criterion to
+0, and in the full model it shifts the invasion thresholds by up to 0.005
+in \code{pr}. Without Chop, negative round-off is set to 0.
 }

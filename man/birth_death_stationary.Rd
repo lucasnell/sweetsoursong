@@ -16,3 +16,6 @@ Probabilities for states 0, ..., n.
 Product formula \code{pi(y) = pi(y - 1) * up(y - 1) / down(y)}, rescaled when
 values exceed 1e100 (Chris Klausmeier's \code{CTMCClosureStationaryWeights}).
 }
+\details{
+A state with \code{down(y) == 0} gets probability 0.
+}

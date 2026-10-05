@@ -158,6 +158,10 @@ tm_stationary <- function(tm) {
         u <- v / sqrt(sum(v^2))
         u <- chop(u)
         v <- u / sum(u)
+    } else {
+        # negative entries are round-off of order 1e-17
+        v <- pmax(v, 0)
+        v <- v / sum(v)
     }
     v
 }

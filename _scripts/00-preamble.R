@@ -8,8 +8,10 @@ suppressPackageStartupMessages({
     library(patchwork)
 })
 
-# Reproduce Chris Klausmeier's Mathematica results, including Chop.
-options(sweetsoursong.chop = TRUE)
+# No Chop (package default). Figs 2-6 are identical with Chop on
+# (claude-checks/r-port/compare_chop_output.txt); set TRUE to reproduce
+# Chris Klausmeier's Mathematica code exactly.
+options(sweetsoursong.chop = FALSE)
 
 pars <- ss_params()
 
