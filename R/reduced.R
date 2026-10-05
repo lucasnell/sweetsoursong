@@ -3,6 +3,8 @@
 #' Product formula `pi(y) = pi(y - 1) * up(y - 1) / down(y)`, rescaled when
 #' values exceed 1e100 (Chris Klausmeier's `CTMCClosureStationaryWeights`).
 #'
+#' A state with `down(y) == 0` gets probability 0.
+#'
 #' @param up,down Birth and death rates for states 0, ..., n.
 #' @return Probabilities for states 0, ..., n.
 #' @export
@@ -24,6 +26,13 @@ birth_death_stationary <- function(up, down) {
 #' Reduced model with the vacancy closure, for fixed regional pools
 #' (Chris Klausmeier's `GetYDistribution` with `SetCTMCClosureTM`).
 #'
+#' One difference from Chris's code: with `pbr == 0` exactly, bacteria
+#' cannot arrive and y = n is absorbing, so all probability is at y = n.
+#' Chris's product formula gives y = n probability 0 there (its down rate is
+#' 0), which spreads the mass over a spurious mode. This is the limit as
+#' `pbr` goes to 0; his notebook never evaluates `pbr == 0` exactly because
+#' `FindRoot` stops just short of the yeast-only root.
+#'
 #' @param pyr,pbr Regional pools.
 #' @param pars An [ss_params()] object.
 #' @return A numeric vector of probabilities for y = 0, ..., n, with the
@@ -31,7 +40,11 @@ birth_death_stationary <- function(up, down) {
 #' @export
 y_distribution <- function(pyr, pbr, pars = ss_params()) {
     hz <- vacancy_hazards(pyr, pbr, pars)
-    pi_y <- birth_death_stationary(hz$up, hz$down)
+    if (pbr == 0 && pyr > 0) {
+        pi_y <- c(numeric(pars$n), 1)
+    } else {
+        pi_y <- birth_death_stationary(hz$up, hz$down)
+    }
     attr(pi_y, "hazards") <- hz
     pi_y
 }

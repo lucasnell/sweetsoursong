@@ -37,3 +37,16 @@ test_that("hazards, pi(y), and E[YP] match Mathematica", {
         })
     }
 })
+
+test_that("an exactly zero pool gives the one-species limit", {
+    p <- ss_params()
+    pr <- 3
+    # yeast only: pbr = 0 exactly puts all mass at y = n
+    pi_y <- y_distribution(p$n * pr, 0, p)
+    expect_equal(pi_y[p$n + 1], 1)
+    # close to the limit, as Mathematica's FindRoot result
+    pi_near <- y_distribution(149.9999991669740, p$n * pr - 149.9999991669740, p)
+    expect_gt(pi_near[p$n + 1], 0.99)
+    # bacteria only: pyr = 0 exactly puts all mass at y = 0
+    expect_equal(y_distribution(0, p$n * 0.6, p)[1], 1)
+})
