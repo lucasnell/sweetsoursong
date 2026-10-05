@@ -1,0 +1,3 @@
+multi_plant_table_check.R, 2026-10-05 16:39
+200 random states, K = 2..20 plants
+max relative difference, Table 2 summed vs Table 1: 4.54e-16
