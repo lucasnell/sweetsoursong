@@ -8,7 +8,7 @@ outcome_grid(
   pr,
   m_b,
   pars = ss_params(),
-  method = c("chris", "direct"),
+  method = c("direct", "chris"),
   cores = 1L
 )
 }

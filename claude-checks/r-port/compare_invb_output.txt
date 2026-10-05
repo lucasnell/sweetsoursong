@@ -1,0 +1,5 @@
+compare_invb.R, 2026-10-05 14:14, sweetsoursong 2.0.0
+Fig 6A: 5566 points; outcome differs at 0
+  max relative deviation from the identity: 9.9e-09
+Fig 6B: 12100 points; outcome differs at 0
+  max relative deviation from the identity: 8.95e-09

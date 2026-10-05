@@ -6,7 +6,7 @@ test_that("invasion criteria match Mathematica", {
         with_mode(mode, {
             for (v in ref$inv) {
                 expect_lt(rel_diff(inv_y(v$PR, p), v$invY), 1e-9)
-                expect_lt(rel_diff(inv_b(v$PR, p), v$invB), 1e-9)
+                expect_lt(rel_diff(inv_b(v$PR, p, "chris"), v$invB), 1e-9)
                 expect_lt(rel_diff(inv_b(v$PR, p, "direct"), v$eYPdirectB / p$eps), 1e-9)
             }
             pm <- update_params(p, m_b = p$m)
@@ -14,7 +14,8 @@ test_that("invasion criteria match Mathematica", {
                 expect_lt(rel_diff(inv_y(v$PR, pm), v$invY), 1e-9)
                 # (n * PR - E[YP]) / eps cancels: round-off in E[YP] is
                 # amplified by n * PR / eps
-                expect_lt(abs(inv_b(v$PR, pm) - v$invB), 1e-12 * pm$n * v$PR / pm$eps)
+                expect_lt(abs(inv_b(v$PR, pm, "chris") - v$invB),
+                          1e-12 * pm$n * v$PR / pm$eps)
             }
         })
     }
@@ -40,6 +41,8 @@ test_that("invasion thresholds match Mathematica", {
         with_mode(mode, {
             expect_equal(inv_threshold("y", c(0.5, 1), p), th$invY_mB05, tolerance = 1e-8)
             expect_equal(inv_threshold("b", c(2.5, 3.5), p), th$invB_mB05, tolerance = 1e-8)
+            expect_equal(inv_threshold("b", c(2.5, 3.5), p, "chris"), th$invB_mB05,
+                         tolerance = 1e-8)
             expect_equal(inv_threshold("y", c(1.4, 1.5), pm), th$invY_mB01, tolerance = 1e-8)
             expect_equal(inv_threshold("b", c(1.5, 1.6), pm), th$invB_mB01, tolerance = 1e-8)
         })

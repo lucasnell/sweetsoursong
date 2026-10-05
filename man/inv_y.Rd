@@ -7,14 +7,14 @@
 \usage{
 inv_y(pr, pars = ss_params())
 
-inv_b(pr, pars = ss_params(), method = c("chris", "direct"))
+inv_b(pr, pars = ss_params(), method = c("direct", "chris"))
 }
 \arguments{
 \item{pr}{Regional pollinator abundance (mean pollinators per plant).}
 
 \item{pars}{An \code{\link[=ss_params]{ss_params()}} object.}
 
-\item{method}{For \code{inv_b()}, \code{"chris"} or \code{"direct"}.}
+\item{method}{For \code{inv_b()}, \code{"direct"} or \code{"chris"}.}
 }
 \description{
 \code{inv_y()} is \verb{E[Y P] / eps} when the yeast pool is \code{eps} in a
@@ -22,8 +22,10 @@ bacteria-dominated metacommunity. \code{inv_b()} is the analogue for bacteria.
 Each species can invade when its criterion exceeds 1.
 }
 \details{
-\code{inv_b(method = "chris")} is \verb{(n * pr - E[Y P]) / eps}, as in Chris
-Klausmeier's \code{InvB}. It has the same threshold as \code{method = "direct"},
-\verb{E[B P] / eps}, but a different magnitude:
-\code{direct - 1 = (m / m_b) * (chris - 1)}.
+\code{inv_b(method = "direct")} (default) is \verb{E[B P] / eps}, the invader's own
+pollinator output, as \code{R_B} is defined in the SI. \code{method = "chris"} is
+\verb{(n * pr - E[Y P]) / eps}, as in Chris Klausmeier's \code{InvB}; it equals 1
+at the same \code{pr} but has a different magnitude,
+\code{direct - 1 = (m / m_b) * (chris - 1)}, can be negative, and loses
+precision to cancellation when \code{eps} is small.
 }

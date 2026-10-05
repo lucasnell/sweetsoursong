@@ -8,7 +8,7 @@ source("_scripts/00-preamble.R")
 thr_reduced <- function(eps) {
     p <- update_params(pars, eps = eps)
     c(y = inv_threshold("y", c(0.6, 0.85), p),
-      b = inv_threshold("b", c(2.8, 3.0), p, method = "direct"))
+      b = inv_threshold("b", c(2.8, 3.0), p))
 }
 thr_full <- function(eps, pmax) {
     p <- update_params(pars, eps = eps, pmax = pmax)

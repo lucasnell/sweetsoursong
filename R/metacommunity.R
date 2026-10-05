@@ -36,13 +36,15 @@ e_bp <- function(pyr, pr, pars = ss_params(), pbr = pars$n * pr - pyr) {
 #' bacteria-dominated metacommunity. `inv_b()` is the analogue for bacteria.
 #' Each species can invade when its criterion exceeds 1.
 #'
-#' `inv_b(method = "chris")` is `(n * pr - E[Y P]) / eps`, as in Chris
-#' Klausmeier's `InvB`. It has the same threshold as `method = "direct"`,
-#' `E[B P] / eps`, but a different magnitude:
-#' `direct - 1 = (m / m_b) * (chris - 1)`.
+#' `inv_b(method = "direct")` (default) is `E[B P] / eps`, the invader's own
+#' pollinator output, as `R_B` is defined in the SI. `method = "chris"` is
+#' `(n * pr - E[Y P]) / eps`, as in Chris Klausmeier's `InvB`; it equals 1
+#' at the same `pr` but has a different magnitude,
+#' `direct - 1 = (m / m_b) * (chris - 1)`, can be negative, and loses
+#' precision to cancellation when `eps` is small.
 #'
 #' @inheritParams e_yp
-#' @param method For `inv_b()`, `"chris"` or `"direct"`.
+#' @param method For `inv_b()`, `"direct"` or `"chris"`.
 #' @export
 inv_y <- function(pr, pars = ss_params()) {
     e_yp(pars$eps, pr, pars) / pars$eps
@@ -50,7 +52,7 @@ inv_y <- function(pr, pars = ss_params()) {
 
 #' @rdname inv_y
 #' @export
-inv_b <- function(pr, pars = ss_params(), method = c("chris", "direct")) {
+inv_b <- function(pr, pars = ss_params(), method = c("direct", "chris")) {
     method <- match.arg(method)
     pyr <- pars$n * pr - pars$eps
     switch(method,
@@ -174,7 +176,7 @@ newton_root <- function(f, x0, lower = -Inf, upper = Inf, tol = 1e-10,
 #' @param tol Tolerance passed to [stats::uniroot()].
 #' @export
 inv_threshold <- function(which = c("y", "b"), interval, pars = ss_params(),
-                          method = c("chris", "direct"), tol = 1e-10) {
+                          method = c("direct", "chris"), tol = 1e-10) {
     which <- match.arg(which)
     method <- match.arg(method)
     f <- switch(which,

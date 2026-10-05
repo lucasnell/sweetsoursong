@@ -8,7 +8,7 @@ inv_threshold(
   which = c("y", "b"),
   interval,
   pars = ss_params(),
-  method = c("chris", "direct"),
+  method = c("direct", "chris"),
   tol = 1e-10
 )
 }
@@ -19,7 +19,7 @@ inv_threshold(
 
 \item{pars}{An \code{\link[=ss_params]{ss_params()}} object.}
 
-\item{method}{For \code{inv_b()}, \code{"chris"} or \code{"direct"}.}
+\item{method}{For \code{inv_b()}, \code{"direct"} or \code{"chris"}.}
 
 \item{tol}{Tolerance passed to \code{\link[stats:uniroot]{stats::uniroot()}}.}
 }

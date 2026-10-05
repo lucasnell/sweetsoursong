@@ -21,7 +21,7 @@ classify_outcome <- function(inv_y, inv_b) {
 #' @return A data frame with `pr`, `m_b`, `inv_y`, `inv_b`, `outcome`.
 #' @export
 outcome_grid <- function(pr, m_b, pars = ss_params(),
-                         method = c("chris", "direct"), cores = 1L) {
+                         method = c("direct", "chris"), cores = 1L) {
     method <- match.arg(method)
     grid <- expand.grid(pr = pr, m_b = m_b)
     one <- function(i) {
