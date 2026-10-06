@@ -8,23 +8,24 @@
 
 ### In progress
 
-- [ ] Read through the tracked-change rewrite (Methods, Results, captions, SI) on Overleaf
+- [ ] Co-author read-through of the rewritten manuscript
 
 ### Next
 
-- [ ] Update the data and code statement in the manuscript for the `sweetsoursong` `v2.0.0` release on Zenodo
+- [ ] Update the data and code statement in `__ms.tex` for the `sweetsoursong` `v2.0.0` release on Zenodo (it still cites the `v1.0.0` DOI, 10.5281/zenodo.15113988)
 - [ ] Decide whether to repeat the founder-control scan at other e_B, c_B∅ values
-- [ ] Ask Chris whether the closed metacommunity assumes effectively infinitely many plants (needed for the optional Lerch et al. ergodicity clause, if it was added)
-- [ ] Check PNAS Research Report limits: 4 medium graphical elements (the main text has 6 figures and 1 table), 4,000 words, 50 references
-- [ ] Revise the Discussion beyond its figure and wording swaps; its argument still follows the old multi-plant model
+- [ ] Ask Chris to confirm that the closed metacommunity assumes effectively infinitely many plants (the Lerch et al. ergodicity clause is in Methods)
+- [ ] Check PNAS Research Report limits: 4 medium graphical elements (the main text has 6 figures and 2 tables), 4,000 words, 50 references
+- [ ] Check that the Discussion's argument matches the new model (partly revised on 2026-10-05, `sweetsoursong-ms` `5620296`)
 - [ ] Review the Significance Statement (revised on Overleaf 2026-10-05) with co-authors
-- [ ] Accept all tracked changes (`\usepackage[final]{changes}`) once co-authors have reviewed
-- [ ] Update the title-page word-count note in `__ms.tex` (still 3870 / 149). Recount: the Methods and Significance Statement changed on 2026-10-05. Recount with `texcount -inc -total __ms.tex` after accepting the changes
+- [ ] If PNAS needs word counts, recount with `texcount -inc -total __ms.tex` (the title-page note was removed)
 
 ### Blocked
 
 ### Done
 
+- [x] Add Table 2, transitions in the K-plant metacommunity, after Table 1 (`sweetsoursong-ms` `30657e9`; check `claude-checks/multi_plant_table_check.R`) (2026-10-05)
+- [x] Accept all tracked changes; remove the hidden old equations and label shims (user, `5620296`, 2026-10-05)
 - [x] Add the Lerch et al. citations and the founder-control sentence to Methods; revise the Significance Statement (user, on Overleaf, 2026-10-05)
 - [x] Check for regional founder control (both R < 1): none for m_B ≥ m; region starts at m_B = 0.00908 (`claude-checks/founder_control_*`, 2026-10-05)
 - [x] Fix the Overleaf word count (TeXcount errors from the hidden Mathematica block; skip deleted and replaced text), commit `1937795` (2026-10-04)

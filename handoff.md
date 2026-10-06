@@ -20,8 +20,8 @@ The R port was developed on branch `new-model` and merged into `main` (pushed 20
 - [x] Chris approved the port
 - [x] Manuscript figure panels stay as the Mathematica exports for now
 - [x] User: GitHub release `v2.0.0` and Zenodo archive; the README badge carries the DOI
-- [ ] Update the manuscript's data and code statement for the `v2.0.0` release
-- [ ] Update the title-page word-count note in `__ms.tex` (user said they will do this)
+- [ ] Update the manuscript's data and code statement for the `v2.0.0` release (it still cites the `v1.0.0` DOI)
+- [ ] Fit the main text to PNAS's 4 graphical elements (now 6 figures and 2 tables)
 
 ## Context for the next session
 
@@ -36,4 +36,5 @@ The R port was developed on branch `new-model` and merged into `main` (pushed 20
 - Sparse stationary solves: replacing a row with ones makes `Matrix::lu` ~100× slower (dense row); the code fixes one state instead, chosen by inflow/outflow ratio, then re-solves at the most probable state.
 - Notebook input cells, readable without a front end: `claude-checks/r-port/notebook_inputs.txt` (`extract_notebook_inputs.wl`).
 - Overleaf is likely ahead of GitHub for `sweetsoursong-ms`; ask the user to push from Overleaf before any local edit there.
+- After the release (2026-10-05 to 10-06): the user accepted all tracked changes (`sweetsoursong-ms` `5620296`); Table 2 (K-plant transitions, no markup) added after Table 1 (`30657e9`), with `claude-checks/multi_plant_table_check.R` showing its arrivals and departures sum to Table 1's rates to 5e-16; README's no-renv route rewritten to a Posit Package Manager snapshot of 2026-10-05 and tested in a clean library (`4d4752a`); `renv::status()` consistent, all seven used packages in `renv.lock`.
 - Earlier handoffs are in git history (`git log -p handoff.md`).

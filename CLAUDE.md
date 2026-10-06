@@ -26,14 +26,13 @@
 
 ## How this project works
 
-- Model hierarchy in the current manuscript: the full per-plant CTMC (Y, B, P; Table 1); the reduced model with no empty flowers plus a vacancy (CTMC) closure for the filling probabilities; the closed metacommunity, where regional pools satisfy P_YR = E[YP] at fixed P_R.
+- Model hierarchy in the current manuscript: the K-plant metacommunity in which pollinators fly directly between plants (Table 2), whose one-plant view with a regional pool is the full per-plant CTMC (Y, B, P; Table 1; summation checked in `claude-checks/multi_plant_table_check.R`); the reduced model with no empty flowers plus a vacancy (CTMC) closure for the filling probabilities; the closed metacommunity, where regional pools satisfy P_YR = E[YP] at fixed P_R.
 - Manuscript figure panels are the Mathematica exports (decided 2026-10-05); `_scripts/` reproduces their computed content in R. Figure provenance in `exploration_unified_10x.nb`: Fig 2 = section 1.4 (deterministic one-plant model). Figs 3–4 = 2.2, Fig 5 = 2.3, Fig 6 = 2.4 (reduced model, vacancy closure). Section 3 (full model) is used only for the SI check.
 - Parameters come from `SetParameters` in the notebook: N = 50, Pmax = 12, c = 500, d = 0.1, m = 0.01, m_B = 0.05, e_Y = 1, e_B = 0.5, c_B∅ = 5, ε = 1e-5, giving P_crit = 1.
 - Software: Wolfram 15.0.1 with EcoEvo 1.7.2; R 4.6.1 with `renv`. `wolframscript` needs `WolframKernel=/Applications/Wolfram.app/Contents/MacOS/WolframKernel`; run one kernel-heavy script at a time (two in parallel crashed).
 - R port: tests compare with Mathematica fixtures (`tests/testthat/fixtures/ref_chop.json`, `ref_nochop.json`) made by `claude-checks/r-port/r_port_reference.wl`. `options(sweetsoursong.chop = TRUE)` and `inv_b(method = "chris")` reproduce Chris's code exactly.
-- Manuscript edits are tracked with the LaTeX `changes` package (`\added`, `\deleted`, `\replaced`, `\comment`). New display equations and tables use `addedblock` / `\addedcolor`. Use `defaultcolor=red`. Accept all edits with `\usepackage[final]{changes}`.
-- Old equations and figures are hidden in `\iffalse` behind visible markers, with label shims that print "old N". Leave them until all changes are accepted.
-- Overleaf word count runs TeXcount, which ignores `\iffalse`. Wrap hidden code in `%TC:ignore` / `%TC:endignore`. The `%TC:macro` lines at the top of `__ms.tex` skip `\deleted`, the old argument of `\replaced`, and `\comment`. Check locally with `texcount -inc -total __ms.tex`.
+- The tracked changes of the new-model rewrite were accepted on 2026-10-05 (`sweetsoursong-ms` `5620296`); new edits go in without markup unless the user asks. The `changes` package (`\added`, `\deleted`, `\replaced`, `\comment`, `addedblock`, `defaultcolor=red`) is still loaded in `__ms.tex` if a tracked round is needed again.
+- Overleaf word count runs TeXcount, which ignores `\iffalse`. Wrap any hidden code in `%TC:ignore` / `%TC:endignore`. The `%TC:macro` lines at the top of `__ms.tex` skip `\deleted`, the old argument of `\replaced`, and `\comment`. Check locally with `texcount -inc -total __ms.tex`.
 - Overleaf sync order: the user pushes from Overleaf → `git fetch` and fast-forward locally → commit → check `origin/main` is an ancestor of `HEAD` → push (with the user's say-so) → the user pulls in Overleaf. The user often edits on Overleaf, so do not edit `sweetsoursong-ms` locally without asking.
 
 ## Decisions that are settled
