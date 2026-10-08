@@ -14,7 +14,7 @@ A continuous-time Markov chain for one plant with N flowers (uncolonized, yeast-
 
 | Workstream | State | Next |
 |---|---|---|
-| Manuscript | Rewritten for the new model; tracked changes accepted (2026-10-05); new Fig 1 with parameters (D) and transitions (E); K-plant transitions in SI Table S1; Methods mention the R package (2026-10-08); data statement cites the Zenodo concept DOI; full model description in the SI (eqs S1–S9) and two Methods wording fixes (`a082e02`, `23aefc7`, 2026-10-08) | Co-author read-through; 6 figures against PNAS's limit of 4 graphical elements; Fig 1E regional-colonization rows (TODO) |
+| Manuscript | Rewritten for the new model; tracked changes accepted (2026-10-05); new Fig 1 with parameters (D) and transitions (E); K-plant transitions in SI Table S1; Methods mention the R package (2026-10-08); data statement cites the Zenodo concept DOI; full model description in the SI (eqs S1–S9) and two Methods wording fixes (`a082e02`, `23aefc7`, 2026-10-08) | Co-author read-through; 6 figures against PNAS's limit of 4 graphical elements |
 | New-model code | R port (package 2.0.0) reviewed, approved by Chris, merged into `main` and pushed: 346 tests against Mathematica pass; `R CMD check` 0 errors, 0 warnings; scripts reproduce Figs 2–6 (computed panels) and SI Table S2 (`tab:numerics`) | Released as `v2.0.0` on GitHub and Zenodo (2026-10-05) |
 | Numerical checks | Done (`claude-checks/`), including founder control (none for m_B ≥ m) | Decide whether to send `note_for_chris.md`; whether to scan founder control at other e_B, c_B∅ |
 | Old R package | Replaced on `main`; preserved at tag `v1.0.0` (Zenodo 10.5281/zenodo.15113988) | None |
@@ -38,6 +38,7 @@ A continuous-time Markov chain for one plant with N flowers (uncolonized, yeast-
 | 2026-10-02 | Track manuscript edits with the `changes` package, in red | User can see every change on Overleaf |
 | 2026-10-02 | Word count removed from the title page | Stale after the rewrite |
 | 2026-10-02 | Never rewrite `sweetsoursong-ms` history; keep figures tracked | The Overleaf project can't be unlinked, and its sync ignores `.gitignore` |
+| 2026-10-08 | Fig 1E lists processes with overlapping rows: row 3 is total pollinator immigration; regional colonization (5, 6) is part of it, stated in the caption | Keeps panels B and C separate and gives correct rates. Listing rows 5 and 6 as separate events without $P \to P + 1$ would be a different chain, shifting thresholds by −0.0047 and −0.030 (`claude-checks/fig1e_row3_alternative_output.txt`) |
 | 2026-10-08 | Manuscript data statement cites the Zenodo concept DOI, 10.5281/zenodo.15113987 | Resolves to the latest release, so it never goes out of date; the old citation was the `v1.0.0` version DOI (first-submission code) |
 | 2026-10-08 | One-plant transitions (old Table 1) and parameters move into Fig 1 (panels E, D); K-plant transitions move to SI Table S1; the accuracy table becomes SI Table S2; `\varnothing` replaces `\emptyset` | User's revision (`sweetsoursong-ms` `a8ebbfc`); supersedes the 2026-10-05 Table 2 placement |
 | 2026-10-05 | Table 2: explicit K-plant transitions, in the main text after Table 1 | Shows the multi-plant model that Table 1's regional pool stands for; its arrivals sum to Table 1's immigration rates |

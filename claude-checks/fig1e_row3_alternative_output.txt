@@ -1,0 +1,4 @@
+fig1e_row3_alternative.R, 2026-10-08 13:50
+computed model (joint jump):  R_Y = 1 at P_R = 0.730855, R_B = 1 at P_R = 2.895810
+alternative (separate events): R_Y = 1 at P_R = 0.726187, R_B = 1 at P_R = 2.865934
+difference: -0.0047 (R_Y), -0.03 (R_B)

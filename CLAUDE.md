@@ -26,7 +26,7 @@
 
 ## How this project works
 
-- The SI section "Full model description" (`99-supplement.tex`, eqs S1–S9) is the complete written model; keep it consistent with the R package and Fig 1E.
+- The SI section "Full model description" (`99-supplement.tex`, eqs S1–S9) is the complete written model; keep it consistent with the R package and Fig 1E. Fig 1E lists processes whose rows overlap (regional colonization, 5 and 6, is part of pollinator immigration, 3); eq S2 lists the same model as separate chain events.
 - Model hierarchy in the current manuscript: the K-plant metacommunity in which pollinators fly directly between plants (SI Table S1, `tab:rates-multi`), whose one-plant view with a regional pool is the full per-plant CTMC (Y, B, P; transitions in Fig 1E, parameters in Fig 1D; summation checked in `claude-checks/multi_plant_table_check.R`); the reduced model with no empty flowers plus a vacancy (CTMC) closure for the filling probabilities; the closed metacommunity, where regional pools satisfy P_YR = E[YP] at fixed P_R.
 - Manuscript figure panels are the Mathematica exports (decided 2026-10-05); `_scripts/` reproduces their computed content in R. Figure provenance in `exploration_unified_10x.nb`: Fig 2 = section 1.4 (deterministic one-plant model). Figs 3–4 = 2.2, Fig 5 = 2.3, Fig 6 = 2.4 (reduced model, vacancy closure). Section 3 (full model) is used only for the SI check.
 - Parameters come from `SetParameters` in the notebook: N = 50, Pmax = 12, c = 500, d = 0.1, m = 0.01, m_B = 0.05, e_Y = 1, e_B = 0.5, c_B∅ = 5, ε = 1e-5, giving P_crit = 1.

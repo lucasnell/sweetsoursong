@@ -12,7 +12,6 @@
 
 ### Next
 
-- [ ] Fig 1E: decide how to show that events 5 and 6 (regional colonization) also add a pollinator. The user omitted $P \to P + 1$ on purpose, taking event 3 to set the overall arrival rate; but event 3's $(1 - e_X \varnothing / N)$ factors exclude colonizing arrivals, so total arrivals are events 3 + 5 + 6. Options: add $P \to P + 1$ to rows 5 and 6, or add a caption sentence (drafted 2026-10-08). SI eq S2 has both changes
 - [ ] Decide whether to repeat the founder-control scan at other e_B, c_B∅ values
 - [ ] Ask Chris to confirm that the closed metacommunity assumes effectively infinitely many plants (the Lerch et al. ergodicity clause is in Methods)
 - [ ] Check PNAS Research Report limits: 4 medium graphical elements (the main text has 6 figures and no tables), 4,000 words, 50 references
@@ -24,6 +23,7 @@
 
 ### Done
 
+- [x] Fig 1E lists processes, not separate transitions: row 3 is total pollinator immigration, c(m P_∅R + m P_YR + m_B P_BR)/N, and the caption says regional colonization (5, 6) is part of it (user, on Overleaf, 2026-10-08; not yet pushed to GitHub when noted)
 - [x] Methods: Figure 1E reference fixed; $a_Y$, $a_B$ described as $N$ times the fill rates (`sweetsoursong-ms`, 2026-10-08)
 - [x] Write the full model description in the SI; SI title updated (`sweetsoursong-ms`, 2026-10-08)
 - [x] Data and code statement cites the Zenodo concept DOI, 10.5281/zenodo.15113987 (`sweetsoursong-ms` `0d49704`, 2026-10-08)
