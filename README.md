@@ -67,7 +67,7 @@ Rscript _scripts/01-fig2.R
 Rscript _scripts/02-fig3-4.R
 Rscript _scripts/03-fig5.R
 Rscript _scripts/04-fig6.R
-Rscript _scripts/05-si-table-s1.R
+Rscript _scripts/05-si-table-s2.R
 ```
 
 They make the computed panels of Figs 2–6 and SI Table S2. Panels 2A and 5A

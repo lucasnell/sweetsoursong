@@ -1,6 +1,6 @@
-verify_manuscript_numbers.R, 2026-10-05 14:34, sweetsoursong 2.0.0
+verify_manuscript_numbers.R, 2026-10-08 13:27, sweetsoursong 2.0.0
 
-== SI Table S1 ==
+== SI Table S2 ==
 reduced, eps 1e-05, Pmax 12 R_Y = 1                     R 0.7308551429 MS 0.730855   match
 reduced, eps 1e-05, Pmax 12 R_B = 1                     R 2.895810394  MS 2.89581    match
 reduced, eps 1e-07, Pmax 12 R_Y = 1                     R 0.7308549972 MS 0.730855   match
@@ -11,7 +11,7 @@ full, eps 1e-05, Pmax 12 R_Y = 1                        R 0.7296767818 MS 0.7296
 full, eps 1e-05, Pmax 12 R_B = 1                        R 2.8674887    MS 2.867489   match
 full, eps 1e-05, Pmax 18 R_Y = 1                        R 0.7296702385 MS 0.72967    match
 full, eps 1e-05, Pmax 18 R_B = 1                        R 2.867472716  MS 2.867473   match
-full model at eps 1e-7 (Table S1 row 'eps 1e-5 to 1e-7'): 0.7296768, 0.7296702, 2.8674893, 2.8674733
+full model at eps 1e-7 (Table S2 row 'eps 1e-5 to 1e-7'): 0.7296768, 0.7296702, 2.8674893, 2.8674733
 
 == Fig 3 caption ==
 P_YR at P_R = 1.8                                       R 71.87328016  MS 71.87      match

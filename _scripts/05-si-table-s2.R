@@ -1,4 +1,4 @@
-# SI Table S1: values of P_R at which each invasion criterion equals 1, for
+# SI Table S2: values of P_R at which each invasion criterion equals 1, for
 # the reduced model (vacancy closure) and the full model, across epsilon and
 # Pmax. Without Chop (the default set in 00-preamble.R): Chop sets InvY to
 # 0 in the reduced model when epsilon <= 1e-7.
@@ -18,7 +18,7 @@ thr_full <- function(eps, pmax) {
                          tol = 1e-9)$root)
 }
 
-tab <- cached("si-table-s1.rds", {
+tab <- cached("si-table-s2.rds", {
     rows <- list(
         data.frame(model = "reduced", eps = 1e-5, pmax = 12, t(thr_reduced(1e-5))),
         data.frame(model = "reduced", eps = 1e-7, pmax = 12, t(thr_reduced(1e-7))),
@@ -30,5 +30,5 @@ tab <- cached("si-table-s1.rds", {
     do.call(rbind, rows)
 })
 names(tab)[4:5] <- c("pr_inv_y_eq_1", "pr_inv_b_eq_1")
-write.csv(tab, data_path("si-table-s1.csv"), row.names = FALSE)
+write.csv(tab, data_path("si-table-s2.csv"), row.names = FALSE)
 print(tab, digits = 7)

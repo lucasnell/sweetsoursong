@@ -12,7 +12,6 @@
 
 ### Next
 
-- [ ] Update the data and code statement in `__ms.tex` for the `sweetsoursong` `v2.0.0` release on Zenodo (it still cites the `v1.0.0` DOI, 10.5281/zenodo.15113988)
 - [ ] Decide whether to repeat the founder-control scan at other e_B, c_B∅ values
 - [ ] Ask Chris to confirm that the closed metacommunity assumes effectively infinitely many plants (the Lerch et al. ergodicity clause is in Methods)
 - [ ] Check PNAS Research Report limits: 4 medium graphical elements (the main text has 6 figures and no tables), 4,000 words, 50 references
@@ -24,6 +23,8 @@
 
 ### Done
 
+- [x] Data and code statement cites the Zenodo concept DOI, 10.5281/zenodo.15113987 (`sweetsoursong-ms` `0d49704`, 2026-10-08)
+- [x] Rename `_scripts/05-si-table-s1.R` to `05-si-table-s2.R`, with its outputs, to match the SI numbering (2026-10-08)
 - [x] New Fig 1 with parameters (D) and one-plant transitions (E); K-plant table to SI (Table S1); `\varnothing` notation; R package mentioned in Methods (user, `a8ebbfc`, 2026-10-08)
 - [x] Add Table 2, transitions in the K-plant metacommunity, after Table 1 (`sweetsoursong-ms` `30657e9`; check `claude-checks/multi_plant_table_check.R`) (2026-10-05)
 - [x] Accept all tracked changes; remove the hidden old equations and label shims (user, `5620296`, 2026-10-05)

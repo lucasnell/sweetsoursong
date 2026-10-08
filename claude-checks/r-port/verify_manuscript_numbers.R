@@ -1,7 +1,7 @@
 # Compare the R port's outputs with numbers printed in the manuscript
 # (sweetsoursong-ms, origin/main on 2026-10-05). Run from the project root
 # after the _scripts/ figure scripts.
-# Inputs: _data/si-table-s1.csv, _data/fig3-4-equilibria.csv,
+# Inputs: _data/si-table-s2.csv, _data/fig3-4-equilibria.csv,
 #         _data/fig5-continuation.csv, _data/fig6-grid-*.rds
 # Output: claude-checks/r-port/verify_manuscript_numbers_output.txt
 
@@ -15,9 +15,9 @@ check <- function(what, r_value, ms_value, digits) {
                 format(ms_value), if (ok) "match" else "DIFFERENT"))
 }
 
-# SI Table S1 (99-supplement.tex), digits as printed
-s1 <- read.csv("_data/si-table-s1.csv")
-add("\n== SI Table S1 ==")
+# SI Table S2 (99-supplement.tex, tab:numerics), digits as printed
+s1 <- read.csv("_data/si-table-s2.csv")
+add("\n== SI Table S2 ==")
 ms <- data.frame(model = c("reduced", "reduced", "reduced", "full", "full"),
                  eps = c(1e-5, 1e-7, 1e-9, 1e-5, 1e-5), pmax = c(12, 12, 12, 12, 18),
                  y = c(0.730855, 0.730855, 0.730855, 0.729677, 0.729670),
@@ -30,7 +30,7 @@ for (i in seq_len(nrow(ms))) {
     check(paste(lab, "R_B = 1"), r$pr_inv_b_eq_1, ms$b[i], ms$dig_b[i])
 }
 r <- s1[s1$model == "full" & s1$eps == 1e-7, ]
-add("full model at eps 1e-7 (Table S1 row 'eps 1e-5 to 1e-7'): ",
+add("full model at eps 1e-7 (Table S2 row 'eps 1e-5 to 1e-7'): ",
     paste(format(unlist(r[, 4:5]), digits = 7), collapse = ", "))
 
 # Fig 3 caption (98-figures.tex): P_R = 1.8, P_YR = 71.87, P_BR = 18.13

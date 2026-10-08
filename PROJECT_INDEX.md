@@ -1,6 +1,6 @@
 # sweetsoursong — index
 
-**Status as of 2026-10-08:** The manuscript has been rewritten for the new pollinator-pool metacommunity model and the tracked changes accepted; the user edits it on Overleaf. The main text has 6 figures and no tables: Fig 1 now holds the model diagram, parameters (D), and one-plant transitions (E), and the K-plant transitions are SI Table S1. The model is implemented in R (package 2.0.0 on `main`), reproduces Chris's Mathematica results and the manuscript numbers, and is released as `v2.0.0` (GitHub and Zenodo). Next milestones: co-author read-through; point the data and code statement at the `v2.0.0` release; fit the PNAS limit on graphical elements.
+**Status as of 2026-10-08:** The manuscript has been rewritten for the new pollinator-pool metacommunity model and the tracked changes accepted; the user edits it on Overleaf. The main text has 6 figures and no tables: Fig 1 now holds the model diagram, parameters (D), and one-plant transitions (E), and the K-plant transitions are SI Table S1. The model is implemented in R (package 2.0.0 on `main`), reproduces Chris's Mathematica results and the manuscript numbers, and is released as `v2.0.0` (GitHub and Zenodo). Next milestones: co-author read-through; fit the PNAS limit on graphical elements.
 
 ## The question
 
@@ -14,7 +14,7 @@ A continuous-time Markov chain for one plant with N flowers (uncolonized, yeast-
 
 | Workstream | State | Next |
 |---|---|---|
-| Manuscript | Rewritten for the new model; tracked changes accepted (2026-10-05); new Fig 1 with parameters (D) and transitions (E); K-plant transitions in SI Table S1; Methods mention the R package (2026-10-08) | Co-author read-through; data and code statement still cites the `v1.0.0` DOI; 6 figures against PNAS's limit of 4 graphical elements |
+| Manuscript | Rewritten for the new model; tracked changes accepted (2026-10-05); new Fig 1 with parameters (D) and transitions (E); K-plant transitions in SI Table S1; Methods mention the R package (2026-10-08); data statement cites the Zenodo concept DOI | Co-author read-through; 6 figures against PNAS's limit of 4 graphical elements |
 | New-model code | R port (package 2.0.0) reviewed, approved by Chris, merged into `main` and pushed: 346 tests against Mathematica pass; `R CMD check` 0 errors, 0 warnings; scripts reproduce Figs 2–6 (computed panels) and SI Table S2 (`tab:numerics`) | Released as `v2.0.0` on GitHub and Zenodo (2026-10-05) |
 | Numerical checks | Done (`claude-checks/`), including founder control (none for m_B ≥ m) | Decide whether to send `note_for_chris.md`; whether to scan founder control at other e_B, c_B∅ |
 | Old R package | Replaced on `main`; preserved at tag `v1.0.0` (Zenodo 10.5281/zenodo.15113988) | None |
@@ -25,7 +25,7 @@ A continuous-time Markov chain for one plant with N flowers (uncolonized, yeast-
 - Figures: `~/Box/_sweetandsour/_figures/`
 - Chris's model files: `~/Box/_sweetandsour/ChrisK-nb/`
 - Checks: `claude-checks/note_for_chris.md`
-- Code archive: Zenodo, via the DOI badge in `README.md`, which always points to the latest release
+- Code archive: Zenodo concept DOI 10.5281/zenodo.15113987 (always resolves to the latest release; also behind the badge in `README.md`)
 - Previous code archive (old model, `v1.0.0`): Zenodo DOI 10.5281/zenodo.15113988
 
 ## Decision log
@@ -38,6 +38,7 @@ A continuous-time Markov chain for one plant with N flowers (uncolonized, yeast-
 | 2026-10-02 | Track manuscript edits with the `changes` package, in red | User can see every change on Overleaf |
 | 2026-10-02 | Word count removed from the title page | Stale after the rewrite |
 | 2026-10-02 | Never rewrite `sweetsoursong-ms` history; keep figures tracked | The Overleaf project can't be unlinked, and its sync ignores `.gitignore` |
+| 2026-10-08 | Manuscript data statement cites the Zenodo concept DOI, 10.5281/zenodo.15113987 | Resolves to the latest release, so it never goes out of date; the old citation was the `v1.0.0` version DOI (first-submission code) |
 | 2026-10-08 | One-plant transitions (old Table 1) and parameters move into Fig 1 (panels E, D); K-plant transitions move to SI Table S1; the accuracy table becomes SI Table S2; `\varnothing` replaces `\emptyset` | User's revision (`sweetsoursong-ms` `a8ebbfc`); supersedes the 2026-10-05 Table 2 placement |
 | 2026-10-05 | Table 2: explicit K-plant transitions, in the main text after Table 1 | Shows the multi-plant model that Table 1's regional pool stands for; its arrivals sum to Table 1's immigration rates |
 | 2026-10-05 | Tracked changes accepted; new manuscript edits without markup | User's choice after the rewrite was incorporated |
