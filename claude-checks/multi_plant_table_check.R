@@ -1,9 +1,10 @@
-# Check that the K-plant transitions (Table 2 of the manuscript) reproduce
-# the one-plant transitions with a regional pool (Table 1):
-#  (1) summed over destinations, departures from plant j equal Table 1's
+# Check that the K-plant transitions (manuscript SI Table S1; Table 2 when
+# written) reproduce the one-plant transitions with a regional pool
+# (manuscript Fig 1E; Table 1 when written):
+#  (1) summed over destinations, departures from plant j equal the one-plant
 #      emigration rate;
-#  (2) summed over source plants, arrivals at plant i (by type) equal
-#      Table 1's immigration rates with P_XR = sum_{j != i} P_j X_j / (K - 1).
+#  (2) summed over source plants, arrivals at plant i (by type) equal the
+#      one-plant immigration rates with P_XR = sum_{j != i} P_j X_j / (K - 1).
 # Run from the project root. Output: claude-checks/multi_plant_table_check_output.txt
 
 suppressPackageStartupMessages(library(sweetsoursong))

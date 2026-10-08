@@ -44,7 +44,7 @@ of the first submission.
 ```
 ├── _data           cached results and CSV outputs of the scripts (not tracked)
 ├── _figures        figures made by the scripts (not tracked)
-├── _scripts        R scripts for Figs 2-6 and SI Table S1
+├── _scripts        R scripts for Figs 2-6 and SI Table S2
 ├── claude-checks   numerical checks; r-port/ has the Mathematica reference
 │                   script and comparisons of R with Mathematica and the
 │                   manuscript
@@ -70,7 +70,7 @@ Rscript _scripts/04-fig6.R
 Rscript _scripts/05-si-table-s1.R
 ```
 
-They make the computed panels of Figs 2–6 and SI Table S1. Panels 2A and 5A
+They make the computed panels of Figs 2–6 and SI Table S2. Panels 2A and 5A
 are schematics. The tests run with `devtools::test()` (about 2 minutes).
 
 

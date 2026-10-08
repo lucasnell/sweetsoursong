@@ -15,7 +15,7 @@
 - [ ] Update the data and code statement in `__ms.tex` for the `sweetsoursong` `v2.0.0` release on Zenodo (it still cites the `v1.0.0` DOI, 10.5281/zenodo.15113988)
 - [ ] Decide whether to repeat the founder-control scan at other e_B, c_B∅ values
 - [ ] Ask Chris to confirm that the closed metacommunity assumes effectively infinitely many plants (the Lerch et al. ergodicity clause is in Methods)
-- [ ] Check PNAS Research Report limits: 4 medium graphical elements (the main text has 6 figures and 2 tables), 4,000 words, 50 references
+- [ ] Check PNAS Research Report limits: 4 medium graphical elements (the main text has 6 figures and no tables), 4,000 words, 50 references
 - [ ] Check that the Discussion's argument matches the new model (partly revised on 2026-10-05, `sweetsoursong-ms` `5620296`)
 - [ ] Review the Significance Statement (revised on Overleaf 2026-10-05) with co-authors
 - [ ] If PNAS needs word counts, recount with `texcount -inc -total __ms.tex` (the title-page note was removed)
@@ -24,6 +24,7 @@
 
 ### Done
 
+- [x] New Fig 1 with parameters (D) and one-plant transitions (E); K-plant table to SI (Table S1); `\varnothing` notation; R package mentioned in Methods (user, `a8ebbfc`, 2026-10-08)
 - [x] Add Table 2, transitions in the K-plant metacommunity, after Table 1 (`sweetsoursong-ms` `30657e9`; check `claude-checks/multi_plant_table_check.R`) (2026-10-05)
 - [x] Accept all tracked changes; remove the hidden old equations and label shims (user, `5620296`, 2026-10-05)
 - [x] Add the Lerch et al. citations and the founder-control sentence to Methods; revise the Significance Statement (user, on Overleaf, 2026-10-05)

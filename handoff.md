@@ -21,14 +21,14 @@ The R port was developed on branch `new-model` and merged into `main` (pushed 20
 - [x] Manuscript figure panels stay as the Mathematica exports for now
 - [x] User: GitHub release `v2.0.0` and Zenodo archive; the README badge carries the DOI
 - [ ] Update the manuscript's data and code statement for the `v2.0.0` release (it still cites the `v1.0.0` DOI)
-- [ ] Fit the main text to PNAS's 4 graphical elements (now 6 figures and 2 tables)
+- [ ] Fit the main text to PNAS's 4 graphical elements (now 6 figures, no tables)
 
 ## Context for the next session
 
 - Verification, all saved in `claude-checks/r-port/`:
   - 346 testthat checks against Mathematica fixtures (`tests/testthat/fixtures/ref_chop.json`, `ref_nochop.json`, from `r_port_reference.wl`) pass; about 2 minutes with `devtools::test()`. Full-model tests compare at 1e-6 because `FindRoot` stops at about 8 digits on the resident equilibrium.
   - `check_founder_grid_output.txt`: R_Y matches Mathematica at all 7381 founder-control grid points to 5e-14; outcomes identical.
-  - `verify_manuscript_numbers_output.txt`: SI Table S1, Fig 3 caption pools, Fig 5 coexistence range, and the m_B = m window all match the manuscript to printed digits.
+  - `verify_manuscript_numbers_output.txt`: the SI accuracy table (Table S1 when checked; Table S2 since 2026-10-08), Fig 3 caption pools, Fig 5 coexistence range, and the m_B = m window all match the manuscript to printed digits.
   - `R CMD check --as-cran --no-manual`: 0 errors, 0 warnings, 1 note ("New submission").
 - Figure scripts make the computed panels only; Fig 2A and Fig 5A are schematics, and Illustrator annotations are not reproduced.
 - Without Chop, the full model's 3-D watershed found 363 spurious modes in Mathematica (round-off noise ~1e-19 in tails); in R, clipping negative round-off to 0 removes them. `decompose_distribution(floor =)` is a further safeguard.
@@ -37,4 +37,5 @@ The R port was developed on branch `new-model` and merged into `main` (pushed 20
 - Notebook input cells, readable without a front end: `claude-checks/r-port/notebook_inputs.txt` (`extract_notebook_inputs.wl`).
 - Overleaf is likely ahead of GitHub for `sweetsoursong-ms`; ask the user to push from Overleaf before any local edit there.
 - After the release (2026-10-05 to 10-06): the user accepted all tracked changes (`sweetsoursong-ms` `5620296`); Table 2 (K-plant transitions, no markup) added after Table 1 (`30657e9`), with `claude-checks/multi_plant_table_check.R` showing its arrivals and departures sum to Table 1's rates to 5e-16; README's no-renv route rewritten to a Posit Package Manager snapshot of 2026-10-05 and tested in a clean library (`4d4752a`); `renv::status()` consistent, all seven used packages in `renv.lock`.
+- 2026-10-08: the user's `sweetsoursong-ms` commit `a8ebbfc` moved the one-plant transitions and parameters into Fig 1 (panels E, D), moved the K-plant table to SI Table S1 (so the accuracy table is now SI Table S2), switched to `\varnothing`, and mentioned the R package in Methods. `_scripts/05-si-table-s1.R` and its outputs still use the old "Table S1" name.
 - Earlier handoffs are in git history (`git log -p handoff.md`).
