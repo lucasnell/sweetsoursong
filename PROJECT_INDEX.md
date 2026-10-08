@@ -1,6 +1,6 @@
 # sweetsoursong — index
 
-**Status as of 2026-10-08:** The manuscript has been rewritten for the new pollinator-pool metacommunity model and the tracked changes accepted; the user edits it on Overleaf. The main text has 6 figures and no tables: Fig 1 now holds the model diagram, parameters (D), and one-plant transitions (E), and the K-plant transitions are SI Table S1. The model is implemented in R (package 2.0.0 on `main`), reproduces Chris's Mathematica results and the manuscript numbers, and is released as `v2.0.0` (GitHub and Zenodo). Next milestones: co-author read-through; fit the PNAS limit on graphical elements.
+**Status as of 2026-10-08:** The manuscript has been rewritten for the new pollinator-pool metacommunity model and the tracked changes accepted; the SI now has the full model description; the user edits it on Overleaf. The main text has 6 figures and no tables: Fig 1 now holds the model diagram, parameters (D), and one-plant transitions (E), and the K-plant transitions are SI Table S1. The model is implemented in R (package 2.0.0 on `main`), reproduces Chris's Mathematica results and the manuscript numbers, and is released as `v2.0.0` (GitHub and Zenodo). Next milestones: co-author read-through; fit the PNAS limit on graphical elements.
 
 ## The question
 
@@ -14,7 +14,7 @@ A continuous-time Markov chain for one plant with N flowers (uncolonized, yeast-
 
 | Workstream | State | Next |
 |---|---|---|
-| Manuscript | Rewritten for the new model; tracked changes accepted (2026-10-05); new Fig 1 with parameters (D) and transitions (E); K-plant transitions in SI Table S1; Methods mention the R package (2026-10-08); data statement cites the Zenodo concept DOI | Co-author read-through; 6 figures against PNAS's limit of 4 graphical elements |
+| Manuscript | Rewritten for the new model; tracked changes accepted (2026-10-05); new Fig 1 with parameters (D) and transitions (E); K-plant transitions in SI Table S1; Methods mention the R package (2026-10-08); data statement cites the Zenodo concept DOI; full model description in the SI (eqs S1–S9) and two Methods wording fixes (`a082e02`, `23aefc7`, 2026-10-08) | Co-author read-through; 6 figures against PNAS's limit of 4 graphical elements; Fig 1E regional-colonization rows (TODO) |
 | New-model code | R port (package 2.0.0) reviewed, approved by Chris, merged into `main` and pushed: 346 tests against Mathematica pass; `R CMD check` 0 errors, 0 warnings; scripts reproduce Figs 2–6 (computed panels) and SI Table S2 (`tab:numerics`) | Released as `v2.0.0` on GitHub and Zenodo (2026-10-05) |
 | Numerical checks | Done (`claude-checks/`), including founder control (none for m_B ≥ m) | Decide whether to send `note_for_chris.md`; whether to scan founder control at other e_B, c_B∅ |
 | Old R package | Replaced on `main`; preserved at tag `v1.0.0` (Zenodo 10.5281/zenodo.15113988) | None |

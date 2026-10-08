@@ -12,7 +12,7 @@
 
 ### Next
 
-- [ ] Fig 1E: events 5 and 6 (regional colonization) should also list $P \to P + 1$; the arriving pollinator joins the plant (SI eq S2 has it right)
+- [ ] Fig 1E: decide how to show that events 5 and 6 (regional colonization) also add a pollinator. The user omitted $P \to P + 1$ on purpose, taking event 3 to set the overall arrival rate; but event 3's $(1 - e_X \varnothing / N)$ factors exclude colonizing arrivals, so total arrivals are events 3 + 5 + 6. Options: add $P \to P + 1$ to rows 5 and 6, or add a caption sentence (drafted 2026-10-08). SI eq S2 has both changes
 - [ ] Decide whether to repeat the founder-control scan at other e_B, c_B∅ values
 - [ ] Ask Chris to confirm that the closed metacommunity assumes effectively infinitely many plants (the Lerch et al. ergodicity clause is in Methods)
 - [ ] Check PNAS Research Report limits: 4 medium graphical elements (the main text has 6 figures and no tables), 4,000 words, 50 references
