@@ -12,6 +12,9 @@
 
 ### Next
 
+- [ ] Fig 1E: events 5 and 6 (regional colonization) should also list $P \to P + 1$; the arriving pollinator joins the plant (SI eq S2 has it right)
+- [ ] Methods: "The resulting transitions are in Table~\ref{fig:model-diagram}E" prints "Table 1E"; change to Figure
+- [ ] Methods: $a_Y$ and $a_B$ (eq 1) are $N$ times the rates at which one opening is filled, not those rates; only their ratio is used, so only the wording needs fixing
 - [ ] Decide whether to repeat the founder-control scan at other e_B, c_B∅ values
 - [ ] Ask Chris to confirm that the closed metacommunity assumes effectively infinitely many plants (the Lerch et al. ergodicity clause is in Methods)
 - [ ] Check PNAS Research Report limits: 4 medium graphical elements (the main text has 6 figures and no tables), 4,000 words, 50 references
@@ -23,6 +26,7 @@
 
 ### Done
 
+- [x] Write the full model description in the SI; SI title updated (`sweetsoursong-ms`, 2026-10-08)
 - [x] Data and code statement cites the Zenodo concept DOI, 10.5281/zenodo.15113987 (`sweetsoursong-ms` `0d49704`, 2026-10-08)
 - [x] Rename `_scripts/05-si-table-s1.R` to `05-si-table-s2.R`, with its outputs, to match the SI numbering (2026-10-08)
 - [x] New Fig 1 with parameters (D) and one-plant transitions (E); K-plant table to SI (Table S1); `\varnothing` notation; R package mentioned in Methods (user, `a8ebbfc`, 2026-10-08)
