@@ -12,6 +12,7 @@
 
 ### Next
 
+- [ ] Review the PNAS cover letter (`~/Box/_sweetandsour/_drafts/cover-Nell-nectar-microbes-PNAS-tracked.docx`, tracked changes): check the signature affiliation (still Cornell), "disease ecology" in the audience list, and whether to mention the earlier *Ecology Letters* submission
 - [ ] Decide whether to repeat the founder-control scan at other e_B, c_B∅ values
 - [ ] Ask Chris to confirm that the closed metacommunity assumes effectively infinitely many plants (the Lerch et al. ergodicity clause is in Methods)
 - [ ] Check PNAS Research Report limits: 4 medium graphical elements (the main text has 6 figures and no tables), 4,000 words, 50 references
@@ -23,6 +24,7 @@
 
 ### Done
 
+- [x] Revise the cover letter for the new model and *PNAS*, as tracked changes in a new file (`claude-checks/cover-letter/make_tracked.py`, 2026-10-08)
 - [x] Fig 1E lists processes, not separate transitions: row 3 is total pollinator immigration, c(m P_∅R + m P_YR + m_B P_BR)/N, and the caption says regional colonization (5, 6) is part of it (user, on Overleaf, 2026-10-08; not yet pushed to GitHub when noted)
 - [x] Methods: Figure 1E reference fixed; $a_Y$, $a_B$ described as $N$ times the fill rates (`sweetsoursong-ms`, 2026-10-08)
 - [x] Write the full model description in the SI; SI title updated (`sweetsoursong-ms`, 2026-10-08)

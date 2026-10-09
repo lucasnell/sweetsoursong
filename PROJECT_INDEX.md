@@ -25,6 +25,7 @@ A continuous-time Markov chain for one plant with N flowers (uncolonized, yeast-
 - Figures: `~/Box/_sweetandsour/_figures/`
 - Chris's model files: `~/Box/_sweetandsour/ChrisK-nb/`
 - Checks: `claude-checks/note_for_chris.md`
+- Cover letter: `~/Box/_sweetandsour/_drafts/cover-Nell-nectar-microbes.docx` (original, *Ecology Letters*, 2025); `cover-Nell-nectar-microbes-PNAS-tracked.docx` (*PNAS* revision, tracked changes, 2026-10-08)
 - Code archive: Zenodo concept DOI 10.5281/zenodo.15113987 (always resolves to the latest release; also behind the badge in `README.md`)
 - Previous code archive (old model, `v1.0.0`): Zenodo DOI 10.5281/zenodo.15113988
 
