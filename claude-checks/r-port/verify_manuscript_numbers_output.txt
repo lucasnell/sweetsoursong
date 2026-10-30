@@ -1,4 +1,4 @@
-verify_manuscript_numbers.R, 2026-10-08 13:27, sweetsoursong 2.0.0
+verify_manuscript_numbers.R, 2026-10-30 15:20, sweetsoursong 2.1.0
 
 == SI Table S2 ==
 reduced, eps 1e-05, Pmax 12 R_Y = 1                     R 0.7308551429 MS 0.730855   match
@@ -6,12 +6,22 @@ reduced, eps 1e-05, Pmax 12 R_B = 1                     R 2.895810394  MS 2.8958
 reduced, eps 1e-07, Pmax 12 R_Y = 1                     R 0.7308549972 MS 0.730855   match
 reduced, eps 1e-07, Pmax 12 R_B = 1                     R 2.895810997  MS 2.895811   match
 reduced, eps 1e-09, Pmax 12 R_Y = 1                     R 0.7308549957 MS 0.730855   match
-reduced, eps 1e-09, Pmax 12 R_B = 1                     R 2.895811003  MS 2.89581    match
+reduced, eps 1e-09, Pmax 12 R_B = 1                     R 2.895811003  MS 2.895811   match
 full, eps 1e-05, Pmax 12 R_Y = 1                        R 0.7296767818 MS 0.729677   match
 full, eps 1e-05, Pmax 12 R_B = 1                        R 2.8674887    MS 2.867489   match
 full, eps 1e-05, Pmax 18 R_Y = 1                        R 0.7296702385 MS 0.72967    match
 full, eps 1e-05, Pmax 18 R_B = 1                        R 2.867472716  MS 2.867473   match
 full model at eps 1e-7 (Table S2 row 'eps 1e-5 to 1e-7'): 0.7296768, 0.7296702, 2.8674893, 2.8674733
+
+== SI Numerical accuracy: R_Y at P_R = 1.8 ==
+R_Y, eps 1e-5 (MS 2.7e7)                                R 2.692103113  MS 2.7        match
+R_Y, eps 1e-9 (MS 7.4e7)                                R 7.397771531  MS 7.4        match
+
+== Fig 2 ==
+panel B: 1 stable, at Y = 50
+panel C: 1 stable, at Y = 50
+panel D: 2 stable, at Y = 0, 50
+panel E: 2 stable, at Y = 4.64, 49.73
 
 == Fig 3 caption ==
 P_YR at P_R = 1.8                                       R 71.87328016  MS 71.87      match
@@ -32,6 +42,15 @@ continuation: two modes for P_R in 0.74 to 2.89; R_Y > 1 and R_B > 1 at all 216 
 == Fig 6 ==
 panel A: bacteria 2460, coexist 1582, yeast 1524, neither 0
 panel B: bacteria 4183, coexist 6826, yeast 1091, neither 0
+
+== Results, Fig 5D-E ==
+proportion yeast-dominated: 0.004 to 0.997
+mean P on yeast-dominated plants: 2.90 to 3.29
+mean P on bacteria-dominated plants: 0.68 to 0.73
+
+== Results, Fig 6: coexistence and alternative stable states ==
+panel A: 1564 of 1582 coexistence points inside (99%); outside points have m_B <= 0.0180
+panel B: 6824 of 6826 coexistence points inside (100%); outside points have m_B <= 0.0100
 
 == No pollinator preference (m_B = m) ==
 R_Y = 1 at P_R                                          R 1.462006021  MS 1.462006   match

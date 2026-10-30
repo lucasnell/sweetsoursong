@@ -1,6 +1,6 @@
-# Check that the K-plant transitions (manuscript SI Table S1; Table 2 when
-# written) reproduce the one-plant transitions with a regional pool
-# (manuscript Fig 1E; Table 1 when written):
+# Check that the K-plant transitions (manuscript SI Table S1)
+# reproduce the one-plant transitions with a regional pool (manuscript
+# Fig 1E):
 #  (1) summed over destinations, departures from plant j equal the one-plant
 #      emigration rate;
 #  (2) summed over source plants, arrivals at plant i (by type) equal the
@@ -21,12 +21,12 @@ for (rep in 1:200) {
     P <- sample(0:8, K, replace = TRUE)
     i <- sample.int(K, 1)
     js <- setdiff(seq_len(K), i)
-    # Table 2 rates for moves j -> i
+    # SI Table S1 rates for moves j -> i
     move_only <- c * P[js] * (m * E[js] + m * (1 - ey * E[i] / n) * Y[js] +
                               mb * (1 - eb * E[i] / n) * B[js]) / (n * (K - 1))
     move_y <- c * m * ey * P[js] * Y[js] * E[i] / (n^2 * (K - 1))
     move_b <- c * mb * eb * P[js] * B[js] * E[i] / (n^2 * (K - 1))
-    # Table 1 at plant i with pools from the other plants
+    # Fig 1E rates at plant i with pools from the other plants
     pools <- c(p0r = sum(P[js] * E[js]), pyr = sum(P[js] * Y[js]),
                pbr = sum(P[js] * B[js])) / (K - 1)
     t1 <- flower_rates(Y[i], B[i], P[i], pools[["p0r"]], pools[["pyr"]], pools[["pbr"]], p)
@@ -45,6 +45,6 @@ for (rep in 1:200) {
     worst <- max(worst, abs(c(d_arr, d_dep)) / pmax(1, abs(c(t1[, c("p_plus", "py_plus", "pb_plus")], dep, dep))))
 }
 lines <- c(lines, "200 random states, K = 2..20 plants",
-           paste0("max relative difference, Table 2 summed vs Table 1: ", signif(worst, 3)))
+           paste0("max relative difference, SI Table S1 summed vs Fig 1E: ", signif(worst, 3)))
 writeLines(lines, "claude-checks/multi_plant_table_check_output.txt")
 cat(lines, sep = "\n")

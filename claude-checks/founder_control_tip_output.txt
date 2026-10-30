@@ -1,0 +1,5 @@
+founder_control_tip.R, 2026-10-30 15:03, sweetsoursong 2.0.0
+threshold gap (R_Y = 1 minus R_B = 1) at m_B = 0.0085: 0.070024, at 0.0100: -0.104828
+tip: P_R = 1.5276369729, m_B = 0.0090761076
+check: R_Y = 1.0000000000, R_B = 1.0000000000
+Mathematica (founder_control_tip_output.m): P_R = 1.5276369729, m_B = 0.0090761076
