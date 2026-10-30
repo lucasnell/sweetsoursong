@@ -1,0 +1,14 @@
+bibentry(
+    bibtype = "Manual",
+    title = "sweetsoursong: Pollinator-Mediated Coexistence of Nectar Microbes",
+    author = c(person(c("Lucas", "A."), "Nell"),
+               person(c("Christopher", "A."), "Klausmeier")),
+    year = "2026",
+    note = paste("R package version", meta$Version),
+    doi = "10.5281/zenodo.15113987",
+    url = "https://github.com/lucasnell/sweetsoursong",
+    textVersion = paste0(
+        "Nell, L. A., and C. A. Klausmeier (2026). sweetsoursong: ",
+        "Pollinator-Mediated Coexistence of Nectar Microbes. R package version ",
+        meta$Version, ". https://doi.org/10.5281/zenodo.15113987")
+)

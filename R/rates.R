@@ -1,6 +1,6 @@
 #' Transition rates of the per-plant model
 #'
-#' Rates of the eight transitions in Table 1 for a plant with `y`
+#' Rates of the eight transitions in Fig 1E of the manuscript for a plant with `y`
 #' yeast-dominated, `b` bacteria-dominated, and `e` uncolonized flowers and
 #' `p` pollinators. Arguments are recycled.
 #'

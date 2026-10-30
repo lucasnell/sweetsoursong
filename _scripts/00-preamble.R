@@ -15,7 +15,9 @@ options(sweetsoursong.chop = FALSE)
 
 pars <- ss_params()
 
-n_cores <- max(1L, parallel::detectCores() - 2L)
+# parallel::mclapply (used by outcome_grid) forks, which Windows does not support
+n_cores <- if (.Platform$OS.type == "windows") 1L else
+    max(1L, parallel::detectCores() - 2L)
 
 col_y <- rgb(0.880722, 0.611041, 0.142051)
 col_b <- rgb(0.368417, 0.506779, 0.709798)
@@ -28,11 +30,20 @@ theme_set(theme_classic(base_size = 10) +
 fig_path <- function(name) file.path("_figures", name)
 data_path <- function(name) file.path("_data", name)
 
-# Cache an expensive result as .rds.
+# Cache an expensive result as .rds. The cache is reused only if it was made
+# with the same package version, parameters, and Chop setting; otherwise it
+# is recomputed.
 cached <- function(name, expr) {
     path <- data_path(name)
-    if (file.exists(path)) return(readRDS(path))
+    key <- list(version = as.character(utils::packageVersion("sweetsoursong")),
+                pars = unclass(pars), chop = getOption("sweetsoursong.chop"))
+    if (file.exists(path)) {
+        out <- readRDS(path)
+        if (identical(attr(out, "cache_key"), key)) return(out)
+        message("Cache ", path, " is out of date; recomputing")
+    }
     out <- force(expr)
+    attr(out, "cache_key") <- key
     saveRDS(out, path)
     out
 }

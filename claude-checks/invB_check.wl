@@ -1,6 +1,8 @@
+(* Directory of this script; run with wolframscript -file from any directory. *)
+here = FileNameDrop[ExpandFileName[$InputFileName], -1];
 (* Compare reduced-model InvB as coded (n PR - E[y P]) with the direct B-carrier output E[(n-y) P].
    CTMC closure, parameters from SetParameters in exploration_unified_10x.nb. Run 2026-10-02. *)
-SetDirectory["/Users/lucasnell/GitHub/Stanford/sweetsoursong/claude-checks/chris-files"];
+SetDirectory[here <> "/chris-files"];
 Get["definitions_unified.wl"];
 n = 50; Pmax = 12; c = 500; d = 0.1; {m, mB} = {0.01, 0.05}; {eY, eB} = {1, 0.5}; cB\[EmptySet] = 5; \[Epsilon] = 10^-5;
 SetCTMCClosureTM;

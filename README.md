@@ -45,10 +45,10 @@ of the first submission.
 ├── _data           cached results and CSV outputs of the scripts (not tracked)
 ├── _figures        figures made by the scripts (not tracked)
 ├── _scripts        R scripts for Figs 2-6 and SI Table S2
-├── claude-checks   numerical checks; r-port/ has the Mathematica reference
-│                   script and comparisons of R with Mathematica and the
-│                   manuscript
+├── claude-checks   numerical checks behind statements in the manuscript;
+│                   see claude-checks/README.md
 ├── DESCRIPTION
+├── inst            CITATION
 ├── LICENSE.md
 ├── man
 ├── NAMESPACE
@@ -59,19 +59,62 @@ of the first submission.
 └── tests
 ```
 
+
+# Reproducing the figures
+
 Install the package and its dependencies (see below), then run the scripts
 from the project root, in order:
 
 ```bash
-Rscript _scripts/01-fig2.R
-Rscript _scripts/02-fig3-4.R
-Rscript _scripts/03-fig5.R
-Rscript _scripts/04-fig6.R
-Rscript _scripts/05-si-table-s2.R
+Rscript _scripts/01-fig2.R           # Fig 2, a few seconds
+Rscript _scripts/02-fig3-4.R         # Figs 3 and 4, a few seconds
+Rscript _scripts/03-fig5.R           # Fig 5, about 30 seconds
+Rscript _scripts/04-fig6.R           # Fig 6, about 40 seconds on 8 cores
+Rscript _scripts/05-si-table-s2.R    # SI Table S2, about 3.5 minutes
 ```
 
-They make the computed panels of Figs 2–6 and SI Table S2. Panels 2A and 5A
-are schematics. The tests run with `devtools::test()` (about 2 minutes).
+Times are for an Apple M-series laptop. On Windows, Fig 6 runs on one core and
+takes several minutes. Results are cached in `_data/` as
+`.rds` files and reused only if they were made with the same package
+version, parameters, and `Chop` setting.
+
+The figures in the manuscript were made in Mathematica, with Christopher
+Klausmeier's notebook (not in this repository; it calls the functions in
+`claude-checks/chris-files/definitions_unified.wl`), and laid out in Adobe
+Illustrator. The scripts reproduce their computed content in R, not their
+appearance:
+
+- Fig 1 and panels 2A and 5A are schematics and are not reproduced, nor
+  are the labels and annotations added in Illustrator.
+- Equilibria, stationary distributions, mode weights, invasion criteria,
+  and outcome grids are the same as in the Mathematica code. The tests and
+  `claude-checks/r-port/` compare them value by value.
+- Fig 3A–B (Gillespie simulations) and the 50 plants in Fig 4 are random
+  draws, so they match the published panels only in distribution.
+
+Numbers that the manuscript states but that are not in a figure come from
+the scripts in `claude-checks/`; `claude-checks/README.md` lists which
+script supports which statement.
+
+
+# Tests
+
+The tests compare the R code with reference values from the Mathematica
+code, stored in `tests/testthat/fixtures/`. Running them does not need
+Mathematica. From the project root (about 2 minutes):
+
+```r
+Sys.setenv(NOT_CRAN = "true")  # otherwise the slower tests are skipped
+testthat::test_local()
+```
+
+The fixtures were made with Wolfram 15.0.1 and the EcoEvo package 1.7.2
+(<https://github.com/cklausme/EcoEvo>):
+
+```bash
+wolframscript -file claude-checks/r-port/r_port_reference.wl chop
+wolframscript -file claude-checks/r-port/r_port_reference.wl nochop
+```
 
 
 # Replicating the R environment
@@ -89,14 +132,13 @@ install.packages(".", repos = NULL, type = "source")  # sweetsoursong itself
 
 **Without `renv`**, from a dated CRAN snapshot. Posit Package Manager serves
 CRAN as it was on a given date, so dependencies of dependencies are pinned as
-well. On 2026-10-05, the release date of v2.0.0, the snapshot has every
-package in `renv.lock` at the recorded version. Use R 4.6.1 (for example,
-installed with [rig](https://github.com/r-lib/rig)), then:
+well. The snapshot of 2026-10-05 has every package in `renv.lock` at the
+recorded version. Use R 4.6.1 (for example, installed with [rig](https://github.com/r-lib/rig)), then:
 
 ```r
 options(repos = c(CRAN = "https://packagemanager.posit.co/cran/2026-10-05"))
 install.packages(c("remotes", "Matrix"))
-remotes::install_github("lucasnell/sweetsoursong@v2.0.0",
+remotes::install_github("lucasnell/sweetsoursong@v2.1.0",
                         dependencies = TRUE, upgrade = "always")
 ```
 
@@ -104,5 +146,5 @@ remotes::install_github("lucasnell/sweetsoursong@v2.0.0",
 (ggplot2, patchwork) and tests (jsonlite, testthat). `upgrade = "always"`
 replaces older copies already in your library with the snapshot's versions;
 `Matrix` is installed explicitly because `remotes` does not upgrade the copy
-that ships with R. Tested on macOS on 2026-10-05: all packages in `renv.lock`
-except `renv` itself were installed at the recorded versions.
+that ships with R. Tested on macOS on 2026-10-05 with v2.0.0: all packages
+in `renv.lock` except `renv` itself were installed at the recorded versions.

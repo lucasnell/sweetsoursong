@@ -14,7 +14,7 @@ full_index <- function(y, b, p, n) {
 #' Transition-rate matrix of the full per-plant model
 #'
 #' Continuous-time Markov chain over (Y, B, P) with Y + B <= n and
-#' P <= `pmax` (Table 1; Chris Klausmeier's `SetFullTM`). Pollinator
+#' P <= `pmax` (Fig 1E of the manuscript; Chris Klausmeier's `SetFullTM`). Pollinator
 #' arrivals are blocked at `pmax`. The matrix is the transpose of the
 #' generator: entry `[to, from]` is the rate from `from` to `to`, and columns
 #' sum to zero.
@@ -278,5 +278,5 @@ full_meta_equilibrium <- function(pr, start, pars = ss_params(), tol = 1e-10) {
         }
         x <- xn; fx <- fn
     }
-    c(pyr = x[1], pbr = x[2])
+    c(pyr = unname(x[1]), pbr = unname(x[2]))
 }

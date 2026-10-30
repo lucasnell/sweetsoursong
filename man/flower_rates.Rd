@@ -23,7 +23,7 @@ A matrix with one row per state and columns \code{p_minus}, \code{y_plus},
 \code{b_plus}, \code{p_plus}, \code{py_plus}, \code{pb_plus}, \code{y_minus}, \code{b_minus}.
 }
 \description{
-Rates of the eight transitions in Table 1 for a plant with \code{y}
+Rates of the eight transitions in Fig 1E of the manuscript for a plant with \code{y}
 yeast-dominated, \code{b} bacteria-dominated, and \code{e} uncolonized flowers and
 \code{p} pollinators. Arguments are recycled.
 }

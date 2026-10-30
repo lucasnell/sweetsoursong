@@ -10,7 +10,7 @@
 mode = If[Length[$ScriptCommandLine] >= 2, $ScriptCommandLine[[2]], "chop"];
 If[! MemberQ[{"chop", "nochop"}, mode], Print["mode must be chop or nochop"]; Exit[1]];
 
-root = "/Users/lucasnell/GitHub/Stanford/sweetsoursong";
+root = FileNameDrop[ExpandFileName[$InputFileName], -3];  (* project root *)
 SetDirectory[root <> "/claude-checks/chris-files"];
 Get["definitions_unified.wl"];
 

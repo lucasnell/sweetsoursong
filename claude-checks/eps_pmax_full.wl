@@ -1,3 +1,5 @@
+(* Directory of this script; run with wolframscript -file from any directory. *)
+here = FileNameDrop[ExpandFileName[$InputFileName], -1];
 (* Full three-species model: (1) mass at the pollinator cutoff P = Pmax, and
    (2) dependence of the invasion criteria on epsilon and Pmax.
    Parameters from SetParameters in exploration_unified_10x.nb.
@@ -7,11 +9,11 @@
    Direct-solve noise floor: min(pi) about -4e-9, so eps is kept >= 1e-7.
    definitions_unified.wl is unchanged. *)
 
-SetDirectory["/Users/lucasnell/GitHub/Stanford/sweetsoursong/claude-checks/chris-files"];
+SetDirectory[here <> "/chris-files"];
 Get["definitions_unified.wl"];
 n = 50; c = 500; d = 0.1; {m, mB} = {0.01, 0.05}; {eY, eB} = {1, 0.5}; cB\[EmptySet] = 5;
 
-Get["/Users/lucasnell/GitHub/Stanford/sweetsoursong/claude-checks/eps_pmax_full_defs.wl"];
+Get[here <> "/eps_pmax_full_defs.wl"];
 
 (* coexistence equilibria reported in the notebook (Pmax = 12), section 3.3 *)
 coexPools = {{1.0, {18.2848, 31.304}}, {1.8, {71.8926, 17.6553}}, {2.6, {125.109, 4.39406}}};
@@ -40,6 +42,6 @@ Do[
     {eps, {10^-5, 10^-6, 10^-7}}];
   , {pm, {12, 18}}];
 
-SetDirectory["/Users/lucasnell/GitHub/Stanford/sweetsoursong/claude-checks"];
+SetDirectory[here];
 Put[out, "eps_pmax_full_output.m"];
 out

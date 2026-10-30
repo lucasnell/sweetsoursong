@@ -1,10 +1,12 @@
+(* Directory of this script; run with wolframscript -file from any directory. *)
+here = FileNameDrop[ExpandFileName[$InputFileName], -1];
 (* Numbers cited in the manuscript text that are not printed on the figures.
    Reduced model, CTMC closure, SetParameters from exploration_unified_10x.nb
    (n = 50, Pmax = 12, c = 500, d = 0.1, m = 0.01, mB = 0.05, eY = 1, eB = 0.5,
-   cB0 = 5, eps = 1e-5). Chop disabled (see note_for_chris.md, section 1).
+   cB0 = 5, eps = 1e-5). Chop disabled (Chop zeroes vacancy-filling probabilities of order eps; see eps_ctmc.wl).
    definitions_unified.wl is unchanged. *)
 
-SetDirectory["/Users/lucasnell/GitHub/Stanford/sweetsoursong/claude-checks/chris-files"];
+SetDirectory[here <> "/chris-files"];
 Get["definitions_unified.wl"];
 n = 50; Pmax = 12; c = 500; d = 0.1; {m, mB} = {0.01, 0.05}; {eY, eB} = {1, 0.5}; cB\[EmptySet] = 5; \[Epsilon] = 10^-5;
 SetCTMCClosureTM;
@@ -22,7 +24,7 @@ out["mBeqm"] = Block[{mB = m, Chop = Identity},
    Block[{PR = 1.5}, {InvY, InvB}]}];
 
 (* (1b) B invader's own pool output E[(n - y) P]/eps, which avoids the affine rescaling in InvB
-   (InvB as coded can be negative; see note_for_chris.md, section 4) *)
+   (InvB as coded can be negative; see invB_check.wl) *)
 out["fig4E_InvB_direct"] = Table[Block[{PR = pr},
    Module[{pyr = n PR - \[Epsilon], pbr = \[Epsilon], dY},
     dY = GetYDistribution[{pyr, pbr}];
@@ -32,6 +34,6 @@ out["fig4E_InvB_direct"] = Table[Block[{PR = pr},
 (* (3) Pcrit for the closed one-plant model *)
 out["Pcrit"] = cB\[EmptySet] n/(c (eY - eB));
 
-SetDirectory["/Users/lucasnell/GitHub/Stanford/sweetsoursong/claude-checks"];
+SetDirectory[here];
 Put[out, "ms_numbers_output.m"];
 out

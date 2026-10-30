@@ -1,9 +1,11 @@
+(* Directory of this script; run with wolframscript -file from any directory. *)
+here = FileNameDrop[ExpandFileName[$InputFileName], -1];
 (* Follow-up to founder_control_scan.wl: (1) the mB = m row of the scan, against the
    thresholds in ms_numbers_output.m (1.462, 1.567); (2) the point where R_Y = 1 and
    R_B = 1 cross, which is the tip of the neither-invades region; (3) the smallest
    |log10 R| in the scan, as a check that underflow warnings could not flip a sign.
    Same model and parameters as founder_control_scan.wl. *)
-dir = "/Users/lucasnell/GitHub/Stanford/sweetsoursong/claude-checks";
+dir = here;
 SetDirectory[dir <> "/chris-files"];
 Get["definitions_unified.wl"];
 n = 50; Pmax = 12; c = 500; d = 0.1; m = 0.01; {eY, eB} = {1, 0.5}; cB\[EmptySet] = 5; \[Epsilon] = 10^-5;

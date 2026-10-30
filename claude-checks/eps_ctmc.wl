@@ -1,9 +1,11 @@
+(* Directory of this script; run with wolframscript -file from any directory. *)
+here = FileNameDrop[ExpandFileName[$InputFileName], -1];
 (* Epsilon dependence of the reduced CTMC-closure invasion criteria.
    Parameters from SetParameters in exploration_unified_10x.nb.
    Chop (zeroes |x| < 1e-10) is disabled with Block so that small-epsilon
    vacancy-filling probabilities are not truncated. definitions_unified.wl is unchanged. *)
 
-SetDirectory["/Users/lucasnell/GitHub/Stanford/sweetsoursong/claude-checks/chris-files"];
+SetDirectory[here <> "/chris-files"];
 Get["definitions_unified.wl"];
 n = 50; Pmax = 12; c = 500; d = 0.1; {m, mB} = {0.01, 0.05}; {eY, eB} = {1, 0.5}; cB\[EmptySet] = 5;
 SetCTMCClosureTM;
@@ -25,7 +27,7 @@ ctmcCrit = Table[
      PR /. FindRoot[InvB == 1, {PR, 2.9}]}],
    {eps, epsList}];
 
-SetDirectory["/Users/lucasnell/GitHub/Stanford/sweetsoursong/claude-checks"];
+SetDirectory[here];
 Export["eps_ctmc_output.txt",
   StringJoin[
    "Reduced CTMC closure, Pmax = 12. Columns: eps, PR, InvY, InvB (Chop on), InvY, InvB (Chop off)\n",

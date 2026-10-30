@@ -17,7 +17,7 @@ A sparse matrix (class \code{dgCMatrix}) with the states as attribute
 }
 \description{
 Continuous-time Markov chain over (Y, B, P) with Y + B <= n and
-P <= \code{pmax} (Table 1; Chris Klausmeier's \code{SetFullTM}). Pollinator
+P <= \code{pmax} (Fig 1E of the manuscript; Chris Klausmeier's \code{SetFullTM}). Pollinator
 arrivals are blocked at \code{pmax}. The matrix is the transpose of the
 generator: entry \verb{[to, from]} is the rate from \code{from} to \code{to}, and columns
 sum to zero.

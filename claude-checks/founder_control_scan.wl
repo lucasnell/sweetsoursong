@@ -1,14 +1,16 @@
+(* Directory of this script; run with wolframscript -file from any directory. *)
+here = FileNameDrop[ExpandFileName[$InputFileName], -1];
 (* Is there any (PR, mB) where neither species can invade (R_Y < 1 and R_B < 1,
    regional founder control)? Fig 6 (notebook section 2.4) colours only the other three
    outcomes, over PR in [0.1, 10] and mB in [m, 1].
    Reduced model, CTMC closure, SetParameters from exploration_unified_10x.nb
    (n = 50, Pmax = 12, c = 500, d = 0.1, m = 0.01, eY = 1, eB = 0.5, cB0 = 5, eps = 1e-5).
-   Chop disabled (see note_for_chris.md, section 1). InvB as coded has the same sign of
+   Chop disabled (Chop zeroes vacancy-filling probabilities of order eps; see eps_ctmc.wl). InvB as coded has the same sign of
    R - 1 as the direct B-carrier output (invB_check_output.txt), so InvB is used here.
    Grid: 121 log-spaced PR in [0.1, 10] x 61 log-spaced mB in [0.001, 1].
    definitions_unified.wl is unchanged. *)
 
-dir = "/Users/lucasnell/GitHub/Stanford/sweetsoursong/claude-checks";
+dir = here;
 LaunchKernels[];
 ParallelEvaluate[
   SetDirectory[dir <> "/chris-files"];
