@@ -1,43 +1,39 @@
-# Handoff — 2026-10-05
+# Handoff — 2026-10-30
 
 ## Session topic
 
-Manuscript upkeep while the user edits on Overleaf (2026-10-04 to 10-05), then a port of Chris Klausmeier's Mathematica model to R. Earlier in the session: fixed the Overleaf word count (`sweetsoursong-ms` commit `1937795`), placed the Lerch et al. (2023) citations, checked for regional founder control, drafted an intro paragraph replacing commented-out old text, and reorganized the project notes to the agentic-starter templates. The user has since pasted the Lerch et al. text, the founder-control sentence, and a revised Significance Statement into Overleaf.
-
-The R port was developed on branch `new-model` and merged into `main` (pushed 2026-10-05). Package `sweetsoursong` 2.0.0 replaces the old package; the old one stays at tag `v1.0.0`. Plan: `~/.claude/plans/what-ways-could-we-polymorphic-pretzel.md`. User choices: pure R, R package with testthat, replace in this repo, reproduce Chris's code exactly first and then fix known issues.
+Reproducibility review of this repo and the manuscript, then the fixes. Two Sonnet reviewers (package and scripts; claim provenance) found no wrong numbers; the gaps were provenance, the archive lagging the manuscript, and private files in the public repo. Their reports are in git history only (`23da609`, removed in `d1444de`).
 
 ## Key decisions
 
-- R port defaults differ from Chris's code in two ways, each in its own commit: no `Chop` (`23dbe04`) and R_B = E[BP]/ε (`fa5e098`). Neither changes Figs 2–6 or any threshold: `claude-checks/r-port/compare_chop_output.txt`, `compare_invb_output.txt`. `options(sweetsoursong.chop = TRUE)` and `inv_b(method = "chris")` reproduce his code.
-- Two numerical fixes not in Chris's code: truncated Poisson weights in log space (`2d7eaa8`; Mathematica switches to extended precision on underflow, R did not, which put R_Y off by ~3× at m_B ≥ 0.79, P_R ≥ 7.9), and with P_BR exactly 0 all mass at y = N (`503417e`; his product formula zeroes that absorbing state, but his `FindRoot` never lands exactly on the bound).
-- Closed-metacommunity roots: Newton from the start value (as `FindRoot`), accepted if interior; otherwise the nearest candidate among sign changes and the bounds. This reproduces all of Chris's roots, including starts on the bound (P_R = 2.6, start 130).
-- Watershed: Mathematica's `WatershedComponents[..., Method -> "Basins"]` here equals steepest descent over 8 neighbours with raw differences; R reproduces its labels cell for cell.
-- Founder control (both R < 1) does not occur for m_B ≥ m at default parameters; it starts at m_B = 0.00908, P_R = 1.528 (`claude-checks/founder_control_*`).
+- Manuscript keeps the Mathematica figure panels; Methods now says so and that the R package reproduces every computed result (random draws in Figs 3A,B and 4 match in distribution only).
+- Both `(SI?)` placeholders resolved by a new full-vs-reduced comparison of distributions (option 19), not by narrowing the claim to thresholds. Cited as "SI Appendix, Numerical accuracy"; no new SI table.
+- `note_for_chris.md`, `cover-letter/`, `ms-edit/` untracked (still in history and in the v2.0.0 Zenodo record; no history rewrite); these and `reviewers/`, `param-justification/` are in `.gitignore`. Chris agreed to his files (`chris-files/`) being public.
+- Release `v2.1.0`; manuscript keeps citing the concept DOI.
+
+## Done
+
+- `sweetsoursong-ms` `c251a76` (pushed): placeholders; SI sentence on reduced vs full distributions; SI Pmax sentence (tail ≤ 4.2e-5, pools ≤ 0.002% reduced, 0.02% full); Table S2 2.89581 → 2.895811; Methods software sentence. Word count 5190.
+- `sweetsoursong` `611889e`: `claude-checks/founder_control_tip.R` (tip P_R = 1.5276369729, m_B = 0.0090761076, matches Mathematica to 10 digits), `pmax_check.R` (reduced thresholds change ~1e-6 across Pmax 12/18/24), `full_vs_reduced.R`, expanded `r-port/verify_manuscript_numbers.R` (all match).
+- `a2c7641`: README (what scripts reproduce, runtimes, `testthat::test_local()` with `NOT_CRAN=true`, fixture regeneration), `claude-checks/README.md` (statement → script → output), Wolfram scripts use paths relative to themselves, `cached()` keyed on version/params/Chop, one core on Windows, `inst/CITATION`, version 2.1.0, `full_meta_equilibrium()` unnames a named start.
+- Verification before tagging: all five `_scripts/` re-ran under 2.1.0; 346 tests pass; `R CMD check --as-cran` 0/0/1 (New submission).
+- Tag `v2.1.0` pushed; user published the release. Concept DOI 10.5281/zenodo.15113987 resolves to the v2.1.0 record, 10.5281/zenodo.23817877 (checked 2026-10-30).
+
+## Full vs reduced (claude-checks/full_vs_reduced_output.txt)
+
+Over 0.8 ≤ P_R ≤ 2.8, full minus reduced: 0.27–0.61 uncolonized flowers per plant; yeast-dominated proportion +0.001 to +0.014; mean P per plant ≤ 3e-5; mean P on yeast plants −0.03 to −0.04; mean Y within plant types ≤ 0.3; P_BR −0.47 (moved to the P_0R pool). Wasserstein-1 ≤ 0.75 flowers. Total variation of (Y, P) reaches 0.19 at P_R = 2.8 only because Y = 50 in the reduced model is often Y = 49 plus one empty flower in the full model.
 
 ## Open follow-ups
 
-- [x] User reviewed the R port; merged into `main` and pushed (2026-10-05)
-- [x] Chris approved the port
-- [x] Manuscript figure panels stay as the Mathematica exports for now
-- [x] User: GitHub release `v2.0.0` and Zenodo archive; the README badge carries the DOI
-- [x] Data and code statement cites the Zenodo concept DOI (`sweetsoursong-ms` `0d49704`)
-- [ ] Fit the main text to PNAS's 4 graphical elements (now 6 figures, no tables)
+- [ ] User: pull `c251a76` into Overleaf (if not done)
+- [ ] Fit the main text to PNAS limits: 4 graphical elements (now 6 figures), 4,000 words (now 5190)
+- [ ] Not verified: the no-renv install route at `@v2.1.0` (tested only for v2.0.0); heavy Wolfram scripts not re-run after the path change (mechanism checked by re-running `extract_notebook_inputs.wl` from `/`, identical output)
+- [ ] Deferred: Linux system dependencies for the PPM route in README
+- [ ] From 2026-10-08, still open: cover-letter questions (signature affiliation, "disease ecology", mention of the *Ecology Letters* submission)
 
 ## Context for the next session
 
-- Verification, all saved in `claude-checks/r-port/`:
-  - 346 testthat checks against Mathematica fixtures (`tests/testthat/fixtures/ref_chop.json`, `ref_nochop.json`, from `r_port_reference.wl`) pass; about 2 minutes with `devtools::test()`. Full-model tests compare at 1e-6 because `FindRoot` stops at about 8 digits on the resident equilibrium.
-  - `check_founder_grid_output.txt`: R_Y matches Mathematica at all 7381 founder-control grid points to 5e-14; outcomes identical.
-  - `verify_manuscript_numbers_output.txt`: the SI accuracy table (Table S1 when checked; Table S2 since 2026-10-08), Fig 3 caption pools, Fig 5 coexistence range, and the m_B = m window all match the manuscript to printed digits.
-  - `R CMD check --as-cran --no-manual`: 0 errors, 0 warnings, 1 note ("New submission").
-- Figure scripts make the computed panels only; Fig 2A and Fig 5A are schematics, and Illustrator annotations are not reproduced.
-- Without Chop, the full model's 3-D watershed found 363 spurious modes in Mathematica (round-off noise ~1e-19 in tails); in R, clipping negative round-off to 0 removes them. `decompose_distribution(floor =)` is a further safeguard.
-- `wolframscript`: set `WolframKernel=/Applications/Wolfram.app/Contents/MacOS/WolframKernel`; run one heavy script at a time (two in parallel crashed once); `Print` output appears only when the script exits; `log` is protected in that context.
-- Sparse stationary solves: replacing a row with ones makes `Matrix::lu` ~100× slower (dense row); the code fixes one state instead, chosen by inflow/outflow ratio, then re-solves at the most probable state.
-- Notebook input cells, readable without a front end: `claude-checks/r-port/notebook_inputs.txt` (`extract_notebook_inputs.wl`).
-- Overleaf is likely ahead of GitHub for `sweetsoursong-ms`; ask the user to push from Overleaf before any local edit there.
-- After the release (2026-10-05 to 10-06): the user accepted all tracked changes (`sweetsoursong-ms` `5620296`); Table 2 (K-plant transitions, no markup) added after Table 1 (`30657e9`), with `claude-checks/multi_plant_table_check.R` showing its arrivals and departures sum to Table 1's rates to 5e-16; README's no-renv route rewritten to a Posit Package Manager snapshot of 2026-10-05 and tested in a clean library (`4d4752a`); `renv::status()` consistent, all seven used packages in `renv.lock`.
-- 2026-10-08: the user's `sweetsoursong-ms` commit `a8ebbfc` moved the one-plant transitions and parameters into Fig 1 (panels E, D), moved the K-plant table to SI Table S1 (so the accuracy table is now SI Table S2), switched to `\varnothing`, and mentioned the R package in Methods. `_scripts/05-si-table-s1.R` and its outputs were renamed to `05-si-table-s2.R` / `si-table-s2.*` to match.
-- 2026-10-08, later: wrote the SI "Full model description" (`sweetsoursong-ms` `a082e02`; eqs S1–S9, checked against the R code) and updated the SI title; fixed two Methods sentences (`23aefc7`). Fig 1E resolved: the user (on Overleaf, not yet on GitHub when noted) made row 3 the total immigration rate and added a caption sentence saying rows 5 and 6 are part of it; the rows are now processes, not exclusive transitions. Treating 5 and 6 as separate events without $P \to P + 1$ would shift thresholds by −0.0047 (R_Y) and −0.030 (R_B) (`claude-checks/fig1e_row3_alternative.R`). SI eq S2 gives the same model as separate chain events.
-- 2026-10-08: revised the cover letter for the new model and *PNAS* as word-level tracked changes in a new file, `~/Box/_sweetandsour/_drafts/cover-Nell-nectar-microbes-PNAS-tracked.docx` (built by `claude-checks/cover-letter/make_tracked.py`; Word reads 129 revisions; rejecting all gives the original text). Open for the user: affiliation in the signature, "disease ecology", whether to mention the earlier *Ecology Letters* submission.
+- `chop_threshold_check.txt` has no script (interactive Mathematica session); `claude-checks/README.md` says so.
+- Local `_data/` still holds v1-era files, including a 2.2 GB `.rds` (git-ignored; clutter only).
+- `git commit` after `git rm --cached` commits the whole index, not just the paths added; stage deliberately when splitting commits.
 - Earlier handoffs are in git history (`git log -p handoff.md`).
